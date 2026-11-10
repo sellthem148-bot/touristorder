@@ -1,6 +1,7 @@
 // Ce qu'est une image : décidé par ses OCTETS, jamais par le type annoncé.
 
-export const TAILLE_MAX_IMAGE = 5 * 1024 * 1024;
+// 4 Mo : Vercel refuse toute requête de plus de 4,5 Mo (la photo est allégée dans le navigateur, lib/reduire-photo.ts).
+export const TAILLE_MAX_IMAGE = 4 * 1024 * 1024;
 
 export type TypeImage = { mime: string; extension: string };
 

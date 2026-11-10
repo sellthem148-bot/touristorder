@@ -36,7 +36,7 @@ async function preparerLesPhotos() {
   }
   const cree = await client.storage.createBucket(nom, {
     public: true,
-    fileSizeLimit: 5 * 1024 * 1024,
+    fileSizeLimit: 4 * 1024 * 1024,
     allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
   });
   // Les photos sont facultatives : un échec ici ne bloque pas la mise en ligne.

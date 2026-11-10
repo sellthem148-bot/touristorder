@@ -8,8 +8,9 @@ const supabase = adresseSupabase ? new URL(adresseSupabase).hostname : undefined
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: {
-    // Une photo produit (5 Mo max) passe par une Server Action.
-    serverActions: { bodySizeLimit: "6mb" },
+    // Une photo produit (4 Mo max, allégée dans le navigateur) passe par une Server Action.
+    // Sur Vercel la limite réelle d'une requête est 4,5 Mo.
+    serverActions: { bodySizeLimit: "5mb" },
   },
   images: {
     remotePatterns: supabase

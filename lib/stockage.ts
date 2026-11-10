@@ -19,7 +19,7 @@ const BUCKET = () => BUCKET_PHOTOS();
 /** Enregistre la photo d'un produit et rend son adresse publique. */
 export async function enregistrerPhoto(fichier: File): Promise<ResultatEnvoi> {
   if (fichier.size === 0) return { ok: false, erreur: "Fichier vide." };
-  if (fichier.size > TAILLE_MAX_IMAGE) return { ok: false, erreur: "Photo trop lourde (5 Mo maximum)." };
+  if (fichier.size > TAILLE_MAX_IMAGE) return { ok: false, erreur: "Photo trop lourde (4 Mo maximum)." };
   const octets = new Uint8Array(await fichier.arrayBuffer());
   const type = typeDImage(octets);
   if (!type) return { ok: false, erreur: "Format non accepté : JPEG, PNG ou WebP." };

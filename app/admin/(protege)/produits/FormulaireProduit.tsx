@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { enregistrerProduit, type EtatProduit } from "../actions";
 import { Vignette } from "@/components/Vignette";
 import { BADGES } from "@/lib/choix-commande";
+import { poidsLisible, reduirePhoto } from "@/lib/reduire-photo";
 
 type Produit = {
   id: string;
@@ -34,6 +35,38 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
   // L'aperçu appartient à un essai : après un refus, le champ photo est vide.
   const [apercuSaisi, setApercu] = useState<{ essai: number; url: string } | null>(null);
   const apercu = apercuSaisi && apercuSaisi.essai === (etat.essai ?? 0) ? apercuSaisi.url : null;
+  // La photo est allégée dans le navigateur avant l'envoi (lib/reduire-photo.ts) : on attend la fin pour enregistrer.
+  const [photo, setPhoto] = useState<{ essai: number; enPreparation: boolean; note: string } | null>(null);
+  const photoDeLEssai = photo && photo.essai === (etat.essai ?? 0) ? photo : null;
+
+  async function choisirPhoto(champ: HTMLInputElement) {
+    const essai = etat.essai ?? 0;
+    const origine = champ.files?.[0];
+    if (!origine) {
+      setApercu(null);
+      setPhoto(null);
+      return;
+    }
+    setPhoto({ essai, enPreparation: true, note: "Préparation de la photo…" });
+    const allegee = await reduirePhoto(origine);
+    if (allegee !== origine) {
+      try {
+        // Remplace le fichier du champ : c'est lui que le formulaire envoie.
+        const transfert = new DataTransfer();
+        transfert.items.add(allegee);
+        champ.files = transfert.files;
+      } catch {
+        // Navigateur ancien : la photo d'origine part telle quelle, le serveur la vérifie.
+      }
+    }
+    const envoyee = champ.files?.[0] ?? origine;
+    setApercu({ essai, url: URL.createObjectURL(envoyee) });
+    setPhoto({
+      essai,
+      enPreparation: false,
+      note: envoyee.size < origine.size ? `Photo allégée : ${poidsLisible(origine.size)} → ${poidsLisible(envoyee.size)}.` : "",
+    });
+  }
 
   // Après une erreur, on réaffiche ce qui avait été saisi.
   const v = (cle: keyof Produit) => etat.valeurs?.[cle] ?? String(produit?.[cle] ?? "");
@@ -138,13 +171,12 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="block w-full text-sm"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              setApercu(f ? { essai: etat.essai ?? 0, url: URL.createObjectURL(f) } : null);
-            }}
+            onChange={(e) => void choisirPhoto(e.currentTarget)}
           />
           {erreur("photo")}
-          <p className="text-xs text-slate-500">JPEG, PNG ou WebP, 5 Mo maximum.</p>
+          <p className="text-xs text-slate-500" aria-live="polite">
+            {photoDeLEssai?.note || "JPEG, PNG ou WebP. La photo est allégée toute seule avant l'envoi."}
+          </p>
           {produit?.photoUrl && (
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="retirerPhoto" /> Retirer la photo actuelle
@@ -178,8 +210,8 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
         {etat.erreur && apercuSaisi && !apercu && (
           <p className="text-xs text-slate-600">Resélectionne la photo avant d&apos;enregistrer à nouveau.</p>
         )}
-        <button type="submit" className="bouton w-full py-3" disabled={enCours}>
-          {enCours ? "Enregistrement…" : produit ? "Enregistrer" : "Ajouter le produit"}
+        <button type="submit" className="bouton w-full py-3" disabled={enCours || !!photoDeLEssai?.enPreparation}>
+          {enCours ? "Enregistrement…" : photoDeLEssai?.enPreparation ? "Préparation de la photo…" : produit ? "Enregistrer" : "Ajouter le produit"}
         </button>
       </div>
     </form>

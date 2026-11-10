@@ -32,6 +32,8 @@ npm run seed         # catégories + réglages ; seed:demo ajoute des produits d
 - Connexion admin : seuls les échecs comptent (`bloque` / `noterEchec`, `lib/limite.ts`). Utilisé par le panier ET par `creerCommande`.
 - La base du catalogue est `prisma/catalogue.ts` ; `npm run seed` n'ajoute que les articles absents (par nom) — n'y mettre aucun prix.
 - Clé de session (gérant et clients) : `cleDeSession()` (`lib/cle-session.ts`) seulement — `SESSION_SECRET`, sinon une clé dérivée (HMAC) de `SUPABASE_JWT_SECRET` / `POSTGRES_PASSWORD` posés par l'intégration ; une `SESSION_SECRET` trop courte reste une erreur.
+- Photos produit : allégées dans le navigateur avant l'envoi (`reduirePhoto`, `lib/reduire-photo.ts` : 1 600 px, JPEG), puis revérifiées par le serveur (`lib/image.ts` : type lu dans les octets, 4 Mo au plus). Vercel refuse toute requête de plus de 4,5 Mo : ne jamais remonter `TAILLE_MAX_IMAGE` au-delà.
+- Pages d'erreur : `app/error.tsx` (propriété `retry` dans cette version de Next, pas `reset`) et `app/not-found.tsx` — jamais de détail technique au visiteur.
 - Espace client : `exigerClient()` en tête de chaque page/action de `/compte`, et l'id du client connecté dans chaque `where` (propriété). Jetons `lib/session-client.ts` (usage « lien » ≠ « session » ≠ admin). Connexion : même réponse que le compte existe ou non.
 - E-mails : gabarits purs dans `lib/courriels.ts` (tout texte externe via `echapper`), envoi `lib/courriel.ts` (Resend, ne lève jamais, `after()`), en dev écrits dans `.courriels/`. Montants : `lignesDeMontants` (`lib/montants.ts`).
 - Un client connecté commande avec l'e-mail de son compte ; le profil d'un compte n'est mis à jour par une commande que si c'est ce client qui est connecté.
