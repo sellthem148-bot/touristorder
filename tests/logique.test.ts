@@ -38,7 +38,7 @@ describe("calcul d'une commande", () => {
   const frais = { fraisService: 1500, fraisLivraison: 3000 };
   it("additionne articles et frais", () => {
     const t = calculerTotaux([{ prixUnitaire: 990, quantite: 2 }, { prixUnitaire: 2490, quantite: 1 }], frais);
-    expect(t).toEqual({ sousTotal: 4470, fraisService: 1500, fraisLivraison: 3000, pourboire: 0, total: 8970 });
+    expect(t).toEqual({ sousTotal: 4470, majoration: 0, fraisService: 1500, fraisLivraison: 3000, pourboire: 0, total: 8970 });
   });
   it("n'inclut pas les articles indisponibles", () => {
     const t = calculerTotaux([{ prixUnitaire: 990, quantite: 2 }, { prixUnitaire: 2490, quantite: 1, indisponible: true }], frais);
@@ -178,7 +178,7 @@ describe("formulaires admin", () => {
     const r = reglagesSchema.parse({
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "Espèces",
       villes: "Tel Aviv\n\n Netanya \nTel Aviv", creneaux: "Dès que possible",
-      whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true,
+      whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true, fraisRegroupes: false,
     });
     expect(r.villes).toEqual(["Tel Aviv", "Netanya"]);
     expect(r.fraisService).toBe(1500);

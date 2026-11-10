@@ -4,7 +4,8 @@ import { prisma } from "./prisma";
 import { calculerTotaux } from "./calcul";
 import { commandeSchema, erreursParChamp, regrouperLignes } from "./validation";
 import { joursProposes } from "./dates";
-import { lireReglages } from "./reglages";
+import { lireReglages, plagesActives } from "./reglages";
+import { tarifDeLaLivraison } from "./tarifs";
 import { formatPrix } from "./argent";
 import { lireGroupes, resoudreSelection } from "./options";
 
@@ -24,7 +25,7 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
     return { ok: false, erreur: CHAMPS, champs: erreursParChamp(lecture.error) };
   }
   const saisie = lecture.data;
-  const reglages = await lireReglages();
+  const [reglages, plages] = await Promise.all([lireReglages(), plagesActives()]);
 
   if (!reglages.ouvert) {
     return { ok: false, erreur: "Les commandes sont fermées pour le moment. Réessaie un peu plus tard." };
@@ -38,8 +39,10 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
   if (!joursProposes().includes(saisie.dateLivraison)) {
     return { ok: false, erreur: CHAMPS, champs: { dateLivraison: "Choisis un jour dans la liste." } };
   }
-  if (saisie.express && reglages.fraisExpress <= 0) {
-    return { ok: false, erreur: "La livraison express n'est pas disponible pour le moment." };
+  // Le tarif du moment de la livraison (journée, nuit, week-end…).
+  const tarif = tarifDeLaLivraison(saisie.dateLivraison, saisie.creneau, plages, reglages);
+  if (saisie.express && tarif.fraisExpress <= 0) {
+    return { ok: false, erreur: "La livraison express n'est pas proposée sur ce créneau.", champs: { express: "Pas d'express sur ce créneau." } };
   }
   if (reglages.paiements.length > 0 && !reglages.paiements.includes(saisie.paiement)) {
     return { ok: false, erreur: CHAMPS, champs: { paiement: "Choisis un mode de paiement." } };
@@ -51,7 +54,7 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
 
   const lignes = regrouperLignes(saisie.lignes);
   const produits = await prisma.produit.findMany({
-    where: { id: { in: lignes.map((l) => l.produitId) }, actif: true, epuise: false, categorie: { active: true } },
+    where: { id: { in: lignes.map((l) => l.produitId) }, actif: true, epuise: false, prix: { gt: 0 }, categorie: { active: true } },
     select: { id: true, nom: true, prix: true, prixAchat: true, boutique: true, lienWolt: true, options: true },
   });
   const parId = new Map(produits.map((p) => [p.id, p]));
@@ -80,8 +83,13 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
     });
   }
 
-  const tarifLivraison = reglages.fraisLivraison + (saisie.express ? reglages.fraisExpress : 0);
-  const totaux = calculerTotaux(aCopier, { fraisService: reglages.fraisService, fraisLivraison: tarifLivraison, pourboire });
+  const tarifLivraison = tarif.fraisLivraison + (saisie.express ? tarif.fraisExpress : 0);
+  const totaux = calculerTotaux(aCopier, {
+    fraisService: tarif.fraisService,
+    fraisLivraison: tarifLivraison,
+    pourboire,
+    majorationPct: tarif.majorationPct,
+  });
 
   if (totaux.sousTotal < reglages.minimumCommande) {
     return { ok: false, erreur: `Le minimum de commande est de ${formatPrix(reglages.minimumCommande)} (hors frais).` };
@@ -102,9 +110,11 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
       remplacement: saisie.remplacement,
       paiement: reglages.paiements.length > 0 ? saisie.paiement : "",
       ...totaux,
-      tarifService: reglages.fraisService,
+      tarifService: tarif.fraisService,
       tarifLivraison,
       tarifPourboire: pourboire,
+      tarifNom: tarif.nom,
+      majorationPct: tarif.majorationPct,
       lignes: { create: aCopier },
     },
     select: { jeton: true, numero: true },

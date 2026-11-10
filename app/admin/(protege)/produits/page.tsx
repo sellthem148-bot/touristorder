@@ -17,8 +17,29 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
   const params = await searchParams;
   const q = (typeof params.q === "string" ? params.q : "").trim().slice(0, 80);
   const categorie = typeof params.categorie === "string" ? params.categorie : "";
+  const ETATS = {
+    tous: { libelle: "Tous", where: {} },
+    "a-completer": { libelle: "À compléter (sans prix)", where: { prix: 0 } },
+    "en-ligne": { libelle: "En ligne", where: { actif: true, prix: { gt: 0 } } },
+    masques: { libelle: "Masqués", where: { actif: false, prix: { gt: 0 } } },
+    epuises: { libelle: "Épuisés", where: { epuise: true } },
+  } satisfies Record<string, { libelle: string; where: Prisma.ProduitWhereInput }>;
+  type Etat = keyof typeof ETATS;
+  const etat: Etat = typeof params.etat === "string" && params.etat in ETATS ? (params.etat as Etat) : "tous";
+  const comptes = Object.fromEntries(
+    await Promise.all((Object.keys(ETATS) as Etat[]).map(async (e) => [e, await prisma.produit.count({ where: ETATS[e].where })] as const)),
+  ) as Record<Etat, number>;
+  const lienEtat = (e: Etat) => {
+    const u = new URLSearchParams();
+    if (e !== "tous") u.set("etat", e);
+    if (categorie) u.set("categorie", categorie);
+    if (q) u.set("q", q);
+    const s = u.toString();
+    return s ? `/admin/produits?${s}` : "/admin/produits";
+  };
 
   const where: Prisma.ProduitWhereInput = {
+    ...ETATS[etat].where,
     ...(categorie ? { categorieId: categorie } : {}),
     ...(q
       ? { OR: [{ nom: { contains: q, mode: "insensitive" } }, { boutique: { contains: q, mode: "insensitive" } }] }
@@ -38,9 +59,26 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">Produits ({produits.length})</h1>
-        <Link href="/admin/produits/nouveau" className="bouton">+ Nouveau produit</Link>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/admin/produits/prix" className="bouton-secondaire py-2.5">Saisie rapide des prix</Link>
+          <Link href="/admin/produits/nouveau" className="bouton py-2.5">+ Nouveau produit</Link>
+        </div>
       </div>
       <Messages params={params} />
+
+      <nav aria-label="Filtrer par état" className="rail">
+        {(Object.keys(ETATS) as Etat[]).map((e) => (
+          <Link
+            key={e}
+            href={lienEtat(e)}
+            aria-current={e === etat ? "page" : undefined}
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-bold ${e === etat ? "bg-slate-900 text-white" : "bg-white shadow-carte"}`}
+          >
+            {ETATS[e].libelle}
+            <span className={`rounded-full px-1.5 text-xs ${e === "a-completer" && comptes[e] > 0 ? "bg-soleil text-slate-900" : "opacity-60"}`}>{comptes[e]}</span>
+          </Link>
+        ))}
+      </nav>
 
       {categories.length === 0 && (
         <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
@@ -50,6 +88,7 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
 
       <form className="flex flex-wrap gap-2" method="get">
         <label htmlFor="q" className="sr-only">Rechercher</label>
+        {etat !== "tous" && <input type="hidden" name="etat" value={etat} />}
         <input id="q" name="q" defaultValue={q} placeholder="Nom ou boutique…" className="champ max-w-xs py-2" />
         <label htmlFor="categorie" className="sr-only">Catégorie</label>
         <select id="categorie" name="categorie" defaultValue={categorie} className="champ max-w-xs py-2">
@@ -64,7 +103,7 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
       ) : (
         <ul className="carte divide-y divide-slate-100">
           {produits.map((p) => {
-            const marge = p.prixAchat != null ? p.prix - p.prixAchat : null;
+            const marge = p.prixAchat != null && p.prix > 0 ? p.prix - p.prixAchat : null;
             return (
               <li key={p.id} className="flex flex-wrap items-center gap-3 p-3">
                 <Vignette url={p.photoUrl} emoji={p.categorie.emoji} alt="" className="h-14 w-14 shrink-0 rounded-xl" />
@@ -80,7 +119,7 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
                   </p>
                 </div>
                 <div className="text-right text-sm">
-                  <p className="font-semibold">{formatPrix(p.prix)}</p>
+                  <p className={`font-semibold ${p.prix === 0 ? "text-amber-700" : ""}`}>{p.prix === 0 ? "Prix à définir" : formatPrix(p.prix)}</p>
                   {marge != null && (
                     <p className={marge >= 0 ? "text-emerald-700" : "text-red-700"}>
                       marge {formatPrix(marge)}

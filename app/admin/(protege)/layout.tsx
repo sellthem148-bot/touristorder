@@ -29,8 +29,10 @@ export default async function LayoutAdmin({ children }: LayoutProps<"/admin">) {
           <NavAdmin
             liens={[
               { href: "/admin", libelle: "Commandes", pastille: aTraiter },
-              { href: "/admin/statistiques", libelle: "Statistiques" },
               { href: "/admin/produits", libelle: "Produits" },
+              { href: "/admin/produits/prix", libelle: "Prix rapides" },
+              { href: "/admin/tarifs", libelle: "Tarifs" },
+              { href: "/admin/statistiques", libelle: "Statistiques" },
               { href: "/admin/categories", libelle: "Catégories" },
               { href: "/admin/reglages", libelle: "Réglages" },
             ]}

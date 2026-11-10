@@ -3,17 +3,6 @@ import { lirePrix } from "./argent";
 import { lireOptionsSaisies } from "./options";
 import { BADGES } from "./choix-commande";
 
-const prixObligatoire = z
-  .string()
-  .transform((t, ctx) => {
-    const p = lirePrix(t);
-    if (p == null || p <= 0) {
-      ctx.addIssue({ code: "custom", message: "Prix invalide (ex. 12,90)." });
-      return z.NEVER;
-    }
-    return p;
-  });
-
 const prixFacultatif = z.string().transform((t, ctx) => {
   if (t.trim() === "") return null;
   const p = lirePrix(t);
@@ -47,7 +36,8 @@ const entier = (min: number, max: number) =>
 export const produitSchema = z.object({
   nom: z.string().trim().min(2, { error: "Nom trop court." }).max(120, { error: "120 caractères maximum." }),
   description: z.string().trim().max(1000, { error: "1000 caractères maximum." }),
-  prix: prixObligatoire,
+  // Vide = « à définir » : l'article reste masqué tant qu'il n'a pas de prix.
+  prix: prixOuZero,
   prixAchat: prixFacultatif,
   categorieId: z.string().min(1, { error: "Choisis une catégorie." }).max(40),
   boutique: z.string().trim().max(120, { error: "120 caractères maximum." }),
@@ -70,6 +60,9 @@ export const produitSchema = z.object({
     return r.groupes;
   }),
 }).superRefine((p, ctx) => {
+  if (p.actif && p.prix === 0) {
+    ctx.addIssue({ code: "custom", path: ["prix"], message: "Mets un prix pour mettre l'article en ligne (ou décoche « En ligne »)." });
+  }
   if (p.prixBarre != null && p.prixBarre <= p.prix) {
     ctx.addIssue({ code: "custom", path: ["prixBarre"], message: "L'ancien prix doit être plus élevé que le prix de vente." });
   }
@@ -127,4 +120,23 @@ export const reglagesSchema = z.object({
     .refine((t) => t === "" || /^\+?[\d\s().-]{8,30}$/.test(t), { error: "Numéro invalide (ex. +972 50 123 4567)." }),
   messageAccueil: z.string().trim().max(300, { error: "300 caractères maximum." }),
   ouvert: z.boolean(),
+  fraisRegroupes: z.boolean(),
+});
+
+const heure = z.string().trim().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { error: "Heure au format HH:MM (ex. 08:00, 21:30)." });
+
+export const plageSchema = z.object({
+  nom: z.string().trim().min(2, { error: "Nom trop court." }).max(40, { error: "40 caractères maximum." }),
+  jours: z
+    .array(z.coerce.number().int().min(0).max(6))
+    .min(1, { error: "Coche au moins un jour." })
+    .transform((j) => [...new Set(j)].sort((a, b) => a - b)),
+  debut: heure,
+  fin: heure,
+  fraisService: prixOuZero,
+  fraisLivraison: prixOuZero,
+  fraisExpress: prixOuZero,
+  majorationPct: entier(0, 100),
+  ordre: entier(0, 999),
+  active: z.boolean(),
 });

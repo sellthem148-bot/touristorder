@@ -12,6 +12,7 @@ import { lienWhatsapp } from "@/lib/whatsapp";
 import { messagePourLeClient, prenomDe } from "@/lib/messages-client";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { BoutonCopier } from "@/components/admin/BoutonCopier";
+import { RecapMontants } from "@/components/RecapMontants";
 import { IconeEclair, IconeWhatsapp } from "@/components/Icones";
 import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { changerStatut, enregistrerNoteInterne, modifierLigne } from "../../actions";
@@ -130,12 +131,16 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
 
           <section className="carte p-4 text-sm">
             <h2 className="mb-2 text-lg font-bold">Montants</h2>
-            <dl className="space-y-1">
-              <div className="flex justify-between"><dt>Articles</dt><dd>{formatPrix(c.sousTotal)}</dd></div>
-              <div className="flex justify-between"><dt>Frais de service</dt><dd>{formatPrix(c.fraisService)}</dd></div>
-              <div className="flex justify-between"><dt>Livraison{c.express ? " express" : ""}</dt><dd>{formatPrix(c.fraisLivraison)}</dd></div>
-              {c.pourboire > 0 && <div className="flex justify-between"><dt>Pourboire</dt><dd>{formatPrix(c.pourboire)}</dd></div>}
-              <div className="flex justify-between border-t border-slate-100 pt-1 text-base font-bold"><dt>À encaisser</dt><dd>{formatPrix(c.total)}</dd></div>
+            {c.tarifNom && <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{c.tarifNom}</p>}
+            <RecapMontants
+              totaux={c}
+              regroupes={false}
+              express={c.express}
+              tarifNom={c.tarifNom}
+              majorationPct={c.majorationPct}
+              libelleTotal="À encaisser"
+            />
+            <dl className="mt-2 space-y-1">
               <div className="flex justify-between text-slate-600"><dt>Coût des articles sur Wolt</dt><dd>{formatPrix(marge.cout)}</dd></div>
               <div className="flex justify-between font-semibold text-emerald-700">
                 <dt>Ta marge estimée</dt>

@@ -11,6 +11,7 @@ import { NOM_DU_SITE } from "@/lib/marque";
 import { Actualiser } from "@/components/Actualiser";
 import { IconeCoche, IconeEclair, IconeHotel, IconeRecu, IconeScooter, IconeSac, IconeWhatsapp } from "@/components/Icones";
 import { ViderPanier } from "./ViderPanier";
+import { RecapMontants } from "@/components/RecapMontants";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Suivi de commande", robots: { index: false } };
@@ -28,7 +29,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
     select: {
       numero: true, statut: true, nomClient: true, ville: true, adresse: true,
       dateLivraison: true, creneau: true, notes: true, express: true, remplacement: true, paiement: true,
-      sousTotal: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
+      sousTotal: true, majoration: true, majorationPct: true, tarifNom: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
       lignes: {
         select: { id: true, nom: true, options: true, prixUnitaire: true, quantite: true, indisponible: true },
         orderBy: { nom: "asc" },
@@ -138,13 +139,15 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
             </li>
           ))}
         </ul>
-        <dl className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
-          <div className="flex justify-between"><dt>Articles</dt><dd>{formatPrix(commande.sousTotal)}</dd></div>
-          <div className="flex justify-between"><dt>Frais de service</dt><dd>{formatPrix(commande.fraisService)}</dd></div>
-          <div className="flex justify-between"><dt>Livraison{commande.express ? " express" : ""}</dt><dd>{formatPrix(commande.fraisLivraison)}</dd></div>
-          {commande.pourboire > 0 && <div className="flex justify-between"><dt>Pourboire</dt><dd>{formatPrix(commande.pourboire)}</dd></div>}
-          <div className="flex justify-between pt-1 text-lg font-extrabold"><dt>Total à payer</dt><dd>{formatPrix(commande.total)}</dd></div>
-        </dl>
+        <RecapMontants
+          className="mt-3 border-t border-slate-100 pt-3"
+          totaux={commande}
+          regroupes={reglages.fraisRegroupes}
+          express={commande.express}
+          tarifNom={commande.tarifNom}
+          majorationPct={commande.majorationPct}
+          libelleTotal="Total à payer"
+        />
       </section>
 
       <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">

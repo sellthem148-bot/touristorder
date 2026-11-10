@@ -6,6 +6,8 @@ import { usePanier } from "@/components/panier/PanierProvider";
 import { Vignette } from "@/components/Vignette";
 import { IconeEclair } from "@/components/Icones";
 import { calculerTotaux } from "@/lib/calcul";
+import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
+import { RecapMontants } from "@/components/RecapMontants";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { REMPLACEMENTS, type Remplacement } from "@/lib/choix-commande";
 import type { ReglagesPublics } from "@/lib/reglages";
@@ -99,10 +101,18 @@ export function PageDuPanier({ reglages, jours }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- une fois au chargement, puis sur panier périmé
   }, [pret, etat]);
 
-  const fraisLivraison = reglages.fraisLivraison + (v.express ? reglages.fraisExpress : 0);
+  // Le tarif du moment choisi (journée, nuit, week-end…) : recalculé à chaque changement de jour ou de créneau.
+  const tarif = tarifDeLaLivraison(v.dateLivraison, v.creneau, reglages.plages, reglages);
+  const expressPossible = tarif.fraisExpress > 0;
+  const express = v.express && expressPossible;
   const totaux = calculerTotaux(
     panier.articles.map((a) => ({ prixUnitaire: a.prix, quantite: a.quantite })),
-    { fraisService: reglages.fraisService, fraisLivraison, pourboire: v.pourboire },
+    {
+      fraisService: tarif.fraisService,
+      fraisLivraison: tarif.fraisLivraison + (express ? tarif.fraisExpress : 0),
+      pourboire: v.pourboire,
+      majorationPct: tarif.majorationPct,
+    },
   );
   const sousLeMinimum = totaux.sousTotal < reglages.minimumCommande;
 
@@ -235,21 +245,30 @@ export function PageDuPanier({ reglages, jours }: Props) {
             {messageErreur("creneau")}
           </fieldset>
 
-          {reglages.fraisExpress > 0 && (
+          <p className="rounded-2xl bg-sable px-4 py-3 text-sm text-slate-700" aria-live="polite">
+            <strong>{tarif.nom === NOM_TARIF_DE_BASE ? "Tarif normal" : `Tarif ${tarif.nom.toLowerCase()}`}</strong>
+            {" · "}
+            {reglages.fraisRegroupes
+              ? `service et livraison ${formatPrixCourt(tarif.fraisService + tarif.fraisLivraison)}`
+              : `service ${formatPrixCourt(tarif.fraisService)}, livraison ${formatPrixCourt(tarif.fraisLivraison)}`}
+            {tarif.majorationPct > 0 && `, articles +${tarif.majorationPct} %`}
+          </p>
+
+          {expressPossible && (
             <fieldset>
               <legend className="etiquette">Rapidité</legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-slate-200 p-4 has-[:checked]:border-marque has-[:checked]:bg-marque-clair/50">
-                  <input type="radio" name="express" value="0" checked={!v.express} onChange={() => changer("express", false)} className="mt-1 accent-marque" />
+                  <input type="radio" name="express" value="0" checked={!express} onChange={() => changer("express", false)} className="mt-1 accent-marque" />
                   <span>
                     <span className="block font-bold">Standard</span>
                     <span className="text-sm text-slate-600">Dans le créneau choisi</span>
                   </span>
                 </label>
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-slate-200 p-4 has-[:checked]:border-marque has-[:checked]:bg-marque-clair/50">
-                  <input type="radio" name="express" value="1" checked={v.express} onChange={() => changer("express", true)} className="mt-1 accent-marque" />
+                  <input type="radio" name="express" value="1" checked={express} onChange={() => changer("express", true)} className="mt-1 accent-marque" />
                   <span>
-                    <span className="flex items-center gap-1 font-bold"><IconeEclair className="h-4 w-4 text-amber-500" /> Express · +{formatPrixCourt(reglages.fraisExpress)}</span>
+                    <span className="flex items-center gap-1 font-bold"><IconeEclair className="h-4 w-4 text-amber-500" /> Express · +{formatPrixCourt(tarif.fraisExpress)}</span>
                     <span className="text-sm text-slate-600">Ta commande passe en priorité</span>
                   </span>
                 </label>
@@ -313,18 +332,14 @@ export function PageDuPanier({ reglages, jours }: Props) {
       <aside className="lg:pt-[3.25rem]">
         <div className="carte space-y-4 p-5 lg:sticky lg:top-20">
           <h2 className="text-lg font-extrabold">Récapitulatif</h2>
-          <dl className="space-y-2 text-sm">
-            <div className="flex justify-between"><dt>Articles ({panier.nombre})</dt><dd className="font-semibold">{formatPrix(totaux.sousTotal)}</dd></div>
-            <div className="flex justify-between"><dt>Frais de service</dt><dd className="font-semibold">{formatPrix(totaux.fraisService)}</dd></div>
-            <div className="flex justify-between">
-              <dt>Livraison{v.express ? " express" : ""}</dt>
-              <dd className="font-semibold">{formatPrix(totaux.fraisLivraison)}</dd>
-            </div>
-            {totaux.pourboire > 0 && (
-              <div className="flex justify-between"><dt>Pourboire</dt><dd className="font-semibold">{formatPrix(totaux.pourboire)}</dd></div>
-            )}
-            <div className="flex justify-between border-t border-slate-100 pt-3 text-lg font-extrabold"><dt>Total</dt><dd>{formatPrix(totaux.total)}</dd></div>
-          </dl>
+          <RecapMontants
+            totaux={totaux}
+            regroupes={reglages.fraisRegroupes}
+            express={express}
+            tarifNom={tarif.nom}
+            majorationPct={tarif.majorationPct}
+            nombreArticles={panier.nombre}
+          />
           <p className="rounded-2xl bg-sable p-3 text-xs text-slate-700">
             Tu paies à la livraison. Un article qui manque n&apos;est pas facturé.
           </p>
@@ -339,7 +354,7 @@ export function PageDuPanier({ reglages, jours }: Props) {
             name="lignes"
             value={JSON.stringify(panier.articles.map((a) => ({ produitId: a.produitId, quantite: a.quantite, options: a.options })))}
           />
-          {!reglages.fraisExpress && <input type="hidden" name="express" value="0" />}
+          {!expressPossible && <input type="hidden" name="express" value="0" />}
 
           {etat.erreur && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm font-medium text-red-800">{etat.erreur}</p>}
           {sousLeMinimum && (

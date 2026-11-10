@@ -5,6 +5,7 @@ import { IconeEclair, IconeHotel, IconeScooter, IconeSac } from "@/components/Ic
 import { misEnAvant, vitrine } from "@/lib/catalogue";
 import { reglagesPublics } from "@/lib/reglages";
 import { formatPrixCourt } from "@/lib/argent";
+import { momentPresent, NOM_TARIF_DE_BASE, tarifDeBase, tarifPour } from "@/lib/tarifs";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ const ETAPES = [
 
 export default async function Accueil() {
   const [rayons, populaires, reglages] = await Promise.all([vitrine(), misEnAvant(), reglagesPublics()]);
+  // Le tarif qui s'appliquerait à une livraison maintenant.
+  const tarif = tarifPour(momentPresent(), reglages.plages, tarifDeBase(reglages));
+  const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
 
   return (
     <div className="space-y-10">
@@ -32,8 +36,15 @@ export default async function Accueil() {
           </h1>
           {reglages.messageAccueil && <p className="text-blue-50 sm:text-lg">{reglages.messageAccueil}</p>}
           <div className="flex flex-wrap gap-2 pt-1 text-xs font-semibold sm:text-sm">
-            <span className="rounded-full bg-white px-3 py-1.5 text-marque-fonce">Livraison {formatPrixCourt(reglages.fraisLivraison)}</span>
-            {reglages.fraisExpress > 0 && (
+            <span className="rounded-full bg-white px-3 py-1.5 text-marque-fonce">
+              {reglages.fraisRegroupes
+                ? `Service + livraison ${formatPrixCourt(tarif.fraisService + tarif.fraisLivraison)}`
+                : `Livraison ${formatPrixCourt(tarif.fraisLivraison)}`}
+            </span>
+            {tarif.nom !== NOM_TARIF_DE_BASE && (
+              <span className="rounded-full bg-marque-fonce px-3 py-1.5">Tarif {tarif.nom.toLowerCase()} en ce moment</span>
+            )}
+            {expressQuelquefois && (
               <span className="inline-flex items-center gap-1 rounded-full bg-soleil px-3 py-1.5 text-slate-900">
                 <IconeEclair className="h-4 w-4" /> Express
               </span>

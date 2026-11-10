@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "./prisma";
+import type { PlageTarifaire } from "./tarifs";
 
 export const VILLES_PAR_DEFAUT = ["Tel Aviv", "Jérusalem", "Netanya", "Herzliya", "Ra'anana"];
 export const CRENEAUX_PAR_DEFAUT = [
@@ -28,8 +29,10 @@ export async function lireReglages() {
 
 /** Ce que le public a le droit de lire des réglages. */
 export async function reglagesPublics() {
-  const r = await lireReglages();
+  const [r, plages] = await Promise.all([lireReglages(), plagesActives()]);
   return {
+    plages,
+    fraisRegroupes: r.fraisRegroupes,
     fraisService: r.fraisService,
     fraisLivraison: r.fraisLivraison,
     fraisExpress: r.fraisExpress,
@@ -45,3 +48,15 @@ export async function reglagesPublics() {
 }
 
 export type ReglagesPublics = Awaited<ReturnType<typeof reglagesPublics>>;
+
+/** Les plages tarifaires actives, dans l'ordre où elles s'appliquent. */
+export async function plagesActives(): Promise<PlageTarifaire[]> {
+  return prisma.plageTarifaire.findMany({
+    where: { active: true },
+    orderBy: [{ ordre: "asc" }, { createdAt: "asc" }],
+    select: {
+      id: true, nom: true, jours: true, debut: true, fin: true,
+      fraisService: true, fraisLivraison: true, fraisExpress: true, majorationPct: true,
+    },
+  });
+}

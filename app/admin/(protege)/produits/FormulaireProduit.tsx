@@ -78,7 +78,7 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="prix" className="etiquette">Prix de vente (₪)</label>
-            <input {...attrs("prix")} defaultValue={v("prix")} inputMode="decimal" required placeholder="49,90" />
+            <input {...attrs("prix")} defaultValue={v("prix")} inputMode="decimal" placeholder="Vide = à définir" />
             {erreur("prix")}
           </div>
           <div>

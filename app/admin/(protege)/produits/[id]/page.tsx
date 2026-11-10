@@ -39,7 +39,7 @@ export default async function ModifierProduit({ params, searchParams }: PageProp
           id: p.id,
           nom: p.nom,
           description: p.description,
-          prix: prixPourChamp(p.prix),
+          prix: p.prix ? prixPourChamp(p.prix) : "",
           prixAchat: prixPourChamp(p.prixAchat),
           prixBarre: prixPourChamp(p.prixBarre),
           badge: p.badge,

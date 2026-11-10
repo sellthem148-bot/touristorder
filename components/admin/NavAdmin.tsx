@@ -7,7 +7,11 @@ type Lien = { href: string; libelle: string; pastille?: number };
 
 export function NavAdmin({ liens }: { liens: Lien[] }) {
   const chemin = usePathname();
-  const actif = (href: string) => (href === "/admin" ? chemin === "/admin" || chemin.startsWith("/admin/commandes") : chemin.startsWith(href));
+  // Le lien le plus précis gagne : « Prix rapides » (/admin/produits/prix) plutôt que « Produits ».
+  const correspond = (href: string) =>
+    href === "/admin" ? chemin === "/admin" || chemin.startsWith("/admin/commandes") : chemin === href || chemin.startsWith(`${href}/`);
+  const choisi = liens.filter((l) => correspond(l.href)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  const actif = (href: string) => href === choisi;
   return (
     <nav aria-label="Administration" className="rail mx-0 px-0 pb-0">
       {liens.map((l) => (

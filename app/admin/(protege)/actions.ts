@@ -7,11 +7,12 @@ import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { calculerTotaux, QUANTITE_MAX } from "@/lib/calcul";
 import { estStatut } from "@/lib/statuts";
-import { categorieSchema, produitSchema, reglagesSchema } from "@/lib/admin-schemas";
+import { categorieSchema, plageSchema, produitSchema, reglagesSchema } from "@/lib/admin-schemas";
 import { erreursParChamp } from "@/lib/validation";
 import { enregistrerPhoto, supprimerPhoto } from "@/lib/stockage";
 import { slugDe } from "@/lib/slug";
 import { lireReglages } from "@/lib/reglages";
+import { lirePrix } from "@/lib/argent";
 
 const texte = (form: FormData, cle: string) => String(form.get(cle) ?? "");
 const id = (form: FormData, cle = "id") => {
@@ -49,7 +50,7 @@ export async function modifierLigne(form: FormData) {
     const commande = await tx.commande.findUniqueOrThrow({
       where: { id: ligne.commandeId },
       select: {
-        tarifService: true, tarifLivraison: true, tarifPourboire: true,
+        tarifService: true, tarifLivraison: true, tarifPourboire: true, majorationPct: true,
         lignes: { select: { prixUnitaire: true, quantite: true, indisponible: true } },
       },
     });
@@ -57,6 +58,7 @@ export async function modifierLigne(form: FormData) {
       fraisService: commande.tarifService,
       fraisLivraison: commande.tarifLivraison,
       pourboire: commande.tarifPourboire,
+      majorationPct: commande.majorationPct,
     });
     await tx.commande.update({ where: { id: ligne.commandeId }, data: totaux });
   });
@@ -133,8 +135,11 @@ export async function basculerProduit(form: FormData) {
   await exigerAdmin();
   const produitId = id(form);
   if (!produitId) return;
-  const p = await prisma.produit.findUnique({ where: { id: produitId }, select: { actif: true } });
+  const p = await prisma.produit.findUnique({ where: { id: produitId }, select: { actif: true, prix: true, nom: true } });
   if (!p) return;
+  if (!p.actif && p.prix === 0) {
+    redirect(avecMessage("/admin/produits", "erreur", `« ${p.nom} » n'a pas encore de prix : ajoute-le avant de le mettre en ligne.`));
+  }
   await prisma.produit.update({ where: { id: produitId }, data: { actif: !p.actif } });
   refresh();
 }
@@ -263,6 +268,7 @@ export async function enregistrerReglages(form: FormData) {
     whatsapp: texte(form, "whatsapp"),
     messageAccueil: texte(form, "messageAccueil"),
     ouvert: form.get("ouvert") === "on",
+    fraisRegroupes: form.get("fraisRegroupes") === "on",
   });
   if (!lecture.success) {
     const [champ, message] = Object.entries(erreursParChamp(lecture.error))[0];
@@ -271,4 +277,93 @@ export async function enregistrerReglages(form: FormData) {
   await lireReglages(); // crée la ligne si besoin
   await prisma.reglages.update({ where: { id: 1 }, data: lecture.data });
   redirect(avecMessage("/admin/reglages", "ok", "Réglages enregistrés."));
+}
+
+// ─── Tarifs selon le moment ───────────────────────────────────────────────
+
+export async function enregistrerPlage(form: FormData) {
+  await exigerAdmin();
+  const plageId = id(form);
+  const lecture = plageSchema.safeParse({
+    nom: texte(form, "nom"),
+    jours: form.getAll("jours").map(String),
+    debut: texte(form, "debut"),
+    fin: texte(form, "fin"),
+    fraisService: texte(form, "fraisService"),
+    fraisLivraison: texte(form, "fraisLivraison"),
+    fraisExpress: texte(form, "fraisExpress"),
+    majorationPct: texte(form, "majorationPct"),
+    ordre: texte(form, "ordre"),
+    active: form.get("active") === "on",
+  });
+  if (!lecture.success) {
+    const [champ, message] = Object.entries(erreursParChamp(lecture.error))[0];
+    redirect(avecMessage("/admin/tarifs", "erreur", `${texte(form, "nom") || "Plage"} — ${champ} : ${message}`));
+  }
+  if (plageId) {
+    const n = await prisma.plageTarifaire.updateMany({ where: { id: plageId }, data: lecture.data });
+    if (n.count === 0) redirect(avecMessage("/admin/tarifs", "erreur", "Cette plage n'existe plus."));
+  } else {
+    await prisma.plageTarifaire.create({ data: lecture.data });
+  }
+  redirect(avecMessage("/admin/tarifs", "ok", `Tarif « ${lecture.data.nom} » enregistré.`));
+}
+
+export async function supprimerPlage(form: FormData) {
+  await exigerAdmin();
+  const plageId = id(form);
+  if (!plageId) return;
+  await prisma.plageTarifaire.deleteMany({ where: { id: plageId } });
+  redirect(avecMessage("/admin/tarifs", "ok", "Plage supprimée."));
+}
+
+// ─── Saisie rapide des prix ───────────────────────────────────────────────
+
+/**
+ * Enregistre d'un coup les prix d'une liste d'articles. Tout ou rien : une
+ * valeur illisible n'enregistre rien et dit quel article corriger.
+ * Un article sans prix reste masqué, même si « En ligne » est coché.
+ */
+export async function enregistrerPrixRapides(form: FormData) {
+  await exigerAdmin();
+  const brut = texte(form, "retour");
+  const retour = brut.startsWith("/admin/produits/prix") ? brut : "/admin/produits/prix";
+  const ids = [...new Set(form.getAll("ids").map(String))].filter((x) => x.length > 0 && x.length <= 40).slice(0, 300);
+  if (ids.length === 0) redirect(retour);
+
+  const existants = await prisma.produit.findMany({ where: { id: { in: ids } }, select: { id: true, nom: true, prix: true, prixAchat: true, actif: true } });
+  const modifs: { id: string; prix: number; prixAchat: number | null; actif: boolean }[] = [];
+  const erreurs: string[] = [];
+  for (const p of existants) {
+    const champPrix = texte(form, `prix_${p.id}`).trim();
+    const champAchat = texte(form, `achat_${p.id}`).trim();
+    const prix = champPrix === "" ? 0 : lirePrix(champPrix);
+    const prixAchat = champAchat === "" ? null : lirePrix(champAchat);
+    const achatIllisible = champAchat !== "" && prixAchat == null;
+    if (prix == null) erreurs.push(`${p.nom} (prix « ${champPrix.slice(0, 12)} »)`);
+    if (achatIllisible) erreurs.push(`${p.nom} (achat « ${champAchat.slice(0, 12)} »)`);
+    if (prix == null || achatIllisible) continue;
+    const actif = form.get(`actif_${p.id}`) === "on" && prix > 0;
+    if (prix !== p.prix || prixAchat !== p.prixAchat || actif !== p.actif) modifs.push({ id: p.id, prix, prixAchat, actif });
+  }
+  if (erreurs.length > 0) {
+    redirect(avecMessage(retour, "erreur", `Rien n'a été enregistré. À corriger (ex. 12,90) : ${erreurs.slice(0, 5).join(", ")}${erreurs.length > 5 ? "…" : ""}`));
+  }
+  await prisma.$transaction(
+    modifs.map((m) =>
+      prisma.produit.update({
+        where: { id: m.id },
+        // Un prix barré devenu inférieur au nouveau prix n'est plus affiché (lib/catalogue.ts).
+        data: { prix: m.prix, prixAchat: m.prixAchat, actif: m.actif },
+      }),
+    ),
+  );
+  const enLigne = modifs.filter((m) => m.actif).length;
+  redirect(
+    avecMessage(
+      retour,
+      "ok",
+      modifs.length === 0 ? "Aucun changement." : `${modifs.length} article${modifs.length > 1 ? "s" : ""} enregistré${modifs.length > 1 ? "s" : ""}, dont ${enLigne} en ligne.`,
+    ),
+  );
 }

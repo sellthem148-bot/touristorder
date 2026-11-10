@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { exigerAdmin } from "@/lib/admin";
 import { lireReglages } from "@/lib/reglages";
 import { prixPourChamp } from "@/lib/argent";
@@ -22,7 +23,10 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
         </label>
 
         <fieldset className="grid gap-4 sm:grid-cols-2">
-          <legend className="mb-2 font-bold">Tes frais (ta marge)</legend>
+          <legend className="mb-1 font-bold">Tarif de base (ta marge)</legend>
+          <p className="col-span-full -mt-1 mb-1 text-xs text-slate-500">
+            S&apos;applique quand aucune plage horaire ne correspond (nuit, week-end…) : voir <Link href="/admin/tarifs" className="font-semibold text-marque underline">Tarifs</Link>.
+          </p>
           <div>
             <label htmlFor="fraisService" className="etiquette">Frais de service (₪)</label>
             <input id="fraisService" name="fraisService" defaultValue={prixPourChamp(r.fraisService)} inputMode="decimal" className="champ" />
@@ -41,6 +45,14 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
             <input id="minimumCommande" name="minimumCommande" defaultValue={prixPourChamp(r.minimumCommande)} inputMode="decimal" className="champ" />
           </div>
         </fieldset>
+
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="fraisRegroupes" defaultChecked={r.fraisRegroupes} className="mt-1 h-5 w-5 accent-marque" />
+          <span>
+            <span className="block font-semibold">Afficher « Frais de service (livraison comprise) »</span>
+            <span className="text-xs text-slate-500">Le client voit une seule ligne : service + livraison additionnés. Les montants restent réglés séparément.</span>
+          </span>
+        </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>

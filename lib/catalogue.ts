@@ -38,14 +38,15 @@ function versPublic(p: Brut): ProduitPublic {
   };
 }
 
-const VISIBLE = { actif: true, categorie: { active: true } } satisfies Prisma.ProduitWhereInput;
+// En ligne, avec un prix (0 = « à définir »), dans une catégorie visible.
+const VISIBLE = { actif: true, prix: { gt: 0 }, categorie: { active: true } } satisfies Prisma.ProduitWhereInput;
 const ORDRE: Prisma.ProduitOrderByWithRelationInput[] = [{ epuise: "asc" }, { ordre: "asc" }, { nom: "asc" }, { id: "asc" }];
 
 export async function categoriesVisibles() {
   return prisma.categorie.findMany({
-    where: { active: true, produits: { some: { actif: true } } },
+    where: { active: true, produits: { some: { actif: true, prix: { gt: 0 } } } },
     orderBy: [{ ordre: "asc" }, { nom: "asc" }],
-    select: { id: true, nom: true, slug: true, emoji: true, _count: { select: { produits: { where: { actif: true } } } } },
+    select: { id: true, nom: true, slug: true, emoji: true, _count: { select: { produits: { where: { actif: true, prix: { gt: 0 } } } } } },
   });
 }
 

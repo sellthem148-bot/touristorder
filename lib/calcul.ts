@@ -7,10 +7,16 @@ export type LigneACalculer = {
   indisponible?: boolean;
 };
 
-export type Frais = { fraisService: number; fraisLivraison: number; pourboire?: number };
+export type Frais = {
+  fraisService: number;
+  fraisLivraison: number;
+  pourboire?: number;
+  majorationPct?: number; // % ajouté aux articles par le tarif du moment (nuit, week-end…)
+};
 
 export type Totaux = {
   sousTotal: number;
+  majoration: number;
   fraisService: number;
   fraisLivraison: number;
   pourboire: number;
@@ -23,10 +29,19 @@ export function calculerTotaux(lignes: LigneACalculer[], frais: Frais): Totaux {
     .reduce((somme, l) => somme + l.prixUnitaire * l.quantite, 0);
   // Une commande vidée (tout indisponible) ne facture rien, pourboire compris.
   const rien = sousTotal === 0;
+  const pct = Math.min(Math.max(frais.majorationPct ?? 0, 0), 100);
+  const majoration = rien ? 0 : Math.round((sousTotal * pct) / 100);
   const fraisService = rien ? 0 : frais.fraisService;
   const fraisLivraison = rien ? 0 : frais.fraisLivraison;
   const pourboire = rien ? 0 : (frais.pourboire ?? 0);
-  return { sousTotal, fraisService, fraisLivraison, pourboire, total: sousTotal + fraisService + fraisLivraison + pourboire };
+  return {
+    sousTotal,
+    majoration,
+    fraisService,
+    fraisLivraison,
+    pourboire,
+    total: sousTotal + majoration + fraisService + fraisLivraison + pourboire,
+  };
 }
 
 export type LigneAvecAchat = LigneACalculer & { prixAchatUnitaire: number | null };

@@ -26,7 +26,7 @@ model Produit {
   id          String          @id @default(cuid())
   nom         String
   description String          @default("")
-  prix        Int // prix de vente au client, en agorot
+  prix        Int // prix de vente au client, en agorot ; 0 = « à définir » : jamais visible ni commandable
   photoUrl    String          @default("")
   actif       Boolean         @default(true)
   // Visible dans le catalogue mais impossible à commander (rupture passagère).
@@ -90,6 +90,10 @@ model Commande {
   tarifService   Int
   tarifLivraison Int // express compris
   tarifPourboire Int             @default(0)
+  // Le tarif du moment de la livraison (journée, nuit, week-end…), copié à la commande.
+  tarifNom       String          @default("")
+  majorationPct  Int             @default(0) // % ajouté aux articles par ce tarif
+  majoration     Int             @default(0) // son montant, en agorot
 
   noteInterne    String          @default("")
   lignes         LigneCommande[]
@@ -134,5 +138,25 @@ model Reglages {
   whatsapp        String   @default("") // ton numéro, format international sans + (ex. 972501234567)
   messageAccueil  String   @default("")
   ouvert          Boolean  @default(true)
+  // Afficher au client une seule ligne « Frais de service (livraison comprise) ».
+  fraisRegroupes  Boolean  @default(false)
   updatedAt       DateTime @updatedAt
+}
+
+// Un tarif selon le moment de la livraison (nuit, week-end…). La première plage
+// active (par ordre) qui contient le moment s'applique ; sinon, le tarif de base
+// des Réglages. Lu et vérifié par lib/tarifs.ts.
+model PlageTarifaire {
+  id             String   @id @default(cuid())
+  nom            String
+  jours          Int[] // 0 = dimanche … 6 = samedi
+  debut          String // « HH:MM », heure d'Israël
+  fin            String // « HH:MM » ; fin < début = passe minuit ; fin = début = toute la journée
+  fraisService   Int
+  fraisLivraison Int
+  fraisExpress   Int // 0 = pas d'express pendant cette plage
+  majorationPct  Int      @default(0) // % ajouté aux articles (0 = prix normaux)
+  ordre          Int      @default(0)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
 }
