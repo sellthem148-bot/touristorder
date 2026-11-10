@@ -50,16 +50,18 @@ export default async function PageClients({ searchParams }: PageProps<"/admin/cl
           {lignes.map((c) => {
             const whatsapp = lienWhatsapp(c.telephone, `Bonjour ${prenomDe(c.nom)}, c'est ${NOM_DU_SITE} !`);
             return (
-              <li key={c.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 p-4">
-                <div className="min-w-0 flex-1">
+              // Sur téléphone : l'identité sur toute la largeur, puis le total et WhatsApp en dessous.
+              <li key={c.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 p-4">
+                <div className="min-w-0 basis-full sm:flex-1 sm:basis-0">
                   <p className="font-bold">{c.nom || "—"}{c.ville && <span className="font-normal text-slate-600"> · {c.ville}</span>}</p>
-                  <p className="break-all text-sm text-slate-600">{c.email} · {c.telephone}</p>
+                  <p className="break-all text-sm text-slate-600">{c.email}</p>
+                  <p className="text-sm text-slate-600">{c.telephone}</p>
                   <p className="text-xs text-slate-500">
                     Client depuis le {formatDateHeure(c.createdAt)}
                     {c.derniere && <> · dernière commande le {formatDateHeure(c.derniere)}</>}
                   </p>
                 </div>
-                <div className="text-right text-sm">
+                <div className="flex-1 text-sm sm:flex-none sm:text-right">
                   <p className="font-extrabold">{c.nombre} commande{c.nombre > 1 ? "s" : ""}</p>
                   <p className="tabular-nums text-emerald-700">{formatPrix(c.depense)} livrés</p>
                 </div>
