@@ -28,5 +28,6 @@ npm run seed         # catégories + réglages ; seed:demo ajoute des produits d
 - Un produit à `prix = 0` est « à définir » : jamais visible ni commandable (`VISIBLE` dans `lib/catalogue.ts`, `creerCommande`), jamais en ligne (`produitSchema`, `basculerProduit`).
 - Tarifs selon le moment : `lib/tarifs.ts` seulement (pur, partagé panier/serveur). Le moment = jour + début du créneau ; la commande copie `tarifNom`, `majorationPct`, et les frais (`tarif*`) pour les recalculs.
 - Villes livrées : table `Ville` ; livraison = `fraisDeLivraison` (`lib/villes.ts`, pur, partagé) = tarif du moment + supplément de la ville (+ express). Le minimum = le plus élevé (général, ville). La commande copie `supplementVille`.
+- Jours et créneaux proposés : `joursDeLivraison` (`lib/creneaux.ts`, pur) — jours livrés, et pour le jour même seulement les créneaux qui commencent après maintenant + `delaiPreparation`. Utilisé par le panier ET par `creerCommande`.
 - La base du catalogue est `prisma/catalogue.ts` ; `npm run seed` n'ajoute que les articles absents (par nom) — n'y mettre aucun prix.
 - Nouvelle table → relancer `prisma/rls.sql` sur Supabase.

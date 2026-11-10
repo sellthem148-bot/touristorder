@@ -51,6 +51,7 @@ await page.getByLabel("Ton numéro WhatsApp").fill("+33 6 12 34 56 78");
 await page.getByLabel("Ville").selectOption("Netanya");
 await page.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Dan, chambre 512");
 await page.getByText("Demain", { exact: true }).click();
+await page.getByText("19:00 – 20:00", { exact: true }).click();
 await page.getByText(/Express · \+/).click();
 await page.getByText("Le remplacer par un équivalent").click();
 await page.getByText("Bit", { exact: true }).click();

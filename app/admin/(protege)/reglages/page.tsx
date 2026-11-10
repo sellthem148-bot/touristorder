@@ -2,6 +2,8 @@ import Link from "next/link";
 import { exigerAdmin } from "@/lib/admin";
 import { lireReglages } from "@/lib/reglages";
 import { prixPourChamp } from "@/lib/argent";
+import { JOURS_COURTS } from "@/lib/tarifs";
+import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { Messages } from "@/components/admin/Messages";
 import { enregistrerReglages } from "../actions";
 
@@ -64,6 +66,32 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
           <div>
             <label htmlFor="creneaux" className="etiquette">Créneaux (un par ligne)</label>
             <textarea id="creneaux" name="creneaux" rows={6} defaultValue={r.creneaux.join("\n")} className="champ" />
+            <p className="mt-1 text-xs text-slate-500">
+              Format « 19:00 – 20:00 ». Actuellement : {amplitudeDesCreneaux(r.creneaux) ?? "créneaux sans heure"}.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <fieldset>
+            <legend className="etiquette">Jours où tu livres</legend>
+            <div className="flex flex-wrap gap-1.5">
+              {JOURS_COURTS.map((j, i) => (
+                <label key={j} className="pastille px-3 py-1.5">
+                  <input type="checkbox" name="joursLivres" value={i} defaultChecked={r.joursLivres.includes(i)} className="sr-only" />
+                  {j}
+                </label>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Les jours non cochés ne sont pas proposés au client.</p>
+          </fieldset>
+          <div>
+            <label htmlFor="delaiPreparation" className="etiquette">Délai de préparation (minutes)</label>
+            <input id="delaiPreparation" name="delaiPreparation" defaultValue={r.delaiPreparation} inputMode="numeric" className="champ" />
+            <p className="mt-1 text-xs text-slate-500">
+              Pour le soir même, un créneau n&apos;est proposé que s&apos;il commence au moins ce délai après la commande
+              (le temps de commander sur Wolt, de recevoir et de préparer).
+            </p>
           </div>
         </div>
 

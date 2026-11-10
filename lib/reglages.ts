@@ -3,13 +3,8 @@ import { prisma } from "./prisma";
 import type { PlageTarifaire } from "./tarifs";
 import type { VilleLivree } from "./villes";
 
-export const CRENEAUX_PAR_DEFAUT = [
-  "Dès que possible",
-  "09:00 – 12:00",
-  "12:00 – 15:00",
-  "15:00 – 18:00",
-  "18:00 – 21:00",
-];
+// Livraison le soir seulement : de 19h à minuit.
+export const CRENEAUX_PAR_DEFAUT = ["19:00 – 20:00", "20:00 – 21:00", "21:00 – 22:00", "22:00 – 23:00", "23:00 – 00:00"];
 
 /** Les réglages (une seule ligne, créée au premier besoin). */
 export async function lireReglages() {
@@ -21,7 +16,7 @@ export async function lireReglages() {
     create: {
       id: 1,
       creneaux: CRENEAUX_PAR_DEFAUT,
-      messageAccueil: "Chargeur oublié, couches, maillot, courses… on s'en occupe et on te livre.",
+      messageAccueil: "Commande quand tu veux, on te livre le soir à ton hôtel : chargeur oublié, couches, maillot, courses…",
     },
   });
 }
@@ -38,6 +33,8 @@ export async function reglagesPublics() {
     pourboires: r.pourboires,
     paiements: r.paiements,
     minimumCommande: r.minimumCommande,
+    joursLivres: r.joursLivres,
+    delaiPreparation: r.delaiPreparation,
     villes,
     creneaux: r.creneaux,
     whatsapp: r.whatsapp,

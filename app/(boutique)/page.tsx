@@ -7,6 +7,7 @@ import { reglagesPublics } from "@/lib/reglages";
 import { formatPrixCourt } from "@/lib/argent";
 import { momentPresent, NOM_TARIF_DE_BASE, tarifDeBase, tarifPour } from "@/lib/tarifs";
 import { livraisonLaMoinsChere } from "@/lib/villes";
+import { amplitudeDesCreneaux, joursDeLivraison } from "@/lib/creneaux";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,8 @@ export default async function Accueil() {
   const [rayons, populaires, reglages] = await Promise.all([vitrine(), misEnAvant(), reglagesPublics()]);
   // Le tarif qui s'appliquerait à une livraison maintenant.
   const tarif = tarifPour(momentPresent(), reglages.plages, tarifDeBase(reglages));
+  const amplitude = amplitudeDesCreneaux(reglages.creneaux);
+  const prochaine = joursDeLivraison(reglages.creneaux, reglages.joursLivres, reglages.delaiPreparation)[0];
   const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
 
   return (
@@ -42,6 +45,12 @@ export default async function Accueil() {
                 ? `Service + livraison dès ${formatPrixCourt(tarif.fraisService + livraisonLaMoinsChere(tarif, reglages.villes))}`
                 : `Livraison dès ${formatPrixCourt(livraisonLaMoinsChere(tarif, reglages.villes))}`}
             </span>
+            {amplitude && <span className="rounded-full bg-white/15 px-3 py-1.5">🌙 Livré le soir, {amplitude}</span>}
+            {prochaine && (
+              <span className="rounded-full bg-white/15 px-3 py-1.5">
+                Prochaine livraison : {prochaine.libelle === "Aujourd'hui" ? "ce soir" : prochaine.libelle.toLowerCase()} dès {prochaine.creneaux[0].split(/\s*[–-]\s*/)[0]}
+              </span>
+            )}
             {tarif.nom !== NOM_TARIF_DE_BASE && (
               <span className="rounded-full bg-marque-fonce px-3 py-1.5">Tarif {tarif.nom.toLowerCase()} en ce moment</span>
             )}

@@ -22,7 +22,7 @@ function Champs({ p }: { p?: Plage }) {
       <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
         <div>
           <label htmlFor={`nom-${id}`} className="etiquette">Nom</label>
-          <input id={`nom-${id}`} name="nom" defaultValue={p?.nom ?? ""} placeholder="Soirée & nuit" required className="champ" />
+          <input id={`nom-${id}`} name="nom" defaultValue={p?.nom ?? ""} placeholder="Fin de soirée" required className="champ" />
         </div>
         <div>
           <label htmlFor={`ordre-${id}`} className="etiquette">Priorité</label>
@@ -43,11 +43,11 @@ function Champs({ p }: { p?: Plage }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label htmlFor={`debut-${id}`} className="etiquette">De</label>
-          <input id={`debut-${id}`} name="debut" type="time" defaultValue={p?.debut ?? "21:00"} required className="champ" />
+          <input id={`debut-${id}`} name="debut" type="time" defaultValue={p?.debut ?? "22:00"} required className="champ" />
         </div>
         <div>
           <label htmlFor={`fin-${id}`} className="etiquette">Jusqu&apos;à</label>
-          <input id={`fin-${id}`} name="fin" type="time" defaultValue={p?.fin ?? "08:00"} required className="champ" />
+          <input id={`fin-${id}`} name="fin" type="time" defaultValue={p?.fin ?? "00:00"} required className="champ" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -181,7 +181,7 @@ export default async function PageTarifs({ searchParams }: PageProps<"/admin/tar
           <button type="submit" className="bouton">Ajouter</button>
         </form>
         <p className="mt-3 text-xs text-slate-500">
-          Une plage qui passe minuit (21:00 → 08:00) couvre la fin de soirée et le début de matinée de chaque jour coché.
+          Une plage qui passe minuit (22:00 → 02:00) couvre la fin de soirée et le début de la nuit de chaque jour coché ; 22:00 → 00:00 s&apos;arrête à minuit.
           Même heure de début et de fin = toute la journée. « Express » à 0 = pas d&apos;express pendant cette plage.
         </p>
       </section>

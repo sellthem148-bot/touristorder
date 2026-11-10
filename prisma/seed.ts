@@ -58,8 +58,9 @@ async function main() {
       fraisService: 1500,
       fraisLivraison: 3000,
       fraisExpress: 2000,
-      creneaux: ["Dès que possible", "09:00 – 12:00", "12:00 – 15:00", "15:00 – 18:00", "18:00 – 21:00", "21:00 – 00:00"],
-      messageAccueil: "Chargeur oublié, couches, maillot, courses… on s'en occupe et on te livre.",
+      // Livraison le soir seulement (le gérant travaille la journée).
+      creneaux: ["19:00 – 20:00", "20:00 – 21:00", "21:00 – 22:00", "22:00 – 23:00", "23:00 – 00:00"],
+      messageAccueil: "Commande quand tu veux, on te livre le soir à ton hôtel : chargeur oublié, couches, maillot, courses…",
     },
   });
 

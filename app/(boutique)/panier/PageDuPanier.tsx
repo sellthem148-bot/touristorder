@@ -12,11 +12,12 @@ import { fraisDeLivraison, minimumPour } from "@/lib/villes";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { REMPLACEMENTS, type Remplacement } from "@/lib/choix-commande";
 import type { ReglagesPublics } from "@/lib/reglages";
+import type { JourDeLivraison } from "@/lib/creneaux";
 import { actualiserPanier, passerCommande, type EtatCommande } from "../actions";
 
 type Props = {
   reglages: ReglagesPublics;
-  jours: { valeur: string; libelle: string }[];
+  jours: JourDeLivraison[];
 };
 
 type Valeurs = {
@@ -54,7 +55,7 @@ export function PageDuPanier({ reglages, jours }: Props) {
     ville: reglages.villes.length === 1 ? reglages.villes[0].nom : "",
     adresse: "",
     dateLivraison: jours[0]?.valeur ?? "",
-    creneau: reglages.creneaux[0] ?? "",
+    creneau: jours[0]?.creneaux[0] ?? "",
     notes: "",
     express: false,
     remplacement: "CONTACTER",
@@ -101,6 +102,8 @@ export function PageDuPanier({ reglages, jours }: Props) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- une fois au chargement, puis sur panier périmé
   }, [pret, etat]);
+
+  const creneauxDuJour = jours.find((j) => j.valeur === v.dateLivraison)?.creneaux ?? [];
 
   // Le tarif du moment choisi (journée, nuit, week-end…) : recalculé à chaque changement de jour ou de créneau.
   const tarif = tarifDeLaLivraison(v.dateLivraison, v.creneau, reglages.plages, reglages);
@@ -234,7 +237,18 @@ export function PageDuPanier({ reglages, jours }: Props) {
             <div className="rail">
               {jours.map((j) => (
                 <label key={j.valeur} className="pastille shrink-0 snap-start">
-                  <input type="radio" name="dateLivraison" value={j.valeur} checked={v.dateLivraison === j.valeur} onChange={() => changer("dateLivraison", j.valeur)} className="sr-only" />
+                  <input
+                    type="radio"
+                    name="dateLivraison"
+                    value={j.valeur}
+                    checked={v.dateLivraison === j.valeur}
+                    onChange={() => {
+                      changer("dateLivraison", j.valeur);
+                      // Le créneau choisi n'existe peut-être pas ce jour-là (soir même déjà entamé).
+                      if (!j.creneaux.includes(v.creneau)) changer("creneau", j.creneaux[0] ?? "");
+                    }}
+                    className="sr-only"
+                  />
                   {j.libelle}
                 </label>
               ))}
@@ -245,7 +259,7 @@ export function PageDuPanier({ reglages, jours }: Props) {
           <fieldset>
             <legend className="etiquette">Créneau</legend>
             <div className="flex flex-wrap gap-2">
-              {reglages.creneaux.map((c) => (
+              {creneauxDuJour.map((c) => (
                 <label key={c} className="pastille">
                   <input type="radio" name="creneau" value={c} checked={v.creneau === c} onChange={() => changer("creneau", c)} className="sr-only" />
                   {c}
@@ -377,7 +391,10 @@ export function PageDuPanier({ reglages, jours }: Props) {
           {!reglages.ouvert && (
             <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Les commandes sont fermées pour le moment. Réessaie un peu plus tard.</p>
           )}
-          <button type="submit" className="bouton w-full py-4 text-base" disabled={enCours || sousLeMinimum || !reglages.ouvert}>
+          {jours.length === 0 && (
+            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Aucun créneau de livraison disponible pour le moment. Réessaie plus tard.</p>
+          )}
+          <button type="submit" className="bouton w-full py-4 text-base" disabled={enCours || sousLeMinimum || !reglages.ouvert || jours.length === 0}>
             {enCours ? "Envoi…" : `Commander · ${formatPrix(totaux.total)}`}
           </button>
         </div>

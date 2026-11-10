@@ -69,17 +69,17 @@ try {
   await admin.getByRole("heading", { name: "La semaine en un coup d'œil" }).waitFor();
   verifier((await admin.locator("table td").count()) === 7 * 24, "grille : 7 jours × 24 heures");
   verifier(await admin.getByTitle("Ven 10h : Week-end").isVisible(), "grille : vendredi 10h = Week-end");
-  verifier(await admin.getByTitle("Mar 23h : Soirée & nuit").isVisible(), "grille : mardi 23h = Soirée & nuit");
+  verifier(await admin.getByTitle("Mar 23h : Fin de soirée").isVisible(), "grille : mardi 23h = Fin de soirée");
   verifier(await admin.getByTitle("Mar 12h : Tarif de base").isVisible(), "grille : mardi 12h = tarif de base");
   verifier(!(await deborde(admin)), "tarifs : pas de défilement horizontal");
   await admin.screenshot({ path: `${OUT}/v3-2-tarifs.png`, fullPage: true });
 
   // Modifier une plage : livraison de nuit à 50 ₪
-  const nuit = admin.locator("details", { hasText: "Soirée & nuit" });
+  const nuit = admin.locator("details", { hasText: "Fin de soirée" });
   await nuit.locator("summary").click();
   await nuit.getByLabel("Livraison (₪)").fill("50");
   await nuit.getByRole("button", { name: "Enregistrer" }).click();
-  await admin.getByText("Tarif « Soirée & nuit » enregistré.").waitFor();
+  await admin.getByText("Tarif « Fin de soirée » enregistré.").waitFor();
   ok("plage modifiée");
 
   // Une plage mal saisie est refusée
@@ -105,30 +105,30 @@ try {
   await client.getByText("Bamba").first().waitFor();
 
   await client.getByText("Demain", { exact: true }).click();
-  await client.getByText("12:00 – 15:00", { exact: true }).click();
+  await client.getByText("19:00 – 20:00", { exact: true }).click();
   let info = espaces(await client.locator("p[aria-live=polite]").innerText());
-  verifier(info.startsWith("Tarif normal"), `demain midi : ${info}`);
-  verifier(espaces(await client.getByRole("button", { name: /^Commander/ }).innerText()).includes("61,80"), "demain midi : 6,90 + 9,90 + 15 + 30 = 61,80");
+  verifier(info.startsWith("Tarif normal"), `demain 19h : ${info}`);
+  verifier(espaces(await client.getByRole("button", { name: /^Commander/ }).innerText()).includes("61,80"), "demain 19h : 6,90 + 9,90 + 15 + 30 = 61,80");
 
-  await client.getByText("21:00 – 00:00", { exact: true }).click();
+  await client.getByText("22:00 – 23:00", { exact: true }).click();
   info = espaces(await client.locator("p[aria-live=polite]").innerText());
-  verifier(info.includes("soirée & nuit") && info.includes("livraison 50 ₪") && info.includes("+10 %"), `demain 21h : ${info}`);
-  verifier((await client.getByText(/Express · \+/).count()) === 0, "pas d'express la nuit (express à 0 dans la plage)");
+  verifier(info.includes("fin de soirée") && info.includes("service 15 ₪, livraison 50 ₪") && info.includes("+10 %"), `demain 22h : ${info}`);
+  verifier((await client.getByText(/Express · \+/).count()) === 0, "pas d'express en fin de soirée (express à 0 dans la plage)");
   const total = espaces(await client.getByRole("button", { name: /^Commander/ }).innerText());
-  verifier(total.includes("88,48"), `nuit : 16,80 + 1,68 (10 %) + 20 + 50 = 88,48 (lu : ${total})`);
-  verifier(await client.getByText("Supplément soirée & nuit (+10 %)").isVisible(), "ligne « Supplément soirée & nuit (+10 %) »");
+  verifier(total.includes("83,48"), `fin de soirée : 16,80 + 1,68 (10 %) + 15 + 50 = 83,48 (lu : ${total})`);
+  verifier(await client.getByText("Supplément fin de soirée (+10 %)").isVisible(), "ligne « Supplément fin de soirée (+10 %) »");
 
   const vendredi = client.locator("label", { hasText: /^Vendredi/ });
   await vendredi.click();
-  await client.getByText("09:00 – 12:00", { exact: true }).click();
+  await client.getByText("19:00 – 20:00", { exact: true }).click();
   info = espaces(await client.locator("p[aria-live=polite]").innerText());
-  verifier(info.includes("week-end") && info.includes("livraison 40 ₪"), `vendredi 9h : ${info}`);
+  verifier(info.includes("week-end") && info.includes("livraison 40 ₪"), `vendredi 19h : ${info}`);
   verifier(espaces(await client.getByRole("button", { name: /^Commander/ }).innerText()).includes("76,80"), "week-end : 16,80 + 20 + 40 = 76,80");
   await client.screenshot({ path: `${OUT}/v3-3-panier-weekend.png`, fullPage: true });
 
   // 5. Commande de nuit, puis article indisponible : la majoration suit
   await client.getByText("Demain", { exact: true }).click();
-  await client.getByText("21:00 – 00:00", { exact: true }).click();
+  await client.getByText("22:00 – 23:00", { exact: true }).click();
   await client.getByLabel("Ton nom").fill("David Lévy");
   await client.getByLabel("Ton numéro WhatsApp").fill("+33 6 11 22 33 44");
   await client.getByLabel("Ville").selectOption("Netanya");
@@ -137,19 +137,19 @@ try {
   await client.waitForURL(/\/suivi\//);
   await client.getByText("Merci, ta commande est envoyée !").waitFor();
   const suivi = espaces(await client.locator("main").innerText());
-  verifier(suivi.includes("Supplément soirée & nuit (+10 %)") && suivi.includes("88,48"), "suivi : supplément de nuit et total 88,48");
+  verifier(suivi.includes("Supplément fin de soirée (+10 %)") && suivi.includes("83,48"), "suivi : supplément de fin de soirée et total 83,48");
   const urlSuivi = client.url().replace("?nouvelle=1", "");
 
   await admin.goto(BASE + "/admin");
   await admin.getByText("David Lévy").first().click();
   await admin.waitForURL(/\/admin\/commandes\//);
-  verifier(await admin.getByText("Soirée & nuit", { exact: true }).isVisible(), "admin : le tarif appliqué est indiqué");
+  verifier(await admin.getByText("Fin de soirée", { exact: true }).isVisible(), "admin : le tarif appliqué est indiqué");
   const lait = admin.locator("li", { hasText: "Lait 3 % 1 L" });
   await lait.getByRole("checkbox").check();
   await lait.getByRole("button", { name: "OK" }).click();
   await admin.waitForTimeout(800);
   const encaisser = espaces(await admin.locator("div", { hasText: /^À encaisser/ }).locator("dd").innerText());
-  verifier(encaisser.includes("77,59"), `lait indispo : 6,90 + 0,69 + 20 + 50 = 77,59 (lu : ${encaisser})`);
+  verifier(encaisser.includes("72,59"), `lait indispo : 6,90 + 0,69 + 15 + 50 = 72,59 (lu : ${encaisser})`);
   await admin.screenshot({ path: `${OUT}/v3-4-admin-commande-nuit.png`, fullPage: true });
 
   // 6. Frais regroupés
@@ -160,7 +160,7 @@ try {
   await client.goto(urlSuivi);
   verifier(await client.getByText("Frais de service (livraison comprise)").isVisible(), "suivi : une seule ligne « livraison comprise »");
   verifier((await client.getByText("Frais de service", { exact: true }).count()) === 0, "suivi : plus de ligne séparée");
-  verifier(espaces(await client.locator("main").innerText()).includes("70,00"), "suivi : service + livraison = 70,00");
+  verifier(espaces(await client.locator("main").innerText()).includes("65,00"), "suivi : service + livraison = 15 + 50 = 65,00");
   await client.goto(BASE + "/");
   verifier(espaces(await client.locator("main").innerText()).includes("Service + livraison"), "accueil : « Service + livraison »");
   await admin.goto(BASE + "/admin/reglages");

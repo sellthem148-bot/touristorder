@@ -268,6 +268,8 @@ export async function enregistrerReglages(form: FormData) {
     messageAccueil: texte(form, "messageAccueil"),
     ouvert: form.get("ouvert") === "on",
     fraisRegroupes: form.get("fraisRegroupes") === "on",
+    joursLivres: form.getAll("joursLivres").map(String),
+    delaiPreparation: texte(form, "delaiPreparation"),
   });
   if (!lecture.success) {
     const [champ, message] = Object.entries(erreursParChamp(lecture.error))[0];

@@ -71,7 +71,7 @@ try {
   await client.goto(BASE + "/panier");
   await client.getByText("Pack d'eau").first().waitFor();
   await client.getByText("Demain", { exact: true }).click();
-  await client.getByText("12:00 – 15:00", { exact: true }).click();
+  await client.getByText("19:00 – 20:00", { exact: true }).click();
   const options = await client.getByLabel("Ville").locator("option").allInnerTexts();
   verifier(!options.includes("Udim"), "la ville retirée n'est plus proposée");
   verifier(options.some((o) => o.startsWith("Kfar Vitkin") && o.includes("+5")), "la ville ajoutée est proposée avec son supplément");

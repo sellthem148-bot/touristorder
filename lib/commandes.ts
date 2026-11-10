@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { prisma } from "./prisma";
 import { calculerTotaux } from "./calcul";
 import { commandeSchema, erreursParChamp, regrouperLignes } from "./validation";
-import { joursProposes } from "./dates";
+import { joursDeLivraison } from "./creneaux";
 import { lireReglages, plagesActives } from "./reglages";
 import { tarifDeLaLivraison } from "./tarifs";
 import { fraisDeLivraison, minimumPour } from "./villes";
@@ -38,11 +38,14 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
   if (!ville) {
     return { ok: false, erreur: CHAMPS, champs: { ville: "On ne livre pas encore cette ville." } };
   }
-  if (!reglages.creneaux.includes(saisie.creneau)) {
-    return { ok: false, erreur: CHAMPS, champs: { creneau: "Choisis un créneau dans la liste." } };
+  // Le jour doit être un jour livré, et le créneau encore possible ce jour-là
+  // (le soir même : au moins le délai de préparation avant son début).
+  const jour = joursDeLivraison(reglages.creneaux, reglages.joursLivres, reglages.delaiPreparation).find((j) => j.valeur === saisie.dateLivraison);
+  if (!jour) {
+    return { ok: false, erreur: CHAMPS, champs: { dateLivraison: "Ce jour n'est plus disponible : choisis-en un autre." } };
   }
-  if (!joursProposes().includes(saisie.dateLivraison)) {
-    return { ok: false, erreur: CHAMPS, champs: { dateLivraison: "Choisis un jour dans la liste." } };
+  if (!jour.creneaux.includes(saisie.creneau)) {
+    return { ok: false, erreur: CHAMPS, champs: { creneau: "Ce créneau n'est plus disponible : choisis-en un autre." } };
   }
   // Le tarif du moment de la livraison (journée, nuit, week-end…).
   const tarif = tarifDeLaLivraison(saisie.dateLivraison, saisie.creneau, plages, reglages);

@@ -135,6 +135,8 @@ model Reglages {
   paiements       String[] @default(["Espèces", "Bit", "PayBox"])
   minimumCommande Int      @default(0)
   creneaux        String[] @default([])
+  joursLivres     Int[]    @default([0, 1, 2, 3, 4, 5, 6]) // 0 = dimanche … 6 = samedi
+  delaiPreparation Int     @default(60) // minutes entre la commande et le début du créneau (commande sur Wolt + reconditionnement)
   whatsapp        String   @default("") // ton numéro, format international sans + (ex. 972501234567)
   messageAccueil  String   @default("")
   ouvert          Boolean  @default(true)

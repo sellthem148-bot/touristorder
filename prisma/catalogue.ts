@@ -200,7 +200,7 @@ export const CATALOGUE: ArticleCatalogue[] = [
 // Montants à ajuster dans Admin → Tarifs.
 export const PLAGES_EXEMPLE = [
   { nom: "Week-end", jours: [5, 6], debut: "00:00", fin: "00:00", fraisService: 2000, fraisLivraison: 4000, fraisExpress: 3000, majorationPct: 0, ordre: 10 },
-  { nom: "Soirée & nuit", jours: [0, 1, 2, 3, 4, 5, 6], debut: "21:00", fin: "08:00", fraisService: 2000, fraisLivraison: 4500, fraisExpress: 0, majorationPct: 10, ordre: 20 },
+  { nom: "Fin de soirée", jours: [0, 1, 2, 3, 4, 5, 6], debut: "22:00", fin: "00:00", fraisService: 1500, fraisLivraison: 4000, fraisExpress: 0, majorationPct: 10, ordre: 20 },
 ];
 
 // Les villes livrées au départ, autour de Netanya, créées seulement si aucune
