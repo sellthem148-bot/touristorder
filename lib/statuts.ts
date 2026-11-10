@@ -1,0 +1,34 @@
+import type { StatutCommande } from "@prisma/client";
+
+export const ETAPES: StatutCommande[] = ["RECUE", "COMMANDEE", "EN_LIVRAISON", "LIVREE"];
+
+export const LIBELLE_STATUT: Record<StatutCommande, string> = {
+  RECUE: "Reçue",
+  COMMANDEE: "En préparation",
+  EN_LIVRAISON: "En livraison",
+  LIVREE: "Livrée",
+  ANNULEE: "Annulée",
+};
+
+// Ce que le client lit sur sa page de suivi.
+export const EXPLICATION_STATUT: Record<StatutCommande, string> = {
+  RECUE: "On a bien reçu ta commande. On te contacte sur WhatsApp pour confirmer.",
+  COMMANDEE: "On prépare ta commande.",
+  EN_LIVRAISON: "Ta commande est en route !",
+  LIVREE: "Ta commande a été livrée. Bon séjour !",
+  ANNULEE: "Cette commande a été annulée.",
+};
+
+export const COULEUR_STATUT: Record<StatutCommande, string> = {
+  RECUE: "bg-amber-100 text-amber-900",
+  COMMANDEE: "bg-sky-100 text-sky-900",
+  EN_LIVRAISON: "bg-violet-100 text-violet-900",
+  LIVREE: "bg-emerald-100 text-emerald-900",
+  ANNULEE: "bg-stone-200 text-stone-700",
+};
+
+export const STATUTS_EN_COURS: StatutCommande[] = ["RECUE", "COMMANDEE", "EN_LIVRAISON"];
+
+export function estStatut(x: unknown): x is StatutCommande {
+  return typeof x === "string" && x in LIBELLE_STATUT;
+}

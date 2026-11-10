@@ -1,0 +1,44 @@
+import "server-only";
+import { prisma } from "./prisma";
+
+export const VILLES_PAR_DEFAUT = ["Tel Aviv", "Jérusalem", "Netanya", "Herzliya", "Ra'anana"];
+export const CRENEAUX_PAR_DEFAUT = [
+  "Dès que possible",
+  "09:00 – 12:00",
+  "12:00 – 15:00",
+  "15:00 – 18:00",
+  "18:00 – 21:00",
+];
+
+/** Les réglages (une seule ligne, créée au premier besoin). */
+export async function lireReglages() {
+  const existants = await prisma.reglages.findUnique({ where: { id: 1 } });
+  if (existants) return existants;
+  return prisma.reglages.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      villes: VILLES_PAR_DEFAUT,
+      creneaux: CRENEAUX_PAR_DEFAUT,
+      messageAccueil: "Chargeur oublié, couches, maillot, courses… on s'en occupe et on te livre.",
+    },
+  });
+}
+
+/** Ce que le public a le droit de lire des réglages. */
+export async function reglagesPublics() {
+  const r = await lireReglages();
+  return {
+    fraisService: r.fraisService,
+    fraisLivraison: r.fraisLivraison,
+    minimumCommande: r.minimumCommande,
+    villes: r.villes,
+    creneaux: r.creneaux,
+    whatsapp: r.whatsapp,
+    messageAccueil: r.messageAccueil,
+    ouvert: r.ouvert,
+  };
+}
+
+export type ReglagesPublics = Awaited<ReturnType<typeof reglagesPublics>>;

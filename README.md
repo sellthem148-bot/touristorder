@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Courses Express (nom provisoire)
 
-## Getting Started
+Service de livraison pour les touristes en Israël : le client commande sur le site, le gérant passe la commande sur Wolt, réceptionne, reconditionne et livre. Paiement à la livraison (espèces ou Bit).
 
-First, run the development server:
+Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_SITE` (ou `lib/marque.ts`).
+
+## Ce que fait le site
+
+**Côté client** (web app mobile, en français, sans compte)
+- Catalogue par catégories, recherche.
+- Panier enregistré dans le navigateur ; à l'ouverture du panier, les prix sont remis à jour depuis la base et les articles retirés du catalogue sont enlevés.
+- Commande : nom, numéro WhatsApp, ville, adresse ou hôtel, jour et créneau, note libre. Le total affiche les articles, les frais de service et la livraison.
+- Page de suivi (lien secret propre à chaque commande) : étape en cours, articles indisponibles barrés et non facturés, bouton « Nous écrire sur WhatsApp ». Elle se met à jour toute seule.
+
+**Côté gérant** (`/admin`, protégé par mot de passe)
+- **Commandes** : en cours, livrées, annulées. Rafraîchissement automatique toutes les 30 s.
+- **Détail d'une commande** :
+  - la liste de courses regroupée par boutique Wolt, avec le lien Wolt de chaque article et un bouton « Copier la liste » ;
+  - l'ajustement d'une quantité ou le marquage « indisponible », qui recalcule le total ;
+  - le bouton d'étape suivante ;
+  - le bouton « Écrire au client sur WhatsApp », avec un message pré-rempli adapté à l'étape ;
+  - la marge estimée et une note interne.
+- **Produits** : nom, description, photo, prix de vente, catégorie, ordre, en ligne ou masqué. Trois champs ne sont **visibles que par toi** : le prix d'achat sur Wolt, la boutique où le commander et le lien Wolt. Aucune page publique ne les lit (`PRODUIT_PUBLIC` dans `lib/catalogue.ts`).
+- **Catégories** : créer, renommer, réordonner, masquer. Une catégorie qui contient des produits ne se supprime pas.
+- **Réglages** : frais de service, frais de livraison, minimum de commande, villes livrées, créneaux, ton numéro WhatsApp, message d'accueil, ouverture et fermeture des commandes.
+
+## Lancer en local
+
+Prérequis : Node 20.9 ou plus récent, et PostgreSQL.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env        # puis renseigner ADMIN_PASSWORD et SESSION_SECRET
+npm install
+npx prisma db push          # crée les tables
+npm run seed                # catégories et réglages de départ
+npm run seed:demo           # (local seulement) + 10 produits d'exemple aux prix inventés
+npm run dev                 # http://localhost:3000, admin sur /admin
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+En local, sans Supabase, les photos sont enregistrées dans `public/uploads/`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Vérifications : `npm run typecheck`, `npm run lint`, `npm test`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Mettre en ligne (Supabase + Vercel)
 
-## Learn More
+1. **Supabase** : créer un projet (région Europe, Francfort par exemple).
+   - Récupérer dans Project Settings → Database → Connection string :
+     - `DATABASE_URL` = « Transaction pooler » (port **6543**), en ajoutant `?pgbouncer=true` à la fin ;
+     - `DIRECT_URL` = « Session pooler » (port **5432**).
+   - Récupérer dans Project Settings → API : `NEXT_PUBLIC_SUPABASE_URL` et la clé **service_role** (`SUPABASE_SERVICE_ROLE_KEY`, secrète, jamais dans le navigateur).
+   - Dans Storage, créer un bucket **public** nommé `produits`.
+2. **Créer les tables**, depuis ton ordinateur, avec le `.env` qui pointe sur Supabase :
+   ```bash
+   npx prisma db push
+   npm run seed
+   ```
+   Ensuite, dans le SQL editor de Supabase, lancer le contenu de `prisma/rls.sql`. Il active la « row level security » sur toutes les tables, sinon la clé publique de Supabase pourrait les lire. À refaire après chaque `db push` qui crée une table.
+3. **Vercel** : importer le dépôt GitHub et renseigner les variables d'environnement :
+   - `DATABASE_URL` et `DIRECT_URL` ;
+   - `ADMIN_PASSWORD` : ton mot de passe gérant, long ;
+   - `SESSION_SECRET` : obtenu avec `openssl rand -base64 48` ;
+   - `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET=produits` ;
+   - `NEXT_PUBLIC_NOM_DU_SITE` : le nom choisi ;
+   - `NEXT_PUBLIC_SITE_URL` (facultatif) : l'adresse publique, utilisée dans les liens de suivi envoyés sur WhatsApp.
 
-To learn more about Next.js, take a look at the following resources:
+   Puis déployer.
+4. Dans `/admin/reglages` : renseigner ton numéro WhatsApp, les frais, les villes et les créneaux.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Règles du code
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Montants en agorot** (entiers : 12,90 ₪ = 1290). Jamais de nombre à virgule pour de l'argent. Le calcul d'une commande est unique (`lib/calcul.ts`) et le serveur recalcule toujours les prix depuis la base : le prix envoyé par le navigateur est ignoré.
+- **Toute action ou page admin commence par `exigerAdmin()`.** Le layout ne protège pas les Server Actions, qui sont appelables directement.
+- **Les pages publiques lisent les produits via `PRODUIT_PUBLIC`**, jamais un produit entier.
+- **Une ligne de commande garde une copie du produit** (nom, prix, prix d'achat, boutique). Modifier ou supprimer un produit ne change pas les commandes passées.
+- **Les classes maison** (`bouton`, `champ`, `carte`…) sont des `@utility` Tailwind, dans `app/globals.css`. Le chargeur Tailwind de Turbopack sortait les règles de `@layer components` de leur couche, et elles écrasaient alors `bg-…` ou `w-…`.
+- Les jours sont des jours **israéliens** (`lib/dates.ts`).
 
-## Deploy on Vercel
+## Pas encore fait (V2)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Paiement en ligne (Stripe, PayPlus ou Tranzila).
+- Notification automatique du gérant à chaque nouvelle commande (e-mail ou Telegram). Pour l'instant, la liste se rafraîchit toutes les 30 s et le client est invité à écrire sur WhatsApp.
+- Plusieurs langues (anglais, hébreu).
+- Fiche produit détaillée et variantes (tailles).

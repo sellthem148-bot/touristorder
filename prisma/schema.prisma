@@ -1,0 +1,119 @@
+// Les montants sont en AGOROT (centimes de shekel) : 12,90 ₪ = 1290.
+// Jamais de Float pour de l'argent.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Categorie {
+  id        String    @id @default(cuid())
+  nom       String    @unique
+  slug      String    @unique
+  emoji     String    @default("🛍️")
+  ordre     Int       @default(0)
+  active    Boolean   @default(true)
+  produits  Produit[]
+  createdAt DateTime  @default(now())
+}
+
+model Produit {
+  id          String          @id @default(cuid())
+  nom         String
+  description String          @default("")
+  prix        Int // prix de vente au client, en agorot
+  photoUrl    String          @default("")
+  actif       Boolean         @default(true)
+  ordre       Int             @default(0)
+  categorieId String
+  categorie   Categorie       @relation(fields: [categorieId], references: [id], onDelete: Restrict)
+
+  // Réservé à l'admin : jamais lu par une page publique.
+  prixAchat   Int? // ce que l'article te coûte sur Wolt, en agorot
+  boutique    String          @default("") // où le commander (ex. « Wolt Market Dizengoff »)
+  lienWolt    String          @default("")
+
+  lignes      LigneCommande[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([categorieId])
+}
+
+enum StatutCommande {
+  RECUE
+  COMMANDEE
+  EN_LIVRAISON
+  LIVREE
+  ANNULEE
+}
+
+model Commande {
+  id             String          @id @default(cuid())
+  numero         Int             @unique @default(autoincrement())
+  jeton          String          @unique // lien de suivi du client
+  statut         StatutCommande  @default(RECUE)
+
+  nomClient      String
+  telephone      String
+  ville          String
+  adresse        String
+  dateLivraison  String // AAAA-MM-JJ, jour israélien
+  creneau        String
+  notes          String          @default("")
+
+  sousTotal      Int
+  fraisService   Int
+  fraisLivraison Int
+  total          Int
+  // Les frais en vigueur au moment de la commande : si tu retires des
+  // articles puis les remets, les frais reviennent à ce montant.
+  tarifService   Int
+  tarifLivraison Int
+
+  noteInterne    String          @default("")
+  lignes         LigneCommande[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([statut, createdAt])
+}
+
+// Une ligne garde une copie du produit au moment de la commande :
+// modifier ou supprimer un produit ne change pas les commandes passées.
+model LigneCommande {
+  id                String   @id @default(cuid())
+  commandeId        String
+  commande          Commande @relation(fields: [commandeId], references: [id], onDelete: Cascade)
+  produitId         String?
+  produit           Produit? @relation(fields: [produitId], references: [id], onDelete: SetNull)
+  nom               String
+  prixUnitaire      Int
+  prixAchatUnitaire Int?
+  boutique          String   @default("")
+  lienWolt          String   @default("")
+  quantite          Int
+  indisponible      Boolean  @default(false)
+
+  @@index([commandeId])
+  @@index([produitId])
+}
+
+// Une seule ligne (id = 1).
+model Reglages {
+  id              Int      @id @default(1)
+  fraisService    Int      @default(1500)
+  fraisLivraison  Int      @default(3000)
+  minimumCommande Int      @default(0)
+  villes          String[] @default([])
+  creneaux        String[] @default([])
+  whatsapp        String   @default("") // ton numéro, format international sans + (ex. 972501234567)
+  messageAccueil  String   @default("")
+  ouvert          Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+}

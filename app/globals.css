@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
+@theme {
+  --color-marque: #1d4ed8;
+  --color-marque-fonce: #1e3a8a;
+  --color-marque-clair: #dbeafe;
+  --color-accent: #f59e0b;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Les boutons et liens d'action gardent un anneau visible au clavier. */
+:focus-visible {
+  outline: 3px solid var(--color-marque);
+  outline-offset: 2px;
+}
+
+/* Des « utilitaires » Tailwind : une classe plus précise (bg-…, w-…, py-…) les surcharge. */
+@utility champ {
+  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-marque focus:outline-none focus:ring-2 focus:ring-marque/30;
+}
+
+@utility champ-erreur {
+  @apply border-red-500;
+}
+
+@utility etiquette {
+  @apply mb-1 block text-sm font-medium text-slate-700;
+}
+
+@utility bouton {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-marque px-4 py-2.5 font-semibold text-white transition hover:bg-marque-fonce disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility bouton-secondaire {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility bouton-danger {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 font-semibold text-red-700 transition hover:bg-red-50;
+}
+
+@utility carte {
+  @apply rounded-2xl border border-slate-200 bg-white;
 }
