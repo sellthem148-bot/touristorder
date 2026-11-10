@@ -5,17 +5,16 @@ import { redirect } from "next/navigation";
 import {
   COOKIE_ADMIN,
   DUREE_SESSION_MS,
-  configurationAdminValide,
   creerJetonSession,
   motDePasseCorrect,
+  reglageManquant,
 } from "@/lib/session-admin";
 import { bloque, noterEchec } from "@/lib/limite";
 import { ipDuVisiteur } from "@/lib/ip";
 
 export async function seConnecter(_avant: { erreur?: string }, form: FormData): Promise<{ erreur?: string }> {
-  if (!configurationAdminValide()) {
-    return { erreur: "ADMIN_PASSWORD (8 caractères min.) et SESSION_SECRET (32 min.) doivent être définis." };
-  }
+  const manque = reglageManquant();
+  if (manque) return { erreur: manque };
   // Seuls les essais ratés comptent : 10 dans les 15 minutes bloquent cette adresse.
   const cle = `connexion:${await ipDuVisiteur()}`;
   if (bloque(cle, 10)) {

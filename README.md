@@ -70,8 +70,8 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 
    Un aperçu (preview) ne touche jamais à la base. Sans base branchée, la mise en ligne continue et le dit dans son journal (`[base] …`).
 5. **Variables à poser dans Vercel** (Settings → Environment Variables) :
-   - `ADMIN_PASSWORD` : le mot de passe gérant, long ;
-   - `SESSION_SECRET` : obtenu avec `openssl rand -base64 48` ;
+   - `ADMIN_PASSWORD` : le mot de passe gérant, long (8 caractères au moins) — **la seule obligatoire** ;
+   - `SESSION_SECRET` (facultative) : la clé qui signe les sessions. Sans elle, le site en dérive une du secret que l'intégration Supabase pose déjà (`lib/cle-session.ts`) ; pour la choisir soi-même : `openssl rand -base64 48` ;
    - `NEXT_PUBLIC_NOM_DU_SITE` : `Tourist Order` (c'est aussi la valeur par défaut) ;
    - `NEXT_PUBLIC_SITE_URL` : `https://touristorder.com`, une fois le domaine branché (liens des e-mails et des messages) ;
    - `RESEND_API_KEY`, `EMAIL_EXPEDITEUR`, `EMAIL_GERANT` : les e-mails (voir ci-dessous).

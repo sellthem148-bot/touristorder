@@ -1,4 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { cleDeSession } from "./cle-session";
 
 // L'espace client, sans mot de passe : un lien signé envoyé par e-mail ouvre
 // une session (cookie signé). Deux usages, deux signatures : un lien de
@@ -16,10 +17,8 @@ export type UsageJeton = "session" | "lien";
 
 const ID = /^[a-z0-9]{10,40}$/;
 
-function cle(): string | null {
-  const s = process.env.SESSION_SECRET ?? "";
-  return s.length >= 32 ? s : null;
-}
+// SESSION_SECRET, ou la clé dérivée de ce que l'intégration Supabase de Vercel pose (lib/cle-session.ts).
+const cle = (): string | null => cleDeSession();
 
 function signer(usage: UsageJeton, clientId: string, exp: number, secret: string): string {
   return createHmac("sha256", secret).update(`client.${usage}.${clientId}.${exp}`).digest("base64url");
