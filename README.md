@@ -61,7 +61,7 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 
 1. **GitHub** : le code est dans un dépôt GitHub (privé).
 2. **Vercel** : *Add New → Project → Import* ce dépôt (Vercel installe son application GitHub au passage). Chaque `git push` sur la branche principale met le site en ligne.
-3. **La base Supabase, créée depuis Vercel** : dans le projet Vercel, onglet **Storage → Create Database → Supabase**, plan gratuit, région Europe (Francfort), puis **Connect** au projet. Vercel pose alors tout seul les variables `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`… que le site lit (`lib/adresses-base.ts`).
+3. **La base Supabase, créée depuis Vercel** : dans le projet Vercel, onglet **Storage → Create Database → Supabase**, plan gratuit, région Europe (Francfort : le site tourne aussi à Francfort, `vercel.json`, au plus près de la base et d'Israël), puis **Connect** au projet. Vercel pose alors tout seul les variables `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`… que le site lit (`lib/adresses-base.ts`).
 4. **Redéployer**. À chaque mise en ligne de production, `npm run build` lance `prisma/preparer.ts`, qui :
    - crée ou met à jour les tables (`prisma db push`, sans `--accept-data-loss` : un changement qui effacerait des données arrête la mise en ligne) ;
    - active la « row level security » sur toutes les tables (`prisma/rls.sql`), sinon la clé publique de Supabase pourrait les lire ;
