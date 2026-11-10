@@ -10,10 +10,11 @@ function Bloc({ titre, p, fonce = false }: { titre: string; p: Periode; fonce?: 
     <section className={`rounded-3xl p-5 ${fonce ? "bg-marque text-white" : "carte"}`}>
       <h2 className={`text-sm font-bold ${fonce ? "text-blue-100" : "text-slate-500"}`}>{titre}</h2>
       <p className="mt-1 text-3xl font-extrabold">{formatPrix(p.chiffre)}</p>
-      <dl className={`mt-3 grid grid-cols-3 gap-2 text-sm ${fonce ? "text-blue-50" : "text-slate-600"}`}>
-        <div><dt>Commandes</dt><dd className={`text-base font-bold ${fonce ? "text-white" : "text-slate-900"}`}>{p.commandes}</dd></div>
-        <div><dt>Marge est.</dt><dd className={`text-base font-bold ${fonce ? "text-white" : "text-emerald-700"}`}>{formatPrix(p.marge)}</dd></div>
-        <div><dt>Panier moy.</dt><dd className={`text-base font-bold ${fonce ? "text-white" : "text-slate-900"}`}>{formatPrix(p.panierMoyen)}</dd></div>
+      {/* Une ligne par chiffre : tient sur un petit téléphone quel que soit le montant. */}
+      <dl className={`mt-3 space-y-1 text-sm ${fonce ? "text-blue-50" : "text-slate-600"}`}>
+        <div className="flex items-baseline justify-between gap-3"><dt>Commandes</dt><dd className={`text-base font-bold tabular-nums ${fonce ? "text-white" : "text-slate-900"}`}>{p.commandes}</dd></div>
+        <div className="flex items-baseline justify-between gap-3"><dt>Marge estimée</dt><dd className={`whitespace-nowrap text-base font-bold tabular-nums ${fonce ? "text-white" : "text-emerald-700"}`}>{formatPrix(p.marge)}</dd></div>
+        <div className="flex items-baseline justify-between gap-3"><dt>Panier moyen</dt><dd className={`whitespace-nowrap text-base font-bold tabular-nums ${fonce ? "text-white" : "text-slate-900"}`}>{formatPrix(p.panierMoyen)}</dd></div>
       </dl>
     </section>
   );
@@ -27,7 +28,7 @@ export default async function PageStatistiques() {
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-extrabold">Statistiques</h1>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Bloc titre="Aujourd'hui" p={s.aujourdhui} fonce />
         <Bloc titre="7 derniers jours" p={s.semaine} />
         <Bloc titre="30 derniers jours" p={s.mois} />
@@ -46,7 +47,7 @@ export default async function PageStatistiques() {
         </ol>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <section className="carte p-5">
           <h2 className="mb-3 font-extrabold">Les plus vendus (30 jours)</h2>
           {s.meilleures.length === 0 ? (
