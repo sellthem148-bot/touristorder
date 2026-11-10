@@ -1,4 +1,4 @@
-# Courses Express (nom provisoire)
+# Tourist Order (touristorder.com)
 
 Service de livraison pour les touristes en Israël : le client commande sur le site, le gérant passe la commande sur Wolt, réceptionne, reconditionne et livre. Paiement à la livraison (espèces ou Bit).
 
@@ -55,37 +55,35 @@ En local, sans Supabase, les photos sont enregistrées dans `public/uploads/`.
 
 Vérifications : `npm run typecheck`, `npm run lint`, `npm test`, et les parcours dans un vrai navigateur (`tests/navigateur/README.md`).
 
-## Mettre en ligne (Supabase + Vercel)
+## Mettre en ligne (Vercel + Supabase)
 
-1. **Supabase** : créer un projet (région Europe, Francfort par exemple).
-   - Récupérer dans Project Settings → Database → Connection string :
-     - `DATABASE_URL` = « Transaction pooler » (port **6543**), en ajoutant `?pgbouncer=true` à la fin ;
-     - `DIRECT_URL` = « Session pooler » (port **5432**).
-   - Récupérer dans Project Settings → API : `NEXT_PUBLIC_SUPABASE_URL` et la clé **service_role** (`SUPABASE_SERVICE_ROLE_KEY`, secrète, jamais dans le navigateur).
-   - Dans Storage, créer un bucket **public** nommé `produits`.
-2. **Créer les tables**, depuis ton ordinateur, avec le `.env` qui pointe sur Supabase :
-   ```bash
-   npx prisma db push
-   npm run seed
-   ```
-   Puis, dans l'admin : **Prix rapides** pour chiffrer les articles, **Tarifs** pour ajuster les plages d'exemple (week-end, soirée & nuit), **Villes** pour ajuster les suppléments d'exemple (+15 ₪ Herzliya, Ra'anana… ; +25 ₪ Tel Aviv et sa région).
-   Ensuite, dans le SQL editor de Supabase, lancer le contenu de `prisma/rls.sql`. Il active la « row level security » sur toutes les tables, sinon la clé publique de Supabase pourrait les lire. À refaire après chaque `db push` qui crée une table.
-3. **Vercel** : importer le dépôt GitHub et renseigner les variables d'environnement :
-   - `DATABASE_URL` et `DIRECT_URL` ;
-   - `ADMIN_PASSWORD` : ton mot de passe gérant, long ;
+Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot de passe de base, pas de clé.
+
+1. **GitHub** : le code est dans un dépôt GitHub (privé).
+2. **Vercel** : *Add New → Project → Import* ce dépôt (Vercel installe son application GitHub au passage). Chaque `git push` sur la branche principale met le site en ligne.
+3. **La base Supabase, créée depuis Vercel** : dans le projet Vercel, onglet **Storage → Create Database → Supabase**, plan gratuit, région Europe (Francfort), puis **Connect** au projet. Vercel pose alors tout seul les variables `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY`… que le site lit (`lib/adresses-base.ts`).
+4. **Redéployer**. À chaque mise en ligne de production, `npm run build` lance `prisma/preparer.ts`, qui :
+   - crée ou met à jour les tables (`prisma db push`, sans `--accept-data-loss` : un changement qui effacerait des données arrête la mise en ligne) ;
+   - active la « row level security » sur toutes les tables (`prisma/rls.sql`), sinon la clé publique de Supabase pourrait les lire ;
+   - sur une base toute neuve seulement, installe la base du catalogue (135 articles sans prix, masqués), les 12 catégories, les villes et les plages d'exemple ;
+   - crée le dossier public `produits` de Supabase Storage (photos).
+
+   Un aperçu (preview) ne touche jamais à la base. Sans base branchée, la mise en ligne continue et le dit dans son journal (`[base] …`).
+5. **Variables à poser dans Vercel** (Settings → Environment Variables) :
+   - `ADMIN_PASSWORD` : le mot de passe gérant, long ;
    - `SESSION_SECRET` : obtenu avec `openssl rand -base64 48` ;
-   - `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET=produits` ;
-   - `NEXT_PUBLIC_NOM_DU_SITE` : le nom choisi ;
-   - `RESEND_API_KEY`, `EMAIL_EXPEDITEUR`, `EMAIL_GERANT` : les e-mails (voir ci-dessous) ;
-   - `NEXT_PUBLIC_SITE_URL` (facultatif) : l'adresse publique, utilisée dans les liens de suivi envoyés sur WhatsApp.
+   - `NEXT_PUBLIC_NOM_DU_SITE` : `Tourist Order` (c'est aussi la valeur par défaut) ;
+   - `NEXT_PUBLIC_SITE_URL` : `https://touristorder.com`, une fois le domaine branché (liens des e-mails et des messages) ;
+   - `RESEND_API_KEY`, `EMAIL_EXPEDITEUR`, `EMAIL_GERANT` : les e-mails (voir ci-dessous).
+6. **Le domaine** `touristorder.com` : l'ajouter au projet Vercel (Settings → Domains), puis, chez l'hébergeur du domaine (Hostinger), remplacer l'enregistrement **A** de `@` par `76.76.21.21` et mettre un **CNAME** `www` → `cname.vercel-dns.com`.
+7. Dans l'admin : **Prix rapides** pour chiffrer les articles, **Tarifs** et **Villes** pour ajuster les montants d'exemple, **Réglages** pour le numéro WhatsApp, les frais et les créneaux.
 
-   Puis déployer.
-4. Dans `/admin/reglages` : renseigner ton numéro WhatsApp, les frais, les villes et les créneaux.
+**Autre façon** (base Supabase créée à la main, sur son propre compte) : poser `DATABASE_URL` (« Transaction pooler », port 6543) et `DIRECT_URL` (« Session pooler », port 5432), `NEXT_PUBLIC_SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` dans Vercel. Ces noms passent avant ceux de l'intégration ; le reste est identique.
 
 ## E-mails (Resend)
 
 1. Crée un compte sur resend.com, ajoute et **vérifie ton nom de domaine** (enregistrements DNS donnés par Resend), crée une clé API.
-2. Variables : `RESEND_API_KEY`, `EMAIL_EXPEDITEUR` (ex. `Courses Express <commandes@ton-domaine.com>`, sur le domaine vérifié), `EMAIL_GERANT` (ton adresse, pour l'avis de nouvelle commande), `NEXT_PUBLIC_SITE_URL` (les liens des e-mails).
+2. Variables : `RESEND_API_KEY`, `EMAIL_EXPEDITEUR` (ex. `Tourist Order <commandes@touristorder.com>`, sur le domaine vérifié), `EMAIL_GERANT` (ton adresse, pour l'avis de nouvelle commande), `NEXT_PUBLIC_SITE_URL` (les liens des e-mails).
 3. Sans `RESEND_API_KEY` en production, aucune confirmation ne part et l'espace client ne peut pas envoyer de lien (la page le dit). Sans domaine vérifié, Resend n'envoie qu'à l'adresse du compte Resend.
 
 En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fichier `.html` à ouvrir dans un navigateur, et un `.txt`).

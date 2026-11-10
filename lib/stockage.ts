@@ -4,17 +4,17 @@ import { mkdir, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 import { TAILLE_MAX_IMAGE, typeDImage } from "./image";
+import { accesSupabase, BUCKET_PHOTOS } from "./adresses-base";
 
 export type ResultatEnvoi = { ok: true; url: string } | { ok: false; erreur: string };
 
 function supabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const cleService = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !cleService) return null;
-  return createClient(url, cleService, { auth: { persistSession: false } });
+  const acces = accesSupabase();
+  if (!acces) return null;
+  return createClient(acces.url, acces.cle, { auth: { persistSession: false } });
 }
 
-const BUCKET = () => process.env.SUPABASE_BUCKET || "produits";
+const BUCKET = () => BUCKET_PHOTOS();
 
 /** Enregistre la photo d'un produit et rend son adresse publique. */
 export async function enregistrerPhoto(fichier: File): Promise<ResultatEnvoi> {
@@ -61,7 +61,7 @@ export async function supprimerPhoto(url: string): Promise<void> {
       return;
     }
     const client = supabase();
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const base = accesSupabase()?.url;
     if (!client || !base) return;
     const prefixe = `${base}/storage/v1/object/public/${BUCKET()}/photos/`;
     if (!url.startsWith(prefixe)) return;
