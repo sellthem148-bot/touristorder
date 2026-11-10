@@ -1,4 +1,4 @@
-// npm run seed       → catégories, réglages, plages tarifaires d'exemple et la base
+// npm run seed       → catégories, réglages, villes et plages tarifaires d'exemple, et la base
 //                      du catalogue (SANS prix, masquée). Rejouable et sans danger
 //                      en production : n'écrase jamais un article ou un réglage existant.
 // npm run seed:demo  → + des PRIX D'EXEMPLE sur quelques articles, pour tester en local.
@@ -6,7 +6,7 @@
 import { PrismaClient } from "@prisma/client";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
-import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE } from "./catalogue";
+import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
 
 const prisma = new PrismaClient();
 
@@ -58,7 +58,6 @@ async function main() {
       fraisService: 1500,
       fraisLivraison: 3000,
       fraisExpress: 2000,
-      villes: ["Tel Aviv", "Jérusalem", "Netanya", "Herzliya", "Ra'anana"],
       creneaux: ["Dès que possible", "09:00 – 12:00", "12:00 – 15:00", "15:00 – 18:00", "18:00 – 21:00", "21:00 – 00:00"],
       messageAccueil: "Chargeur oublié, couches, maillot, courses… on s'en occupe et on te livre.",
     },
@@ -66,6 +65,9 @@ async function main() {
 
   if ((await prisma.plageTarifaire.count()) === 0) {
     await prisma.plageTarifaire.createMany({ data: PLAGES_EXEMPLE });
+  }
+  if ((await prisma.ville.count()) === 0) {
+    await prisma.ville.createMany({ data: VILLES_EXEMPLE.map((v, i) => ({ ...v, ordre: (i + 1) * 10 })) });
   }
 
   // La base du catalogue : seulement les articles qui n'existent pas encore (par nom).

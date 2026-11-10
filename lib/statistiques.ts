@@ -8,6 +8,7 @@ export type CommandePourStats = {
   total: number;
   pourboire: number;
   express: boolean;
+  ville?: string;
   lignes: { nom: string; quantite: number; prixUnitaire: number; prixAchatUnitaire: number | null; indisponible: boolean }[];
 };
 
@@ -49,7 +50,18 @@ export function statistiques(toutes: CommandePourStats[], maintenant = new Date(
     .slice(0, 5);
 
   const mois = depuis(30);
+  // Commandes et chiffre par ville (30 jours), les plus actives d'abord.
+  const villes = new Map<string, { commandes: number; chiffre: number }>();
+  for (const c of mois) {
+    const cle = c.ville || "—";
+    const v = villes.get(cle) ?? { commandes: 0, chiffre: 0 };
+    villes.set(cle, { commandes: v.commandes + 1, chiffre: v.chiffre + c.total });
+  }
+  const parVille = [...villes]
+    .map(([ville, v]) => ({ ville, ...v }))
+    .sort((a, b) => b.commandes - a.commandes || b.chiffre - a.chiffre || a.ville.localeCompare(b.ville));
   return {
+    parVille,
     aujourdhui: resumer(depuis(1)),
     semaine: resumer(depuis(7)),
     mois: resumer(mois),

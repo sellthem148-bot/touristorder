@@ -1,8 +1,8 @@
 import "server-only";
 import { prisma } from "./prisma";
 import type { PlageTarifaire } from "./tarifs";
+import type { VilleLivree } from "./villes";
 
-export const VILLES_PAR_DEFAUT = ["Tel Aviv", "Jérusalem", "Netanya", "Herzliya", "Ra'anana"];
 export const CRENEAUX_PAR_DEFAUT = [
   "Dès que possible",
   "09:00 – 12:00",
@@ -20,7 +20,6 @@ export async function lireReglages() {
     update: {},
     create: {
       id: 1,
-      villes: VILLES_PAR_DEFAUT,
       creneaux: CRENEAUX_PAR_DEFAUT,
       messageAccueil: "Chargeur oublié, couches, maillot, courses… on s'en occupe et on te livre.",
     },
@@ -29,7 +28,7 @@ export async function lireReglages() {
 
 /** Ce que le public a le droit de lire des réglages. */
 export async function reglagesPublics() {
-  const [r, plages] = await Promise.all([lireReglages(), plagesActives()]);
+  const [r, plages, villes] = await Promise.all([lireReglages(), plagesActives(), villesActives()]);
   return {
     plages,
     fraisRegroupes: r.fraisRegroupes,
@@ -39,7 +38,7 @@ export async function reglagesPublics() {
     pourboires: r.pourboires,
     paiements: r.paiements,
     minimumCommande: r.minimumCommande,
-    villes: r.villes,
+    villes,
     creneaux: r.creneaux,
     whatsapp: r.whatsapp,
     messageAccueil: r.messageAccueil,
@@ -58,5 +57,14 @@ export async function plagesActives(): Promise<PlageTarifaire[]> {
       id: true, nom: true, jours: true, debut: true, fin: true,
       fraisService: true, fraisLivraison: true, fraisExpress: true, majorationPct: true,
     },
+  });
+}
+
+/** Les villes livrées, dans l'ordre d'affichage. */
+export async function villesActives(): Promise<VilleLivree[]> {
+  return prisma.ville.findMany({
+    where: { active: true },
+    orderBy: [{ ordre: "asc" }, { nom: "asc" }],
+    select: { nom: true, supplementLivraison: true, minimumCommande: true },
   });
 }

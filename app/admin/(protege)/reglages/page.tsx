@@ -55,9 +55,11 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="villes" className="etiquette">Villes livrées (une par ligne)</label>
-            <textarea id="villes" name="villes" rows={6} defaultValue={r.villes.join("\n")} className="champ" />
+          <div className="rounded-2xl bg-sable p-4 text-sm">
+            <p className="etiquette">Villes livrées</p>
+            <p>Les villes, leur supplément de livraison et leur minimum se règlent dans la page{" "}
+              <Link href="/admin/villes" className="font-semibold text-marque underline">Villes</Link>.
+            </p>
           </div>
           <div>
             <label htmlFor="creneaux" className="etiquette">Créneaux (un par ligne)</label>

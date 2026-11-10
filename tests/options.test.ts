@@ -96,7 +96,7 @@ describe("formulaires admin (nouveaux champs)", () => {
   it("réglages : pourboires (espaces, décimales à la virgule), paiements facultatifs", () => {
     const r = reglagesSchema.parse({
       fraisService: "15", fraisLivraison: "30", fraisExpress: "20", minimumCommande: "",
-      pourboires: "20 10 12,50 10", paiements: "", villes: "Tel Aviv", creneaux: "Dès que possible",
+      pourboires: "20 10 12,50 10", paiements: "", creneaux: "Dès que possible",
       whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: true,
     });
     expect(r.pourboires).toEqual([1000, 1250, 2000]);

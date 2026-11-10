@@ -147,6 +147,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           tarifNom={commande.tarifNom}
           majorationPct={commande.majorationPct}
           libelleTotal="Total à payer"
+          ville={commande.ville}
         />
       </section>
 

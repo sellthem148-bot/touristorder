@@ -14,5 +14,5 @@ await p.goto(B + "/admin/connexion"); await p.getByLabel("Mot de passe").fill(pr
 await mesure("/admin");
 await p.locator('a[href^="/admin/commandes/"]').first().click(); await p.waitForURL(/commandes\//); await mesure("admin commande");
 await p.screenshot({ path: process.argv[2] + "/v2-11-admin-se.png" });
-for (const u of ["/admin/statistiques", "/admin/produits", "/admin/produits?etat=a-completer", "/admin/produits/nouveau", "/admin/produits/prix", "/admin/tarifs", "/admin/categories", "/admin/reglages"]) { await p.goto(B + u); await mesure(u); }
+for (const u of ["/admin/statistiques", "/admin/produits", "/admin/produits?etat=a-completer", "/admin/produits/nouveau", "/admin/produits/prix", "/admin/tarifs", "/admin/villes", "/admin/categories", "/admin/reglages"]) { await p.goto(B + u); await mesure(u); }
 console.log(res.join("\n")); await b.close();

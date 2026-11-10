@@ -90,6 +90,7 @@ model Commande {
   tarifService   Int
   tarifLivraison Int // express compris
   tarifPourboire Int             @default(0)
+  supplementVille Int            @default(0) // supplément de livraison de la ville, compris dans fraisLivraison
   // Le tarif du moment de la livraison (journée, nuit, week-end…), copié à la commande.
   tarifNom       String          @default("")
   majorationPct  Int             @default(0) // % ajouté aux articles par ce tarif
@@ -133,7 +134,6 @@ model Reglages {
   pourboires      Int[]    @default([0, 1000, 1500, 2000]) // montants proposés ; vide = pas de pourboire
   paiements       String[] @default(["Espèces", "Bit", "PayBox"])
   minimumCommande Int      @default(0)
-  villes          String[] @default([])
   creneaux        String[] @default([])
   whatsapp        String   @default("") // ton numéro, format international sans + (ex. 972501234567)
   messageAccueil  String   @default("")
@@ -159,4 +159,15 @@ model PlageTarifaire {
   ordre          Int      @default(0)
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())
+}
+
+// Une ville livrée. La livraison = livraison du tarif du moment + supplément de la ville.
+model Ville {
+  id                  String   @id @default(cuid())
+  nom                 String   @unique
+  supplementLivraison Int      @default(0) // en agorot, ajouté à la livraison
+  minimumCommande     Int      @default(0) // minimum d'articles pour cette ville (0 = celui des Réglages)
+  active              Boolean  @default(true)
+  ordre               Int      @default(0)
+  createdAt           DateTime @default(now())
 }

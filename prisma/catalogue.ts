@@ -202,3 +202,31 @@ export const PLAGES_EXEMPLE = [
   { nom: "Week-end", jours: [5, 6], debut: "00:00", fin: "00:00", fraisService: 2000, fraisLivraison: 4000, fraisExpress: 3000, majorationPct: 0, ordre: 10 },
   { nom: "Soirée & nuit", jours: [0, 1, 2, 3, 4, 5, 6], debut: "21:00", fin: "08:00", fraisService: 2000, fraisLivraison: 4500, fraisExpress: 0, majorationPct: 10, ordre: 20 },
 ];
+
+// Les villes livrées au départ, autour de Netanya, créées seulement si aucune
+// n'existe encore. Suppléments de livraison D'EXEMPLE (agorot), à ajuster dans
+// Admin → Villes : proches = prix de base, puis +15 ₪ (~20 km), puis +25 ₪ (~30 km et plus).
+export const VILLES_EXEMPLE = [
+  // Netanya et alentours immédiats
+  { nom: "Netanya", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Even Yehuda", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Kfar Yona", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Kadima-Tsoran", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Pardesia", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Beit Yitzhak", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Tsur Moshe", supplementLivraison: 0, minimumCommande: 0 },
+  { nom: "Udim", supplementLivraison: 0, minimumCommande: 0 },
+  // Un peu plus loin
+  { nom: "Herzliya", supplementLivraison: 1500, minimumCommande: 0 },
+  { nom: "Ra'anana", supplementLivraison: 1500, minimumCommande: 0 },
+  { nom: "Kfar Saba", supplementLivraison: 1500, minimumCommande: 0 },
+  { nom: "Hod Hasharon", supplementLivraison: 1500, minimumCommande: 0 },
+  { nom: "Hadera", supplementLivraison: 1500, minimumCommande: 0 },
+  // Tel Aviv et sa région
+  { nom: "Tel Aviv", supplementLivraison: 2500, minimumCommande: 0 },
+  { nom: "Ramat HaSharon", supplementLivraison: 2500, minimumCommande: 0 },
+  { nom: "Ramat Gan", supplementLivraison: 2500, minimumCommande: 0 },
+  { nom: "Givatayim", supplementLivraison: 2500, minimumCommande: 0 },
+  { nom: "Petah Tikva", supplementLivraison: 2500, minimumCommande: 0 },
+  { nom: "Césarée", supplementLivraison: 2500, minimumCommande: 0 },
+];

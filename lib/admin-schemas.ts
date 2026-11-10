@@ -111,7 +111,6 @@ export const reglagesSchema = z.object({
     return montants.sort((a, b) => a - b);
   }),
   paiements: lignes(8, 40, true),
-  villes: lignes(40, 60),
   creneaux: lignes(20, 60),
   whatsapp: z
     .string()

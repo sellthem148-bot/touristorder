@@ -263,7 +263,6 @@ export async function enregistrerReglages(form: FormData) {
     minimumCommande: texte(form, "minimumCommande"),
     pourboires: texte(form, "pourboires"),
     paiements: texte(form, "paiements"),
-    villes: texte(form, "villes"),
     creneaux: texte(form, "creneaux"),
     whatsapp: texte(form, "whatsapp"),
     messageAccueil: texte(form, "messageAccueil"),
@@ -366,4 +365,65 @@ export async function enregistrerPrixRapides(form: FormData) {
       modifs.length === 0 ? "Aucun changement." : `${modifs.length} article${modifs.length > 1 ? "s" : ""} enregistré${modifs.length > 1 ? "s" : ""}, dont ${enLigne} en ligne.`,
     ),
   );
+}
+
+// ─── Villes livrées ───────────────────────────────────────────────────────
+
+const montantOuZero = (t: string) => (t.trim() === "" ? 0 : lirePrix(t));
+
+/** Enregistre toute la liste des villes d'un coup (noms, suppléments, minimums, actives, retirées). Tout ou rien. */
+export async function enregistrerVilles(form: FormData) {
+  await exigerAdmin();
+  const ids = [...new Set(form.getAll("ids").map(String))].filter((x) => x.length > 0 && x.length <= 40).slice(0, 200);
+  const erreurs: string[] = [];
+  const aGarder: { id: string; nom: string; supplementLivraison: number; minimumCommande: number; active: boolean }[] = [];
+  const aRetirer: string[] = [];
+  for (const villeId of ids) {
+    if (form.get(`retirer_${villeId}`) === "on") {
+      aRetirer.push(villeId);
+      continue;
+    }
+    const nom = texte(form, `nom_${villeId}`).trim();
+    const supplement = montantOuZero(texte(form, `supp_${villeId}`));
+    const minimum = montantOuZero(texte(form, `min_${villeId}`));
+    if (nom.length < 2 || nom.length > 60) erreurs.push(`nom « ${nom || "vide"} »`);
+    if (supplement == null) erreurs.push(`supplément de ${nom}`);
+    if (minimum == null) erreurs.push(`minimum de ${nom}`);
+    if (supplement == null || minimum == null) continue;
+    aGarder.push({ id: villeId, nom, supplementLivraison: supplement, minimumCommande: minimum, active: form.get(`active_${villeId}`) === "on" });
+  }
+  const noms = aGarder.map((v) => v.nom.toLowerCase());
+  const doublons = noms.filter((n, i) => noms.indexOf(n) !== i);
+  if (doublons.length) erreurs.push(`ville en double « ${doublons[0]} »`);
+  if (erreurs.length) {
+    redirect(avecMessage("/admin/villes", "erreur", `Rien n'a été enregistré. À corriger : ${erreurs.slice(0, 4).join(", ")}.`));
+  }
+  try {
+    await prisma.$transaction([
+      prisma.ville.deleteMany({ where: { id: { in: aRetirer } } }),
+      ...aGarder.map(({ id: villeId, ...data }) => prisma.ville.update({ where: { id: villeId }, data })),
+    ]);
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      redirect(avecMessage("/admin/villes", "erreur", "Deux villes portent le même nom."));
+    }
+    throw e;
+  }
+  redirect(avecMessage("/admin/villes", "ok", `Villes enregistrées${aRetirer.length ? ` (${aRetirer.length} retirée${aRetirer.length > 1 ? "s" : ""})` : ""}.`));
+}
+
+export async function ajouterVille(form: FormData) {
+  await exigerAdmin();
+  const nom = texte(form, "nom").trim();
+  const supplement = montantOuZero(texte(form, "supplement"));
+  const minimum = montantOuZero(texte(form, "minimum"));
+  if (nom.length < 2 || nom.length > 60) redirect(avecMessage("/admin/villes", "erreur", "Nom de ville trop court ou trop long."));
+  if (supplement == null || minimum == null) redirect(avecMessage("/admin/villes", "erreur", "Montant illisible (ex. 15 ou 12,50)."));
+  const existe = await prisma.ville.findFirst({ where: { nom: { equals: nom, mode: "insensitive" } }, select: { id: true } });
+  if (existe) redirect(avecMessage("/admin/villes", "erreur", `« ${nom} » est déjà dans la liste.`));
+  const dernier = await prisma.ville.aggregate({ _max: { ordre: true } });
+  await prisma.ville.create({
+    data: { nom, supplementLivraison: supplement, minimumCommande: minimum, ordre: (dernier._max.ordre ?? 0) + 10 },
+  });
+  redirect(avecMessage("/admin/villes", "ok", `« ${nom} » ajoutée.`));
 }

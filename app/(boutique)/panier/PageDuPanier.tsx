@@ -8,6 +8,7 @@ import { IconeEclair } from "@/components/Icones";
 import { calculerTotaux } from "@/lib/calcul";
 import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
 import { RecapMontants } from "@/components/RecapMontants";
+import { fraisDeLivraison, minimumPour } from "@/lib/villes";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { REMPLACEMENTS, type Remplacement } from "@/lib/choix-commande";
 import type { ReglagesPublics } from "@/lib/reglages";
@@ -50,7 +51,7 @@ export function PageDuPanier({ reglages, jours }: Props) {
   const [v, setV] = useState<Valeurs>({
     nomClient: "",
     telephone: "",
-    ville: reglages.villes.length === 1 ? reglages.villes[0] : "",
+    ville: reglages.villes.length === 1 ? reglages.villes[0].nom : "",
     adresse: "",
     dateLivraison: jours[0]?.valeur ?? "",
     creneau: reglages.creneaux[0] ?? "",
@@ -105,16 +106,20 @@ export function PageDuPanier({ reglages, jours }: Props) {
   const tarif = tarifDeLaLivraison(v.dateLivraison, v.creneau, reglages.plages, reglages);
   const expressPossible = tarif.fraisExpress > 0;
   const express = v.express && expressPossible;
+  // La ville choisie ajoute son supplément de livraison (et peut avoir son minimum).
+  const ville = reglages.villes.find((x) => x.nom === v.ville);
+  const livraison = fraisDeLivraison(tarif, ville, false);
+  const minimum = minimumPour(ville, reglages.minimumCommande);
   const totaux = calculerTotaux(
     panier.articles.map((a) => ({ prixUnitaire: a.prix, quantite: a.quantite })),
     {
       fraisService: tarif.fraisService,
-      fraisLivraison: tarif.fraisLivraison + (express ? tarif.fraisExpress : 0),
+      fraisLivraison: fraisDeLivraison(tarif, ville, express),
       pourboire: v.pourboire,
       majorationPct: tarif.majorationPct,
     },
   );
-  const sousLeMinimum = totaux.sousTotal < reglages.minimumCommande;
+  const sousLeMinimum = totaux.sousTotal < minimum;
 
   const texte = (nom: "nomClient" | "telephone" | "adresse" | "notes") => ({
     id: nom,
@@ -209,7 +214,12 @@ export function PageDuPanier({ reglages, jours }: Props) {
               className={`champ ${erreur("ville") ? "champ-erreur" : ""}`}
             >
               <option value="">Choisir…</option>
-              {reglages.villes.map((x) => <option key={x} value={x}>{x}</option>)}
+              {reglages.villes.map((x) => (
+                <option key={x.nom} value={x.nom}>
+                  {x.nom}
+                  {x.supplementLivraison > 0 ? ` (livraison +${formatPrixCourt(x.supplementLivraison)})` : ""}
+                </option>
+              ))}
             </select>
             {messageErreur("ville")}
           </div>
@@ -249,8 +259,9 @@ export function PageDuPanier({ reglages, jours }: Props) {
             <strong>{tarif.nom === NOM_TARIF_DE_BASE ? "Tarif normal" : `Tarif ${tarif.nom.toLowerCase()}`}</strong>
             {" · "}
             {reglages.fraisRegroupes
-              ? `service et livraison ${formatPrixCourt(tarif.fraisService + tarif.fraisLivraison)}`
-              : `service ${formatPrixCourt(tarif.fraisService)}, livraison ${formatPrixCourt(tarif.fraisLivraison)}`}
+              ? `service et livraison ${formatPrixCourt(tarif.fraisService + livraison)}`
+              : `service ${formatPrixCourt(tarif.fraisService)}, livraison ${formatPrixCourt(livraison)}`}
+            {ville && ville.supplementLivraison > 0 && ` (dont +${formatPrixCourt(ville.supplementLivraison)} pour ${ville.nom})`}
             {tarif.majorationPct > 0 && `, articles +${tarif.majorationPct} %`}
           </p>
 
@@ -339,6 +350,7 @@ export function PageDuPanier({ reglages, jours }: Props) {
             tarifNom={tarif.nom}
             majorationPct={tarif.majorationPct}
             nombreArticles={panier.nombre}
+            ville={ville?.nom}
           />
           <p className="rounded-2xl bg-sable p-3 text-xs text-slate-700">
             Tu paies à la livraison. Un article qui manque n&apos;est pas facturé.
@@ -359,7 +371,7 @@ export function PageDuPanier({ reglages, jours }: Props) {
           {etat.erreur && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm font-medium text-red-800">{etat.erreur}</p>}
           {sousLeMinimum && (
             <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
-              Minimum de commande : {formatPrix(reglages.minimumCommande)} d&apos;articles.
+              Minimum de commande{ville && ville.minimumCommande > reglages.minimumCommande ? ` pour ${ville.nom}` : ""} : {formatPrix(minimum)} d&apos;articles.
             </p>
           )}
           {!reglages.ouvert && (

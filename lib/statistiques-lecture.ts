@@ -8,7 +8,7 @@ export async function lireStatistiques(maintenant = new Date()) {
   const commandes = await prisma.commande.findMany({
     where: { createdAt: { gte: depuis } },
     select: {
-      createdAt: true, statut: true, total: true, pourboire: true, express: true,
+      createdAt: true, statut: true, total: true, pourboire: true, express: true, ville: true,
       lignes: { select: { nom: true, quantite: true, prixUnitaire: true, prixAchatUnitaire: true, indisponible: true } },
     },
   });

@@ -131,7 +131,7 @@ try {
   await client.getByText("21:00 – 00:00", { exact: true }).click();
   await client.getByLabel("Ton nom").fill("David Lévy");
   await client.getByLabel("Ton numéro WhatsApp").fill("+33 6 11 22 33 44");
-  await client.getByLabel("Ville").selectOption("Tel Aviv");
+  await client.getByLabel("Ville").selectOption("Netanya");
   await client.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Carlton, chambre 210");
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);

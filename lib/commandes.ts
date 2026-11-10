@@ -6,6 +6,7 @@ import { commandeSchema, erreursParChamp, regrouperLignes } from "./validation";
 import { joursProposes } from "./dates";
 import { lireReglages, plagesActives } from "./reglages";
 import { tarifDeLaLivraison } from "./tarifs";
+import { fraisDeLivraison, minimumPour } from "./villes";
 import { formatPrix } from "./argent";
 import { lireGroupes, resoudreSelection } from "./options";
 
@@ -30,7 +31,11 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
   if (!reglages.ouvert) {
     return { ok: false, erreur: "Les commandes sont fermées pour le moment. Réessaie un peu plus tard." };
   }
-  if (!reglages.villes.includes(saisie.ville)) {
+  const ville = await prisma.ville.findFirst({
+    where: { nom: saisie.ville, active: true },
+    select: { nom: true, supplementLivraison: true, minimumCommande: true },
+  });
+  if (!ville) {
     return { ok: false, erreur: CHAMPS, champs: { ville: "On ne livre pas encore cette ville." } };
   }
   if (!reglages.creneaux.includes(saisie.creneau)) {
@@ -83,7 +88,7 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
     });
   }
 
-  const tarifLivraison = tarif.fraisLivraison + (saisie.express ? tarif.fraisExpress : 0);
+  const tarifLivraison = fraisDeLivraison(tarif, ville, saisie.express);
   const totaux = calculerTotaux(aCopier, {
     fraisService: tarif.fraisService,
     fraisLivraison: tarifLivraison,
@@ -91,8 +96,9 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
     majorationPct: tarif.majorationPct,
   });
 
-  if (totaux.sousTotal < reglages.minimumCommande) {
-    return { ok: false, erreur: `Le minimum de commande est de ${formatPrix(reglages.minimumCommande)} (hors frais).` };
+  const minimum = minimumPour(ville, reglages.minimumCommande);
+  if (totaux.sousTotal < minimum) {
+    return { ok: false, erreur: `Le minimum de commande pour ${ville.nom} est de ${formatPrix(minimum)} d'articles (hors frais).` };
   }
 
   const jeton = randomBytes(18).toString("base64url");
@@ -113,6 +119,7 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
       tarifService: tarif.fraisService,
       tarifLivraison,
       tarifPourboire: pourboire,
+      supplementVille: ville.supplementLivraison,
       tarifNom: tarif.nom,
       majorationPct: tarif.majorationPct,
       lignes: { create: aCopier },

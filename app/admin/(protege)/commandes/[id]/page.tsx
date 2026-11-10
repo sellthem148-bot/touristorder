@@ -139,8 +139,12 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
               tarifNom={c.tarifNom}
               majorationPct={c.majorationPct}
               libelleTotal="À encaisser"
+              ville={c.ville}
             />
             <dl className="mt-2 space-y-1">
+              {c.supplementVille > 0 && (
+                <div className="flex justify-between text-slate-600"><dt>dont supplément {c.ville}</dt><dd>{formatPrix(c.supplementVille)}</dd></div>
+              )}
               <div className="flex justify-between text-slate-600"><dt>Coût des articles sur Wolt</dt><dd>{formatPrix(marge.cout)}</dd></div>
               <div className="flex justify-between font-semibold text-emerald-700">
                 <dt>Ta marge estimée</dt>

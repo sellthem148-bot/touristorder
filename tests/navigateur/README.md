@@ -15,6 +15,7 @@ npm run dev -- -p 3100
 mkdir -p /tmp/captures
 node tests/navigateur/parcours-client-et-admin.mjs /tmp/captures
 node tests/navigateur/parcours-prix-et-tarifs.mjs /tmp/captures
+node tests/navigateur/parcours-villes.mjs /tmp/captures
 node tests/navigateur/largeur.mjs /tmp/captures     # aucune page plus large qu'un téléphone de 320 px
 ```
 

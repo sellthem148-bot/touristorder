@@ -63,6 +63,21 @@ export default async function PageStatistiques() {
             </ol>
           )}
         </section>
+        <section className="carte p-5 text-sm">
+          <h2 className="mb-3 font-extrabold">Par ville (30 jours)</h2>
+          {s.parVille.length === 0 ? (
+            <p className="text-slate-500">Pas encore de commandes.</p>
+          ) : (
+            <ul className="space-y-2">
+              {s.parVille.map((v) => (
+                <li key={v.ville} className="flex items-center justify-between gap-3">
+                  <span className="font-medium">{v.ville}</span>
+                  <span className="text-slate-600">{v.commandes} commande{v.commandes > 1 ? "s" : ""} · <strong className="text-slate-900">{formatPrix(v.chiffre)}</strong></span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
         <section className="carte space-y-2 p-5 text-sm">
           <h2 className="mb-1 font-extrabold">En bref (30 jours)</h2>
           <p className="flex justify-between"><span>Pourboires reçus</span><strong>{formatPrix(s.pourboiresMois)}</strong></p>

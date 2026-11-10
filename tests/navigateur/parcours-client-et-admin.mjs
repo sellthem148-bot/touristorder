@@ -48,7 +48,7 @@ await page.getByText("Taille : 6").waitFor();
 ok("le panier affiche la variante choisie");
 await page.getByLabel("Ton nom").fill("Sarah Cohen");
 await page.getByLabel("Ton numéro WhatsApp").fill("+33 6 12 34 56 78");
-await page.getByLabel("Ville").selectOption("Tel Aviv");
+await page.getByLabel("Ville").selectOption("Netanya");
 await page.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Dan, chambre 512");
 await page.getByText("Demain", { exact: true }).click();
 await page.getByText(/Express · \+/).click();

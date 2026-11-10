@@ -25,10 +25,11 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
   - la marge estimée et une note interne.
 - **Prix rapides** : tous les articles d'une catégorie (ou « À compléter » : ceux sans prix) sur un écran, prix de vente, prix d'achat et « En ligne » pour chacun, un seul bouton pour tout enregistrer. Une valeur illisible n'enregistre rien et nomme l'article à corriger.
 - **Tarifs** (selon le moment de la livraison) : des plages horaires (jours cochés + heures, minuit passé ou journée entière) avec leurs propres frais de service, livraison, express (0 = pas d'express) et une **majoration en % des articles** (ex. +10 % la nuit). La première plage active (par priorité) qui contient le moment s'applique, sinon le tarif de base des Réglages. Une grille de la semaine montre quel tarif s'applique à chaque heure. Le client voit le tarif changer en direct quand il choisit le jour et le créneau ; la commande garde le tarif appliqué.
+- **Villes** : les villes livrées (19 au départ, autour de Netanya), chacune avec un **supplément de livraison** et, si besoin, un **minimum de commande**. Livraison payée par le client = livraison du moment (Tarifs) + supplément de la ville. Toute la liste se modifie d'un coup ; un tableau montre le prix de livraison de chaque ville pour chaque tarif (base, week-end, nuit…).
 - **Statistiques** : chiffre, marge estimée et panier moyen (jour, 7 jours, 30 jours), chiffre par jour, les plus vendus, pourboires, part d'express.
 - **Produits** : filtres « À compléter (sans prix) / En ligne / Masqués / Épuisés ». Nom, description, photo, prix de vente (vide = à définir : jamais visible ni commandable), prix barré, badge, options (une par ligne : `Taille : 2 ans | 4 ans | 8 ans +10`), catégorie, ordre, en ligne / masqué, épuisé / en stock, bouton **Dupliquer**. Trois champs ne sont **visibles que par toi** : le prix d'achat sur Wolt, la boutique où le commander et le lien Wolt. Aucune page publique ne les lit (`PRODUIT_PUBLIC` dans `lib/catalogue.ts`).
 - **Catégories** : créer, renommer, réordonner, masquer. Une catégorie qui contient des produits ne se supprime pas.
-- **Réglages** : tarif de base (frais de service, livraison, supplément express (0 = pas d'express), minimum de commande), « Frais de service (livraison comprise) » en une seule ligne pour le client, pourboires proposés, modes de paiement, villes, créneaux, ton WhatsApp, message d'accueil, ouverture et fermeture des commandes.
+- **Réglages** : tarif de base (frais de service, livraison, supplément express (0 = pas d'express), minimum de commande général), « Frais de service (livraison comprise) » en une seule ligne pour le client, pourboires proposés, modes de paiement, créneaux, ton WhatsApp, message d'accueil, ouverture et fermeture des commandes.
 
 ## Lancer en local
 
@@ -38,7 +39,7 @@ Prérequis : Node 20.9 ou plus récent, et PostgreSQL.
 cp .env.example .env        # puis renseigner ADMIN_PASSWORD et SESSION_SECRET
 npm install
 npx prisma db push          # crée les tables
-npm run seed                # 12 catégories, réglages, 2 plages tarifaires d'exemple et la base du catalogue
+npm run seed                # 12 catégories, réglages, 19 villes et 2 plages tarifaires d'exemple, et la base du catalogue
                             # (135 articles SANS prix, masqués) — sans danger en production : n'écrase rien
 npm run seed:demo           # (local seulement) + des prix inventés sur 18 articles, pour tester
 npm run dev                 # http://localhost:3000, admin sur /admin
@@ -61,7 +62,7 @@ Vérifications : `npm run typecheck`, `npm run lint`, `npm test`, et les parcour
    npx prisma db push
    npm run seed
    ```
-   Puis, dans l'admin : **Prix rapides** pour chiffrer les articles, **Tarifs** pour ajuster les plages d'exemple (week-end, soirée & nuit).
+   Puis, dans l'admin : **Prix rapides** pour chiffrer les articles, **Tarifs** pour ajuster les plages d'exemple (week-end, soirée & nuit), **Villes** pour ajuster les suppléments d'exemple (+15 ₪ Herzliya, Ra'anana… ; +25 ₪ Tel Aviv et sa région).
    Ensuite, dans le SQL editor de Supabase, lancer le contenu de `prisma/rls.sql`. Il active la « row level security » sur toutes les tables, sinon la clé publique de Supabase pourrait les lire. À refaire après chaque `db push` qui crée une table.
 3. **Vercel** : importer le dépôt GitHub et renseigner les variables d'environnement :
    - `DATABASE_URL` et `DIRECT_URL` ;

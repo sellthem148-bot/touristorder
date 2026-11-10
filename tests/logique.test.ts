@@ -177,10 +177,10 @@ describe("formulaires admin", () => {
   it("réglages : listes nettoyées", () => {
     const r = reglagesSchema.parse({
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "Espèces",
-      villes: "Tel Aviv\n\n Netanya \nTel Aviv", creneaux: "Dès que possible",
+      creneaux: "Dès que possible\n\n 09:00 – 12:00 \nDès que possible",
       whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true, fraisRegroupes: false,
     });
-    expect(r.villes).toEqual(["Tel Aviv", "Netanya"]);
+    expect(r.creneaux).toEqual(["Dès que possible", "09:00 – 12:00"]);
     expect(r.fraisService).toBe(1500);
     expect(r.minimumCommande).toBe(0);
   });

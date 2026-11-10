@@ -11,11 +11,13 @@ type Props = {
   nombreArticles?: number;
   libelleTotal?: string;
   className?: string;
+  ville?: string; // affichée à côté de la livraison
 };
 
 /** Le détail des montants : une seule présentation pour le panier, le suivi et l'admin. */
-export function RecapMontants({ totaux, regroupes, express, tarifNom, majorationPct, nombreArticles, libelleTotal = "Total", className = "" }: Props) {
+export function RecapMontants({ totaux, regroupes, express, tarifNom, majorationPct, nombreArticles, libelleTotal = "Total", className = "", ville }: Props) {
   const livraison = `Livraison${express ? " express" : ""}`;
+  const pour = ville ? ` · ${ville}` : "";
   return (
     <dl className={`space-y-2 text-sm ${className}`}>
       <div className="flex justify-between gap-3">
@@ -32,13 +34,13 @@ export function RecapMontants({ totaux, regroupes, express, tarifNom, majoration
       )}
       {regroupes ? (
         <div className="flex justify-between gap-3">
-          <dt>Frais de service ({livraison.toLowerCase()} comprise)</dt>
+          <dt>Frais de service ({livraison.toLowerCase()} comprise){pour}</dt>
           <dd className="font-semibold">{formatPrix(totaux.fraisService + totaux.fraisLivraison)}</dd>
         </div>
       ) : (
         <>
           <div className="flex justify-between gap-3"><dt>Frais de service</dt><dd className="font-semibold">{formatPrix(totaux.fraisService)}</dd></div>
-          <div className="flex justify-between gap-3"><dt>{livraison}</dt><dd className="font-semibold">{formatPrix(totaux.fraisLivraison)}</dd></div>
+          <div className="flex justify-between gap-3"><dt>{livraison}{pour}</dt><dd className="font-semibold">{formatPrix(totaux.fraisLivraison)}</dd></div>
         </>
       )}
       {totaux.pourboire > 0 && (

@@ -27,5 +27,6 @@ npm run seed         # catégories + réglages ; seed:demo ajoute des produits d
 - Mobile : une case `sr-only` reste dans un parent `relative` (sinon, dans une rangée qui défile, elle élargit la page), et `fieldset { min-inline-size: 0 }`. Vérifier la largeur avec `innerWidth <= screen.width` : une page trop large se dézoome et `scrollWidth === innerWidth` ne voit rien.
 - Un produit à `prix = 0` est « à définir » : jamais visible ni commandable (`VISIBLE` dans `lib/catalogue.ts`, `creerCommande`), jamais en ligne (`produitSchema`, `basculerProduit`).
 - Tarifs selon le moment : `lib/tarifs.ts` seulement (pur, partagé panier/serveur). Le moment = jour + début du créneau ; la commande copie `tarifNom`, `majorationPct`, et les frais (`tarif*`) pour les recalculs.
+- Villes livrées : table `Ville` ; livraison = `fraisDeLivraison` (`lib/villes.ts`, pur, partagé) = tarif du moment + supplément de la ville (+ express). Le minimum = le plus élevé (général, ville). La commande copie `supplementVille`.
 - La base du catalogue est `prisma/catalogue.ts` ; `npm run seed` n'ajoute que les articles absents (par nom) — n'y mettre aucun prix.
 - Nouvelle table → relancer `prisma/rls.sql` sur Supabase.
