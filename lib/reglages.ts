@@ -32,6 +32,9 @@ export async function reglagesPublics() {
   return {
     fraisService: r.fraisService,
     fraisLivraison: r.fraisLivraison,
+    fraisExpress: r.fraisExpress,
+    pourboires: r.pourboires,
+    paiements: r.paiements,
     minimumCommande: r.minimumCommande,
     villes: r.villes,
     creneaux: r.creneaux,

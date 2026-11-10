@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { enregistrerProduit, type EtatProduit } from "../actions";
 import { Vignette } from "@/components/Vignette";
+import { BADGES } from "@/lib/choix-commande";
 
 type Produit = {
   id: string;
@@ -10,11 +11,15 @@ type Produit = {
   description: string;
   prix: string;
   prixAchat: string;
+  prixBarre: string;
+  badge: string;
+  options: string;
   categorieId: string;
   boutique: string;
   lienWolt: string;
   ordre: string;
   actif: boolean;
+  epuise: boolean;
   photoUrl: string;
 };
 
@@ -33,6 +38,7 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
   // Après une erreur, on réaffiche ce qui avait été saisi.
   const v = (cle: keyof Produit) => etat.valeurs?.[cle] ?? String(produit?.[cle] ?? "");
   const actif = etat.valeurs ? etat.valeurs.actif === "on" : (produit?.actif ?? true);
+  const epuise = etat.valeurs ? etat.valeurs.epuise === "on" : (produit?.epuise ?? false);
   const erreur = (cle: string) =>
     etat.champs?.[cle] ? <p id={`${cle}-erreur`} className="mt-1 text-sm text-red-700">{etat.champs[cle]}</p> : null;
   const attrs = (cle: string) => ({
@@ -69,23 +75,56 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
           </select>
           {erreur("categorieId")}
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="prix" className="etiquette">Prix de vente (₪)</label>
             <input {...attrs("prix")} defaultValue={v("prix")} inputMode="decimal" required placeholder="49,90" />
             {erreur("prix")}
           </div>
           <div>
+            <label htmlFor="prixBarre" className="etiquette">Ancien prix barré (₪)</label>
+            <input {...attrs("prixBarre")} defaultValue={v("prixBarre")} inputMode="decimal" placeholder="Facultatif" />
+            {erreur("prixBarre")}
+          </div>
+          <div>
             <label htmlFor="ordre" className="etiquette">Ordre d&apos;affichage</label>
             <input {...attrs("ordre")} defaultValue={v("ordre") || "0"} inputMode="numeric" />
             {erreur("ordre")}
-            <p className="mt-1 text-xs text-slate-500">Les plus petits en premier.</p>
           </div>
         </div>
-        <label className="flex items-center gap-2 font-medium">
-          <input type="checkbox" name="actif" defaultChecked={actif} className="h-5 w-5" />
-          En ligne (visible dans le catalogue)
-        </label>
+        <div>
+          <label htmlFor="badge" className="etiquette">Badge</label>
+          <select {...attrs("badge")} defaultValue={v("badge")}>
+            <option value="">Aucun</option>
+            {Object.entries(BADGES).map(([cle, b]) => <option key={cle} value={cle}>{b.libelle}</option>)}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">« Populaire » et « Promo » apparaissent dans « Les plus demandés » en haut de l&apos;accueil.</p>
+          {erreur("badge")}
+        </div>
+        <div>
+          <label htmlFor="options" className="etiquette">Options au choix du client (facultatif)</label>
+          <textarea
+            {...attrs("options")}
+            defaultValue={v("options")}
+            rows={3}
+            className={`champ font-mono text-sm ${etat.champs?.options ? "champ-erreur" : ""}`}
+            placeholder={"Taille : 2 ans | 4 ans | 6 ans | 8 ans\nCouleur : Bleu | Rose | Vert +5"}
+          />
+          {erreur("options")}
+          <p className="mt-1 text-xs text-slate-500">
+            Une option par ligne : <code>Nom : choix 1 | choix 2</code>. « +5 » après un choix = 5 ₪ de plus. Le client doit choisir une valeur par option.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <label className="flex items-center gap-2 font-medium">
+            <input type="checkbox" name="actif" defaultChecked={actif} className="h-5 w-5 accent-marque" />
+            En ligne (visible dans le catalogue)
+          </label>
+          <label className="flex items-center gap-2 font-medium">
+            <input type="checkbox" name="epuise" defaultChecked={epuise} className="h-5 w-5 accent-marque" />
+            Épuisé (visible mais pas commandable)
+          </label>
+        </div>
       </div>
 
       <div className="space-y-5">

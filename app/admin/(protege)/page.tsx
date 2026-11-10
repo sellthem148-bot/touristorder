@@ -30,7 +30,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
       take: 100,
       select: {
         id: true, numero: true, statut: true, nomClient: true, ville: true,
-        dateLivraison: true, creneau: true, total: true, createdAt: true,
+        dateLivraison: true, creneau: true, total: true, createdAt: true, express: true,
         _count: { select: { lignes: true } },
       },
     }),
@@ -73,6 +73,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${COULEUR_STATUT[c.statut]}`}>
                   {LIBELLE_STATUT[c.statut]}
                 </span>
+                {c.express && <span className="rounded-full bg-soleil px-2.5 py-0.5 text-xs font-bold text-slate-900">⚡ Express</span>}
                 <span className="font-medium">{c.nomClient}</span>
                 <span className="text-slate-600">{c.ville}</span>
                 <span className="text-slate-600">

@@ -7,10 +7,13 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 ## Ce que fait le site
 
 **Côté client** (web app mobile, en français, sans compte)
-- Catalogue par catégories, recherche.
-- Panier enregistré dans le navigateur ; à l'ouverture du panier, les prix sont remis à jour depuis la base et les articles retirés du catalogue sont enlevés.
-- Commande : nom, numéro WhatsApp, ville, adresse ou hôtel, jour et créneau, note libre. Le total affiche les articles, les frais de service et la livraison.
-- Page de suivi (lien secret propre à chaque commande) : étape en cours, articles indisponibles barrés et non facturés, bouton « Nous écrire sur WhatsApp ». Elle se met à jour toute seule.
+- Catalogue par catégories (tuiles), rayons qui défilent, recherche, rubrique « Les plus demandés » (produits Populaire / Promo).
+- **Fiche produit** au toucher : grande photo, description, **options obligatoires** (taille, modèle, couleur… avec supplément éventuel), quantité.
+- Badges Populaire / Nouveau / Promo (avec prix barré) ; un produit **épuisé** reste visible mais ne se commande pas.
+- Panier enregistré dans le navigateur ; à l'ouverture, prix et options sont remis à jour depuis la base et ce qui n'existe plus est retiré.
+- Commande : nom, WhatsApp, ville, hôtel, jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
+- Page de suivi (lien secret) en frise : étape en cours, articles indisponibles non facturés, bouton WhatsApp. Elle se met à jour toute seule.
+- **Mes commandes** : le navigateur garde les liens de suivi de ses commandes (sans compte).
 
 **Côté gérant** (`/admin`, protégé par mot de passe)
 - **Commandes** : en cours, livrées, annulées. Rafraîchissement automatique toutes les 30 s.
@@ -20,9 +23,10 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
   - le bouton d'étape suivante ;
   - le bouton « Écrire au client sur WhatsApp », avec un message pré-rempli adapté à l'étape ;
   - la marge estimée et une note interne.
-- **Produits** : nom, description, photo, prix de vente, catégorie, ordre, en ligne ou masqué. Trois champs ne sont **visibles que par toi** : le prix d'achat sur Wolt, la boutique où le commander et le lien Wolt. Aucune page publique ne les lit (`PRODUIT_PUBLIC` dans `lib/catalogue.ts`).
+- **Statistiques** : chiffre, marge estimée et panier moyen (jour, 7 jours, 30 jours), chiffre par jour, les plus vendus, pourboires, part d'express.
+- **Produits** : nom, description, photo, prix de vente, prix barré, badge, options (une par ligne : `Taille : 2 ans | 4 ans | 8 ans +10`), catégorie, ordre, en ligne / masqué, épuisé / en stock, bouton **Dupliquer**. Trois champs ne sont **visibles que par toi** : le prix d'achat sur Wolt, la boutique où le commander et le lien Wolt. Aucune page publique ne les lit (`PRODUIT_PUBLIC` dans `lib/catalogue.ts`).
 - **Catégories** : créer, renommer, réordonner, masquer. Une catégorie qui contient des produits ne se supprime pas.
-- **Réglages** : frais de service, frais de livraison, minimum de commande, villes livrées, créneaux, ton numéro WhatsApp, message d'accueil, ouverture et fermeture des commandes.
+- **Réglages** : frais de service, livraison, supplément express (0 = pas d'express), minimum de commande, pourboires proposés, modes de paiement, villes, créneaux, ton WhatsApp, message d'accueil, ouverture et fermeture des commandes.
 
 ## Lancer en local
 
@@ -74,6 +78,8 @@ Vérifications : `npm run typecheck`, `npm run lint`, `npm test`.
 - **Une ligne de commande garde une copie du produit** (nom, prix, prix d'achat, boutique). Modifier ou supprimer un produit ne change pas les commandes passées.
 - **Les classes maison** (`bouton`, `champ`, `carte`…) sont des `@utility` Tailwind, dans `app/globals.css`. Le chargeur Tailwind de Turbopack sortait les règles de `@layer components` de leur couche, et elles écrasaient alors `bg-…` ou `w-…`.
 - Les jours sont des jours **israéliens** (`lib/dates.ts`).
+- **Options d'un produit** : une seule définition (`lib/options.ts`) pour la saisie admin, le panier et le serveur, qui revérifie le choix et recalcule le supplément.
+- **Mobile** : une case masquée (`sr-only`) doit rester dans un parent `relative` (la classe `pastille` l'est), et un `fieldset` doit pouvoir rétrécir (`min-inline-size: 0`, dans `globals.css`). Sans cela, une rangée qui défile élargissait toute la page sur téléphone.
 
 ## Pas encore fait (V2)
 

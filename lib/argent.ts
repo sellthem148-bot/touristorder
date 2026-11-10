@@ -10,6 +10,11 @@ export function formatPrix(agorot: number): string {
   return `${formateur.format(agorot / 100)} ₪`;
 }
 
+/** 1000 → « 10 ₪ », 1250 → « 12,50 ₪ » (pastilles, badges). */
+export function formatPrixCourt(agorot: number): string {
+  return agorot % 100 === 0 ? `${new Intl.NumberFormat("fr-FR").format(agorot / 100)} ₪` : formatPrix(agorot);
+}
+
 /** Valeur d'un champ de formulaire (« 12,90 », « 12.9 », « 12 ») → 1290. null si illisible. */
 export function lirePrix(texte: string): number | null {
   const propre = texte.trim().replace(/\s|₪/g, "").replace(",", ".");

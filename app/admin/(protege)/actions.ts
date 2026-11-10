@@ -48,11 +48,15 @@ export async function modifierLigne(form: FormData) {
     });
     const commande = await tx.commande.findUniqueOrThrow({
       where: { id: ligne.commandeId },
-      select: { tarifService: true, tarifLivraison: true, lignes: { select: { prixUnitaire: true, quantite: true, indisponible: true } } },
+      select: {
+        tarifService: true, tarifLivraison: true, tarifPourboire: true,
+        lignes: { select: { prixUnitaire: true, quantite: true, indisponible: true } },
+      },
     });
     const totaux = calculerTotaux(commande.lignes, {
       fraisService: commande.tarifService,
       fraisLivraison: commande.tarifLivraison,
+      pourboire: commande.tarifPourboire,
     });
     await tx.commande.update({ where: { id: ligne.commandeId }, data: totaux });
   });
@@ -83,12 +87,16 @@ export type EtatProduit = {
 export async function enregistrerProduit(_avant: EtatProduit, form: FormData): Promise<EtatProduit> {
   await exigerAdmin();
   const produitId = id(form);
-  const valeurs = Object.fromEntries(
-    ["nom", "description", "prix", "prixAchat", "categorieId", "boutique", "lienWolt", "ordre"].map((k) => [k, texte(form, k)]),
+  const valeurs: Record<string, string> = Object.fromEntries(
+    ["nom", "description", "prix", "prixAchat", "prixBarre", "categorieId", "boutique", "lienWolt", "ordre", "badge", "options"].map(
+      (k) => [k, texte(form, k)],
+    ),
   );
-  const lecture = produitSchema.safeParse({ ...valeurs, actif: form.get("actif") === "on" });
+  valeurs.actif = form.get("actif") === "on" ? "on" : "";
+  valeurs.epuise = form.get("epuise") === "on" ? "on" : "";
+  const lecture = produitSchema.safeParse({ ...valeurs, actif: valeurs.actif === "on", epuise: valeurs.epuise === "on" });
   if (!lecture.success) {
-    return { erreur: "Vérifie les champs en rouge.", champs: erreursParChamp(lecture.error), valeurs: { ...valeurs, actif: form.get("actif") === "on" ? "on" : "" }, essai: Date.now() };
+    return { erreur: "Vérifie les champs en rouge.", champs: erreursParChamp(lecture.error), valeurs, essai: Date.now() };
   }
   const data = lecture.data;
 
@@ -105,7 +113,7 @@ export async function enregistrerProduit(_avant: EtatProduit, form: FormData): P
   const fichier = form.get("photo");
   if (fichier instanceof File && fichier.size > 0) {
     const envoi = await enregistrerPhoto(fichier);
-    if (!envoi.ok) return { erreur: envoi.erreur, champs: { photo: envoi.erreur }, valeurs: { ...valeurs, actif: data.actif ? "on" : "" }, essai: Date.now() };
+    if (!envoi.ok) return { erreur: envoi.erreur, champs: { photo: envoi.erreur }, valeurs, essai: Date.now() };
     photoUrl = envoi.url;
   } else if (form.get("retirerPhoto") === "on") {
     photoUrl = "";
@@ -116,7 +124,7 @@ export async function enregistrerProduit(_avant: EtatProduit, form: FormData): P
   } else {
     await prisma.produit.create({ data: { ...data, photoUrl } });
   }
-  if (ancienne && ancienne !== photoUrl) await supprimerPhoto(ancienne);
+  if (ancienne && ancienne !== photoUrl) await supprimerPhotoSiOrpheline(ancienne);
 
   redirect(avecMessage("/admin/produits", "ok", produitId ? `« ${data.nom} » enregistré.` : `« ${data.nom} » ajouté.`));
 }
@@ -131,14 +139,58 @@ export async function basculerProduit(form: FormData) {
   refresh();
 }
 
+export async function basculerEpuise(form: FormData) {
+  await exigerAdmin();
+  const produitId = id(form);
+  if (!produitId) return;
+  const p = await prisma.produit.findUnique({ where: { id: produitId }, select: { epuise: true } });
+  if (!p) return;
+  await prisma.produit.update({ where: { id: produitId }, data: { epuise: !p.epuise } });
+  refresh();
+}
+
 export async function supprimerProduit(form: FormData) {
   await exigerAdmin();
   const produitId = id(form);
   if (!produitId) return;
   // Les commandes passées gardent leur copie du produit (nom, prix, boutique).
   const p = await prisma.produit.delete({ where: { id: produitId }, select: { nom: true, photoUrl: true } }).catch(() => null);
-  if (p?.photoUrl) await supprimerPhoto(p.photoUrl);
+  if (p?.photoUrl) await supprimerPhotoSiOrpheline(p.photoUrl);
   redirect(avecMessage("/admin/produits", "ok", p ? `« ${p.nom} » supprimé.` : "Produit déjà supprimé."));
+}
+
+/** Une copie masquée du produit (même photo, mêmes options), à compléter. */
+export async function dupliquerProduit(form: FormData) {
+  await exigerAdmin();
+  const produitId = id(form);
+  if (!produitId) return;
+  const p = await prisma.produit.findUnique({ where: { id: produitId } });
+  if (!p) redirect(avecMessage("/admin/produits", "erreur", "Ce produit n'existe plus."));
+  const copie = await prisma.produit.create({
+    data: {
+      nom: `${p.nom} (copie)`.slice(0, 120),
+      description: p.description,
+      prix: p.prix,
+      prixBarre: p.prixBarre,
+      prixAchat: p.prixAchat,
+      photoUrl: p.photoUrl,
+      badge: p.badge,
+      options: p.options ?? [],
+      boutique: p.boutique,
+      lienWolt: p.lienWolt,
+      ordre: p.ordre,
+      categorieId: p.categorieId,
+      actif: false, // masquée tant que tu ne l'as pas relue
+    },
+    select: { id: true },
+  });
+  redirect(`/admin/produits/${copie.id}?ok=${encodeURIComponent("Copie créée (masquée) : modifie-la puis coche « En ligne ».")}`);
+}
+
+/** Une photo partagée par une copie de produit ne quitte le stockage qu'avec le dernier produit qui l'utilise. */
+async function supprimerPhotoSiOrpheline(url: string) {
+  const encore = await prisma.produit.count({ where: { photoUrl: url } });
+  if (encore === 0) await supprimerPhoto(url);
 }
 
 // ─── Catégories ───────────────────────────────────────────────────────────
@@ -202,7 +254,10 @@ export async function enregistrerReglages(form: FormData) {
   const lecture = reglagesSchema.safeParse({
     fraisService: texte(form, "fraisService"),
     fraisLivraison: texte(form, "fraisLivraison"),
+    fraisExpress: texte(form, "fraisExpress"),
     minimumCommande: texte(form, "minimumCommande"),
+    pourboires: texte(form, "pourboires"),
+    paiements: texte(form, "paiements"),
     villes: texte(form, "villes"),
     creneaux: texte(form, "creneaux"),
     whatsapp: texte(form, "whatsapp"),

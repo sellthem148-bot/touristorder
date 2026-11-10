@@ -38,7 +38,7 @@ describe("calcul d'une commande", () => {
   const frais = { fraisService: 1500, fraisLivraison: 3000 };
   it("additionne articles et frais", () => {
     const t = calculerTotaux([{ prixUnitaire: 990, quantite: 2 }, { prixUnitaire: 2490, quantite: 1 }], frais);
-    expect(t).toEqual({ sousTotal: 4470, fraisService: 1500, fraisLivraison: 3000, total: 8970 });
+    expect(t).toEqual({ sousTotal: 4470, fraisService: 1500, fraisLivraison: 3000, pourboire: 0, total: 8970 });
   });
   it("n'inclut pas les articles indisponibles", () => {
     const t = calculerTotaux([{ prixUnitaire: 990, quantite: 2 }, { prixUnitaire: 2490, quantite: 1, indisponible: true }], frais);
@@ -132,6 +132,7 @@ describe("validation d'une commande", () => {
     dateLivraison: "2026-11-10",
     creneau: "Dès que possible",
     notes: "",
+    remplacement: "CONTACTER",
     lignes: [{ produitId: "abc", quantite: 2 }],
   };
   it("accepte une commande correcte (et nettoie les espaces)", () => {
@@ -159,7 +160,10 @@ describe("validation d'une commande", () => {
 });
 
 describe("formulaires admin", () => {
-  const produit = { nom: "Chargeur", description: "", prix: "49,90", prixAchat: "", categorieId: "c1", boutique: "", lienWolt: "", ordre: "", actif: true };
+  const produit = {
+    nom: "Chargeur", description: "", prix: "49,90", prixAchat: "", prixBarre: "", categorieId: "c1", boutique: "", lienWolt: "",
+    ordre: "", actif: true, epuise: false, badge: "", options: "",
+  };
   it("produit : prix en agorot, prix d'achat facultatif", () => {
     const r = produitSchema.parse(produit);
     expect(r.prix).toBe(4990);
@@ -172,7 +176,7 @@ describe("formulaires admin", () => {
   });
   it("réglages : listes nettoyées", () => {
     const r = reglagesSchema.parse({
-      fraisService: "15", fraisLivraison: "30", minimumCommande: "",
+      fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "Espèces",
       villes: "Tel Aviv\n\n Netanya \nTel Aviv", creneaux: "Dès que possible",
       whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true,
     });

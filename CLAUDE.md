@@ -23,4 +23,6 @@ npm run seed         # catégories + réglages ; seed:demo ajoute des produits d
 - Classes CSS maison = `@utility` dans `app/globals.css` (pas `@layer components` : sorti de sa couche par le chargeur Turbopack, il écrasait les utilitaires).
 - Formulaire non contrôlé + `useActionState` : React le vide après l'action et un `<select>` perd sa valeur → reconstruire le formulaire (`key`) avec les valeurs renvoyées (voir `FormulaireProduit.tsx`), ou utiliser des champs contrôlés (`PageDuPanier.tsx`).
 - Jours = jours israéliens (`lib/dates.ts`), stockés `AAAA-MM-JJ`.
+- Options produit (variantes) : `lib/options.ts` seulement — saisie admin, clé de panier, validation et supplément côté serveur.
+- Mobile : une case `sr-only` reste dans un parent `relative` (sinon, dans une rangée qui défile, elle élargit la page), et `fieldset { min-inline-size: 0 }`. Vérifier la largeur avec `innerWidth <= screen.width` : une page trop large se dézoome et `scrollWidth === innerWidth` ne voit rien.
 - Nouvelle table → relancer `prisma/rls.sql` sur Supabase.

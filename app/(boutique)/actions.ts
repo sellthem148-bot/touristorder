@@ -5,6 +5,7 @@ import { creerCommande } from "@/lib/commandes";
 import { etatDuPanier } from "@/lib/catalogue";
 import { autoriser } from "@/lib/limite";
 import { ipDuVisiteur } from "@/lib/ip";
+import { prisma } from "@/lib/prisma";
 
 export type EtatCommande = {
   erreur?: string;
@@ -42,6 +43,10 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     dateLivraison: form.get("dateLivraison") ?? "",
     creneau: form.get("creneau") ?? "",
     notes: form.get("notes") ?? "",
+    express: form.get("express") === "1",
+    remplacement: form.get("remplacement") ?? "",
+    paiement: form.get("paiement") ?? "",
+    pourboire: Number(form.get("pourboire") ?? 0),
     lignes,
   });
 
@@ -49,4 +54,22 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     return { erreur: resultat.erreur, champs: resultat.champs, panierPerime: resultat.panierPerime };
   }
   redirect(`/suivi/${resultat.jeton}?nouvelle=1`);
+}
+
+/**
+ * « Mes commandes » : le navigateur garde les liens de suivi de ses commandes
+ * (pas de compte). On ne rend que ce que la page de suivi montre déjà.
+ */
+export async function mesCommandes(jetons: string[]) {
+  if (!Array.isArray(jetons)) return [];
+  const valides = jetons.filter((j) => typeof j === "string" && /^[A-Za-z0-9_-]{20,40}$/.test(j)).slice(0, 20);
+  if (valides.length === 0) return [];
+  return prisma.commande.findMany({
+    where: { jeton: { in: valides } },
+    orderBy: { createdAt: "desc" },
+    select: {
+      jeton: true, numero: true, statut: true, total: true, dateLivraison: true, creneau: true, createdAt: true,
+      _count: { select: { lignes: true } },
+    },
+  });
 }

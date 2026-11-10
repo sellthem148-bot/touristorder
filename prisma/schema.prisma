@@ -29,6 +29,15 @@ model Produit {
   prix        Int // prix de vente au client, en agorot
   photoUrl    String          @default("")
   actif       Boolean         @default(true)
+  // Visible dans le catalogue mais impossible à commander (rupture passagère).
+  epuise      Boolean         @default(false)
+  // "" | "populaire" | "nouveau" | "promo"
+  badge       String          @default("")
+  // Ancien prix affiché barré (promo). Toujours supérieur à `prix`.
+  prixBarre   Int?
+  // Variantes : [{ nom: "Taille", choix: [{ libelle: "4 ans", supplement: 0 }] }]
+  // Le client choisit une valeur par groupe. Lu et validé par lib/options.ts.
+  options     Json            @default("[]")
   ordre       Int             @default(0)
   categorieId String
   categorie   Categorie       @relation(fields: [categorieId], references: [id], onDelete: Restrict)
@@ -66,15 +75,21 @@ model Commande {
   dateLivraison  String // AAAA-MM-JJ, jour israélien
   creneau        String
   notes          String          @default("")
+  express        Boolean         @default(false)
+  // Si un article manque : CONTACTER | EQUIVALENT | RETIRER
+  remplacement   String          @default("CONTACTER")
+  paiement       String          @default("")
 
   sousTotal      Int
   fraisService   Int
   fraisLivraison Int
+  pourboire      Int             @default(0)
   total          Int
   // Les frais en vigueur au moment de la commande : si tu retires des
   // articles puis les remets, les frais reviennent à ce montant.
   tarifService   Int
-  tarifLivraison Int
+  tarifLivraison Int // express compris
+  tarifPourboire Int             @default(0)
 
   noteInterne    String          @default("")
   lignes         LigneCommande[]
@@ -93,7 +108,8 @@ model LigneCommande {
   produitId         String?
   produit           Produit? @relation(fields: [produitId], references: [id], onDelete: SetNull)
   nom               String
-  prixUnitaire      Int
+  options           String   @default("") // « Taille : 4 ans · Couleur : bleu »
+  prixUnitaire      Int // options comprises
   prixAchatUnitaire Int?
   boutique          String   @default("")
   lienWolt          String   @default("")
@@ -109,6 +125,9 @@ model Reglages {
   id              Int      @id @default(1)
   fraisService    Int      @default(1500)
   fraisLivraison  Int      @default(3000)
+  fraisExpress    Int      @default(0) // supplément livraison express ; 0 = pas d'express
+  pourboires      Int[]    @default([0, 1000, 1500, 2000]) // montants proposés ; vide = pas de pourboire
+  paiements       String[] @default(["Espèces", "Bit", "PayBox"])
   minimumCommande Int      @default(0)
   villes          String[] @default([])
   creneaux        String[] @default([])

@@ -2,28 +2,32 @@
 
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 import { QUANTITE_MAX } from "@/lib/calcul";
+import { cleDeVariante, resoudreSelection, type GroupeOptions, type Selection } from "@/lib/options";
 
 export type ArticlePanier = {
+  cle: string; // produit + options choisies
   produitId: string;
   nom: string;
-  prix: number; // agorot, indicatif : le serveur recalcule
+  options?: Selection;
+  optionsLibelle: string; // « Taille : 4 ans · Couleur : bleu »
+  prix: number; // agorot, options comprises — indicatif : le serveur recalcule
   photoUrl: string;
   emoji: string;
   quantite: number;
 };
 
-type ProduitActuel = { id: string; nom: string; prix: number; photoUrl: string };
+type ProduitActuel = { id: string; nom: string; prix: number; photoUrl: string; options: GroupeOptions[] };
 
 type Panier = {
   articles: ArticlePanier[];
   pret: boolean;
   nombre: number;
   sousTotal: number;
-  ajouter: (a: Omit<ArticlePanier, "quantite">) => void;
-  changerQuantite: (produitId: string, quantite: number) => void;
-  retirer: (produitId: string) => void;
+  quantiteDuProduit: (produitId: string) => number;
+  ajouter: (a: Omit<ArticlePanier, "quantite" | "cle">, quantite?: number) => void;
+  changerQuantite: (cle: string, quantite: number) => void;
   vider: () => void;
-  /** Applique les prix actuels du serveur ; retire ce qui n'existe plus. Rend le nombre d'articles retirés. */
+  /** Applique les prix et options actuels du serveur ; retire ce qui n'existe plus. Rend le nombre d'articles retirés. */
   synchroniser: (actuels: ProduitActuel[]) => number;
 };
 
@@ -42,14 +46,21 @@ function lire(): ArticlePanier[] {
           a && typeof a.produitId === "string" && typeof a.nom === "string" &&
           Number.isInteger(a.prix) && Number.isInteger(a.quantite) && a.quantite > 0,
       )
-      .map((a) => ({
-        produitId: a.produitId,
-        nom: a.nom,
-        prix: a.prix,
-        photoUrl: typeof a.photoUrl === "string" ? a.photoUrl : "",
-        emoji: typeof a.emoji === "string" ? a.emoji : "🛍️",
-        quantite: Math.min(a.quantite, QUANTITE_MAX),
-      }));
+      .map((a) => {
+        const options: Selection | undefined =
+          a.options && typeof a.options === "object" && !Array.isArray(a.options) ? a.options : undefined;
+        return {
+          cle: cleDeVariante(a.produitId, options),
+          produitId: a.produitId,
+          nom: a.nom,
+          options,
+          optionsLibelle: typeof a.optionsLibelle === "string" ? a.optionsLibelle : "",
+          prix: a.prix,
+          photoUrl: typeof a.photoUrl === "string" ? a.photoUrl : "",
+          emoji: typeof a.emoji === "string" ? a.emoji : "🛍️",
+          quantite: Math.min(a.quantite, QUANTITE_MAX),
+        };
+      });
   } catch {
     return [];
   }
@@ -90,7 +101,7 @@ function abonner(rappel: () => void) {
   };
 }
 
-function modifierLePanier(f: (a: ArticlePanier[]) => ArticlePanier[]) {
+function modifier(f: (a: ArticlePanier[]) => ArticlePanier[]) {
   const apres = f(instantane().articles);
   etatClient = { articles: apres, pret: true };
   ecrire(apres);
@@ -99,7 +110,6 @@ function modifierLePanier(f: (a: ArticlePanier[]) => ArticlePanier[]) {
 
 export function PanierProvider({ children }: { children: React.ReactNode }) {
   const { articles, pret } = useSyncExternalStore(abonner, instantane, () => SERVEUR);
-  const modifier = modifierLePanier;
 
   const valeur = useMemo<Panier>(
     () => ({
@@ -107,39 +117,42 @@ export function PanierProvider({ children }: { children: React.ReactNode }) {
       pret,
       nombre: articles.reduce((s, a) => s + a.quantite, 0),
       sousTotal: articles.reduce((s, a) => s + a.prix * a.quantite, 0),
-      ajouter: (a) =>
+      quantiteDuProduit: (produitId) =>
+        articles.filter((a) => a.produitId === produitId).reduce((s, a) => s + a.quantite, 0),
+      ajouter: (a, quantite = 1) =>
         modifier((liste) => {
-          const existant = liste.find((x) => x.produitId === a.produitId);
+          const cle = cleDeVariante(a.produitId, a.options);
+          const existant = liste.find((x) => x.cle === cle);
           if (existant) {
-            return liste.map((x) =>
-              x.produitId === a.produitId ? { ...x, quantite: Math.min(x.quantite + 1, QUANTITE_MAX) } : x,
-            );
+            return liste.map((x) => (x.cle === cle ? { ...x, quantite: Math.min(x.quantite + quantite, QUANTITE_MAX) } : x));
           }
-          return [...liste, { ...a, quantite: 1 }];
+          return [...liste, { ...a, cle, quantite: Math.min(quantite, QUANTITE_MAX) }];
         }),
-      changerQuantite: (produitId, quantite) =>
+      changerQuantite: (cle, quantite) =>
         modifier((liste) =>
           quantite <= 0
-            ? liste.filter((x) => x.produitId !== produitId)
-            : liste.map((x) => (x.produitId === produitId ? { ...x, quantite: Math.min(quantite, QUANTITE_MAX) } : x)),
+            ? liste.filter((x) => x.cle !== cle)
+            : liste.map((x) => (x.cle === cle ? { ...x, quantite: Math.min(quantite, QUANTITE_MAX) } : x)),
         ),
-      retirer: (produitId) => modifier((liste) => liste.filter((x) => x.produitId !== produitId)),
       vider: () => modifier(() => []),
       synchroniser: (actuels) => {
         const parId = new Map(actuels.map((p) => [p.id, p]));
-        const retires = articles.filter((a) => !parId.has(a.produitId)).length;
+        let retires = 0;
         modifier((liste) =>
-          liste
-            .filter((a) => parId.has(a.produitId))
-            .map((a) => {
-              const p = parId.get(a.produitId)!;
-              return { ...a, nom: p.nom, prix: p.prix, photoUrl: p.photoUrl };
-            }),
+          liste.flatMap((a) => {
+            const p = parId.get(a.produitId);
+            const choix = p ? resoudreSelection(p.options, a.options) : null;
+            if (!p || !choix?.ok) {
+              retires += 1;
+              return [];
+            }
+            return [{ ...a, nom: p.nom, prix: p.prix + choix.supplement, optionsLibelle: choix.libelle, photoUrl: p.photoUrl }];
+          }),
         );
         return retires;
       },
     }),
-    [articles, pret, modifier],
+    [articles, pret],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;

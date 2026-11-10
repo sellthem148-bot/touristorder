@@ -12,6 +12,8 @@ import { lienWhatsapp } from "@/lib/whatsapp";
 import { messagePourLeClient, prenomDe } from "@/lib/messages-client";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { BoutonCopier } from "@/components/admin/BoutonCopier";
+import { IconeEclair, IconeWhatsapp } from "@/components/Icones";
+import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { changerStatut, enregistrerNoteInterne, modifierLigne } from "../../actions";
 
 export const metadata = { title: "Commande" };
@@ -54,7 +56,7 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
     parBoutique.set(cle, [...(parBoutique.get(cle) ?? []), l]);
   }
   const listeTexte = [...parBoutique]
-    .map(([b, lignes]) => `${b}\n${lignes.filter((l) => !l.indisponible).map((l) => `- ${l.quantite} × ${l.nom}`).join("\n")}`)
+    .map(([b, lignes]) => `${b}\n${lignes.filter((l) => !l.indisponible).map((l) => `- ${l.quantite} × ${l.nom}${l.options ? ` (${l.options})` : ""}`).join("\n")}`)
     .join("\n\n");
 
   return (
@@ -64,8 +66,23 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-extrabold">Commande n°{c.numero}</h1>
         <span className={`rounded-full px-3 py-1 text-sm font-semibold ${COULEUR_STATUT[c.statut]}`}>{LIBELLE_STATUT[c.statut]}</span>
+        {c.express && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-soleil px-3 py-1 text-sm font-bold text-slate-900">
+            <IconeEclair className="h-4 w-4" /> Express
+          </span>
+        )}
         <span className="text-sm text-slate-500">passée le {formatDateHeure(c.createdAt)}</span>
       </div>
+
+      {(estRemplacement(c.remplacement) || c.paiement || c.pourboire > 0) && (
+        <ul className="flex flex-wrap gap-2 text-sm">
+          {estRemplacement(c.remplacement) && (
+            <li className="rounded-full bg-white px-3 py-1.5 shadow-carte">Si un article manque : <strong>{REMPLACEMENTS[c.remplacement].court}</strong></li>
+          )}
+          {c.paiement && <li className="rounded-full bg-white px-3 py-1.5 shadow-carte">Paiement : <strong>{c.paiement}</strong></li>}
+          {c.pourboire > 0 && <li className="rounded-full bg-white px-3 py-1.5 shadow-carte">Pourboire : <strong>{formatPrix(c.pourboire)}</strong></li>}
+        </ul>
+      )}
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-5">
@@ -82,6 +99,7 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
                     <li key={l.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3">
                       <div className={`min-w-0 sm:flex-1 ${l.indisponible ? "text-slate-400 line-through" : ""}`}>
                         <p className="font-medium">{l.quantite} × {l.nom}</p>
+                        {l.options && <p className="text-sm font-semibold text-marque-fonce">{l.options}</p>}
                         <p className="text-xs text-slate-500">
                           {formatPrix(l.prixUnitaire)} l&apos;unité
                           {l.prixAchatUnitaire != null && <> · achat {formatPrix(l.prixAchatUnitaire)}</>}
@@ -115,7 +133,8 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
             <dl className="space-y-1">
               <div className="flex justify-between"><dt>Articles</dt><dd>{formatPrix(c.sousTotal)}</dd></div>
               <div className="flex justify-between"><dt>Frais de service</dt><dd>{formatPrix(c.fraisService)}</dd></div>
-              <div className="flex justify-between"><dt>Livraison</dt><dd>{formatPrix(c.fraisLivraison)}</dd></div>
+              <div className="flex justify-between"><dt>Livraison{c.express ? " express" : ""}</dt><dd>{formatPrix(c.fraisLivraison)}</dd></div>
+              {c.pourboire > 0 && <div className="flex justify-between"><dt>Pourboire</dt><dd>{formatPrix(c.pourboire)}</dd></div>}
               <div className="flex justify-between border-t border-slate-100 pt-1 text-base font-bold"><dt>À encaisser</dt><dd>{formatPrix(c.total)}</dd></div>
               <div className="flex justify-between text-slate-600"><dt>Coût des articles sur Wolt</dt><dd>{formatPrix(marge.cout)}</dd></div>
               <div className="flex justify-between font-semibold text-emerald-700">
@@ -142,8 +161,8 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
               </form>
             )}
             {whatsappClient && (
-              <a href={whatsappClient} target="_blank" rel="noopener noreferrer" className="bouton w-full bg-[#1f9d55] hover:bg-[#177a42]">
-                Écrire au client sur WhatsApp
+              <a href={whatsappClient} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full">
+                <IconeWhatsapp /> Écrire au client sur WhatsApp
               </a>
             )}
             <details className="text-sm">

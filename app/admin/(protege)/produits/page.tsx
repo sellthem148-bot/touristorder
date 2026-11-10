@@ -5,7 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { formatPrix } from "@/lib/argent";
 import { Messages } from "@/components/admin/Messages";
 import { Vignette } from "@/components/Vignette";
-import { basculerProduit } from "../actions";
+import { basculerEpuise, basculerProduit } from "../actions";
+import { PastilleBadge } from "@/components/Prix";
+import { estBadge } from "@/lib/choix-commande";
+import { lireGroupes } from "@/lib/options";
 
 export const metadata = { title: "Produits" };
 
@@ -64,12 +67,16 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
             const marge = p.prixAchat != null ? p.prix - p.prixAchat : null;
             return (
               <li key={p.id} className="flex flex-wrap items-center gap-3 p-3">
-                <Vignette url={p.photoUrl} emoji={p.categorie.emoji} alt="" className="h-14 w-14 shrink-0 rounded-lg" />
+                <Vignette url={p.photoUrl} emoji={p.categorie.emoji} alt="" className="h-14 w-14 shrink-0 rounded-xl" />
                 <div className="min-w-0 flex-1">
-                  <Link href={`/admin/produits/${p.id}`} className="font-semibold hover:underline">{p.nom}</Link>
+                  <p className="flex flex-wrap items-center gap-2">
+                    <Link href={`/admin/produits/${p.id}`} className="font-semibold hover:underline">{p.nom}</Link>
+                    {estBadge(p.badge) && <PastilleBadge badge={p.badge} />}
+                  </p>
                   <p className="text-xs text-slate-500">
                     {p.categorie.nom}
                     {p.boutique && <> · 🏪 {p.boutique}</>}
+                    {lireGroupes(p.options).length > 0 && <> · {lireGroupes(p.options).map((g) => g.nom).join(", ")}</>}
                   </p>
                 </div>
                 <div className="text-right text-sm">
@@ -80,6 +87,16 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
                     </p>
                   )}
                 </div>
+                <form action={basculerEpuise}>
+                  <input type="hidden" name="id" value={p.id} />
+                  <button
+                    type="submit"
+                    className={`w-24 rounded-full px-3 py-1 text-xs font-semibold ${p.epuise ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-600"}`}
+                    aria-label={`${p.epuise ? "Remettre en stock" : "Marquer épuisé"} ${p.nom}`}
+                  >
+                    {p.epuise ? "Épuisé" : "En stock"}
+                  </button>
+                </form>
                 <form action={basculerProduit}>
                   <input type="hidden" name="id" value={p.id} />
                   <button

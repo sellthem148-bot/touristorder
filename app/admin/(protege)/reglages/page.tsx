@@ -21,7 +21,7 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
           Commandes ouvertes
         </label>
 
-        <fieldset className="grid gap-4 sm:grid-cols-3">
+        <fieldset className="grid gap-4 sm:grid-cols-2">
           <legend className="mb-2 font-bold">Tes frais (ta marge)</legend>
           <div>
             <label htmlFor="fraisService" className="etiquette">Frais de service (₪)</label>
@@ -30,6 +30,11 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
           <div>
             <label htmlFor="fraisLivraison" className="etiquette">Livraison (₪)</label>
             <input id="fraisLivraison" name="fraisLivraison" defaultValue={prixPourChamp(r.fraisLivraison)} inputMode="decimal" className="champ" />
+          </div>
+          <div>
+            <label htmlFor="fraisExpress" className="etiquette">Supplément express (₪)</label>
+            <input id="fraisExpress" name="fraisExpress" defaultValue={prixPourChamp(r.fraisExpress)} inputMode="decimal" className="champ" />
+            <p className="mt-1 text-xs text-slate-500">0 = pas d&apos;option express.</p>
           </div>
           <div>
             <label htmlFor="minimumCommande" className="etiquette">Minimum d&apos;articles (₪)</label>
@@ -45,6 +50,19 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
           <div>
             <label htmlFor="creneaux" className="etiquette">Créneaux (un par ligne)</label>
             <textarea id="creneaux" name="creneaux" rows={6} defaultValue={r.creneaux.join("\n")} className="champ" />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="pourboires" className="etiquette">Pourboires proposés (₪)</label>
+            <input id="pourboires" name="pourboires" defaultValue={r.pourboires.filter((p) => p > 0).map((p) => prixPourChamp(p).replace(",00", "")).join(" ")} className="champ" placeholder="10 15 20" />
+            <p className="mt-1 text-xs text-slate-500">Séparés par des espaces. Vide = pas de pourboire. « Non merci » est toujours proposé.</p>
+          </div>
+          <div>
+            <label htmlFor="paiements" className="etiquette">Modes de paiement (un par ligne)</label>
+            <textarea id="paiements" name="paiements" rows={3} defaultValue={r.paiements.join("\n")} className="champ" />
+            <p className="mt-1 text-xs text-slate-500">Vide = le client ne choisit pas.</p>
           </div>
         </div>
 

@@ -1,6 +1,8 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
+import { lireGroupes, type GroupeOptions } from "./options";
+import { estBadge, type Badge } from "./choix-commande";
 
 // Ce qu'une page PUBLIQUE lit d'un produit. Jamais le prix d'achat,
 // la boutique ni le lien Wolt : ils sont à toi seul.
@@ -9,52 +11,86 @@ export const PRODUIT_PUBLIC = {
   nom: true,
   description: true,
   prix: true,
+  prixBarre: true,
   photoUrl: true,
+  epuise: true,
+  badge: true,
+  options: true,
   categorie: { select: { nom: true, slug: true, emoji: true } },
 } satisfies Prisma.ProduitSelect;
 
-export type ProduitPublic = Prisma.ProduitGetPayload<{ select: typeof PRODUIT_PUBLIC }>;
+type Brut = Prisma.ProduitGetPayload<{ select: typeof PRODUIT_PUBLIC }>;
+
+/** Un produit tel qu'une page publique le reçoit (options lues, badge vérifié). */
+export type ProduitPublic = Omit<Brut, "options" | "badge" | "prixBarre"> & {
+  options: GroupeOptions[];
+  badge: Badge;
+  prixBarre: number | null;
+};
+
+function versPublic(p: Brut): ProduitPublic {
+  return {
+    ...p,
+    options: lireGroupes(p.options),
+    badge: estBadge(p.badge) ? p.badge : "",
+    // Un ancien prix qui n'est pas plus cher n'est pas une promo.
+    prixBarre: p.prixBarre != null && p.prixBarre > p.prix ? p.prixBarre : null,
+  };
+}
 
 const VISIBLE = { actif: true, categorie: { active: true } } satisfies Prisma.ProduitWhereInput;
-const ORDRE: Prisma.ProduitOrderByWithRelationInput[] = [{ ordre: "asc" }, { nom: "asc" }, { id: "asc" }];
+const ORDRE: Prisma.ProduitOrderByWithRelationInput[] = [{ epuise: "asc" }, { ordre: "asc" }, { nom: "asc" }, { id: "asc" }];
 
 export async function categoriesVisibles() {
   return prisma.categorie.findMany({
     where: { active: true, produits: { some: { actif: true } } },
     orderBy: [{ ordre: "asc" }, { nom: "asc" }],
-    select: { id: true, nom: true, slug: true, emoji: true },
+    select: { id: true, nom: true, slug: true, emoji: true, _count: { select: { produits: { where: { actif: true } } } } },
   });
 }
 
 export async function produitsDeLaCategorie(slug: string) {
-  return prisma.produit.findMany({
+  const liste = await prisma.produit.findMany({
     where: { ...VISIBLE, categorie: { active: true, slug } },
     orderBy: ORDRE,
     select: PRODUIT_PUBLIC,
   });
+  return liste.map(versPublic);
 }
 
-export async function vitrine(parCategorie = 8) {
+export async function vitrine(parCategorie = 10) {
   const categories = await categoriesVisibles();
-  const rayons = await Promise.all(
+  return Promise.all(
     categories.map(async (c) => ({
       categorie: c,
-      produits: await prisma.produit.findMany({
-        where: { ...VISIBLE, categorieId: c.id },
-        orderBy: ORDRE,
-        take: parCategorie,
-        select: PRODUIT_PUBLIC,
-      }),
-      total: await prisma.produit.count({ where: { ...VISIBLE, categorieId: c.id } }),
+      produits: (
+        await prisma.produit.findMany({
+          where: { ...VISIBLE, categorieId: c.id },
+          orderBy: ORDRE,
+          take: parCategorie,
+          select: PRODUIT_PUBLIC,
+        })
+      ).map(versPublic),
+      total: c._count.produits,
     })),
   );
-  return rayons;
+}
+
+/** « Les plus demandés » : les produits marqués Populaire ou Promo. */
+export async function misEnAvant(nombre = 12) {
+  const liste = await prisma.produit.findMany({
+    where: { ...VISIBLE, epuise: false, badge: { in: ["populaire", "promo"] } },
+    orderBy: [{ badge: "asc" }, ...ORDRE],
+    take: nombre,
+    select: PRODUIT_PUBLIC,
+  });
+  return liste.map(versPublic);
 }
 
 export async function rechercher(texte: string) {
   const q = texte.trim().slice(0, 80);
   if (q.length < 2) return [];
-  return prisma.produit.findMany({
+  const liste = await prisma.produit.findMany({
     where: {
       ...VISIBLE,
       OR: [
@@ -67,14 +103,16 @@ export async function rechercher(texte: string) {
     take: 60,
     select: PRODUIT_PUBLIC,
   });
+  return liste.map(versPublic);
 }
 
-/** Prix et disponibilité actuels des produits d'un panier. */
+/** Prix, options et disponibilité actuels des produits d'un panier. */
 export async function etatDuPanier(ids: string[]) {
   const uniques = [...new Set(ids.filter((id) => typeof id === "string" && id.length > 0 && id.length < 40))].slice(0, 100);
   if (uniques.length === 0) return [];
-  return prisma.produit.findMany({
-    where: { id: { in: uniques }, ...VISIBLE },
-    select: { id: true, nom: true, prix: true, photoUrl: true },
+  const liste = await prisma.produit.findMany({
+    where: { id: { in: uniques }, ...VISIBLE, epuise: false },
+    select: { id: true, nom: true, prix: true, photoUrl: true, options: true },
   });
+  return liste.map((p) => ({ ...p, options: lireGroupes(p.options) }));
 }

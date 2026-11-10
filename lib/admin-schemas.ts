@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { lirePrix } from "./argent";
+import { lireOptionsSaisies } from "./options";
+import { BADGES } from "./choix-commande";
 
 const prixObligatoire = z
   .string()
@@ -56,6 +58,21 @@ export const produitSchema = z.object({
     .refine((t) => t === "" || /^https:\/\/[^\s]+$/.test(t), { error: "Le lien doit commencer par https://" }),
   ordre: entier(0, 9999),
   actif: z.boolean(),
+  epuise: z.boolean(),
+  badge: z.enum(["", ...Object.keys(BADGES)] as ["", ...string[]], { error: "Badge inconnu." }),
+  prixBarre: prixFacultatif,
+  options: z.string().max(3000, { error: "Trop long." }).transform((t, ctx) => {
+    const r = lireOptionsSaisies(t);
+    if (!r.ok) {
+      ctx.addIssue({ code: "custom", message: r.erreur });
+      return z.NEVER;
+    }
+    return r.groupes;
+  }),
+}).superRefine((p, ctx) => {
+  if (p.prixBarre != null && p.prixBarre <= p.prix) {
+    ctx.addIssue({ code: "custom", path: ["prixBarre"], message: "L'ancien prix doit être plus élevé que le prix de vente." });
+  }
 });
 
 export const categorieSchema = z.object({
@@ -65,10 +82,10 @@ export const categorieSchema = z.object({
   active: z.boolean(),
 });
 
-const lignes = (max: number, longueur: number) =>
+const lignes = (max: number, longueur: number, vide = false) =>
   z.string().transform((t, ctx) => {
     const liste = [...new Set(t.split("\n").map((l) => l.trim()).filter(Boolean))];
-    if (liste.length === 0) {
+    if (liste.length === 0 && !vide) {
       ctx.addIssue({ code: "custom", message: "Au moins une ligne." });
       return z.NEVER;
     }
@@ -82,7 +99,25 @@ const lignes = (max: number, longueur: number) =>
 export const reglagesSchema = z.object({
   fraisService: prixOuZero,
   fraisLivraison: prixOuZero,
+  fraisExpress: prixOuZero,
   minimumCommande: prixOuZero,
+  pourboires: z.string().transform((t, ctx) => {
+    const montants: number[] = [];
+    for (const morceau of t.split(/[;\s]+/).map((m) => m.trim()).filter(Boolean)) {
+      const p = lirePrix(morceau);
+      if (p == null) {
+        ctx.addIssue({ code: "custom", message: `« ${morceau.slice(0, 20)} » n'est pas un montant.` });
+        return z.NEVER;
+      }
+      if (!montants.includes(p)) montants.push(p);
+    }
+    if (montants.length > 6) {
+      ctx.addIssue({ code: "custom", message: "6 montants au maximum." });
+      return z.NEVER;
+    }
+    return montants.sort((a, b) => a - b);
+  }),
+  paiements: lignes(8, 40, true),
   villes: lignes(40, 60),
   creneaux: lignes(20, 60),
   whatsapp: z

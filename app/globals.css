@@ -1,20 +1,33 @@
 @import "tailwindcss";
 
 @theme {
-  --color-marque: #1d4ed8;
-  --color-marque-fonce: #1e3a8a;
-  --color-marque-clair: #dbeafe;
-  --color-accent: #f59e0b;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Bleu Méditerranée, soleil, sable. */
+  --color-marque: #1557ff;
+  --color-marque-fonce: #0b2a8f;
+  --color-marque-clair: #e8efff;
+  --color-soleil: #ffc531;
+  --color-sable: #fff6e5;
+  --color-fond: #f5f6fa;
+  --color-whatsapp: #1a8f4c;
+  --color-whatsapp-fonce: #137038;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --shadow-carte: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px rgb(15 23 42 / 0.06);
+  --shadow-flottant: 0 8px 30px rgb(15 23 42 / 0.18);
 }
 
 :root {
   color-scheme: light;
 }
 
+/* Un fieldset refuse par défaut d'être plus étroit que son contenu : une rangée
+   qui défile (jours) élargissait toute la page sur téléphone. */
+fieldset {
+  min-inline-size: 0;
+}
+
 html,
 body {
-  background: #f8fafc;
+  background: var(--color-fond);
   color: #0f172a;
 }
 
@@ -24,31 +37,67 @@ body {
   outline-offset: 2px;
 }
 
-/* Des « utilitaires » Tailwind : une classe plus précise (bg-…, w-…, py-…) les surcharge. */
+/* Fiche produit : boîte de dialogue native (piège du focus et touche Échap fournis). */
+dialog.fiche::backdrop {
+  background: rgb(15 23 42 / 0.55);
+  backdrop-filter: blur(2px);
+}
+dialog.fiche[open] {
+  animation: monter 0.22s ease-out;
+}
+@keyframes monter {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  dialog.fiche[open] { animation: none; }
+}
+
+/*
+ * Classes maison = « utilitaires » Tailwind : une classe plus précise
+ * (bg-…, w-…, py-…) les surcharge. Pas de @layer components : le chargeur
+ * Turbopack sort ces règles de leur couche et elles écrasent alors tout.
+ */
 @utility champ {
-  @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900 placeholder:text-slate-400 focus:border-marque focus:outline-none focus:ring-2 focus:ring-marque/30;
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 shadow-xs placeholder:text-slate-400 focus:border-marque focus:outline-none focus:ring-4 focus:ring-marque/15;
 }
 
 @utility champ-erreur {
-  @apply border-red-500;
+  @apply border-red-500 focus:border-red-500 focus:ring-red-500/15;
 }
 
 @utility etiquette {
-  @apply mb-1 block text-sm font-medium text-slate-700;
+  @apply mb-1.5 block text-sm font-semibold text-slate-700;
 }
 
 @utility bouton {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-marque px-4 py-2.5 font-semibold text-white transition hover:bg-marque-fonce disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-marque px-5 py-3 font-bold text-white shadow-sm transition hover:bg-marque-fonce active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
 }
 
 @utility bouton-secondaire {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility bouton-whatsapp {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-whatsapp px-5 py-3 font-bold text-white shadow-sm transition hover:bg-whatsapp-fonce active:scale-[0.98];
 }
 
 @utility bouton-danger {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 font-semibold text-red-700 transition hover:bg-red-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white px-5 py-3 font-semibold text-red-700 transition hover:bg-red-50;
 }
 
 @utility carte {
-  @apply rounded-2xl border border-slate-200 bg-white;
+  @apply rounded-3xl border border-slate-100 bg-white shadow-carte;
+}
+
+/* Un choix en pastille (radio ou case masquée + libellé). `relative` : la case
+   masquée (sr-only, en position absolue) reste dans sa pastille ; sinon, dans une
+   rangée qui défile, elle s'en échappait et élargissait toute la page. */
+@utility pastille {
+  @apply relative inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition select-none hover:border-marque/50 has-[:checked]:border-marque has-[:checked]:bg-marque has-[:checked]:text-white has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-marque/30;
+}
+
+/* Rangée qui défile horizontalement (rayons, catégories). */
+@utility rail {
+  @apply -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
 }

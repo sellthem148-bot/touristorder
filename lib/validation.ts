@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { LIGNES_MAX, QUANTITE_MAX } from "./calcul";
+import { cleDeVariante, type Selection } from "./options";
+import { REMPLACEMENTS } from "./choix-commande";
 
 const texte = (min: number, max: number, message: string) =>
   z.string({ error: message }).trim().min(min, { error: message }).max(max, { error: `${max} caractères maximum.` });
@@ -17,6 +19,7 @@ export const telephoneSchema = z
 export const ligneSchema = z.object({
   produitId: z.string().min(1).max(40),
   quantite: z.number().int().min(1).max(QUANTITE_MAX),
+  options: z.record(z.string().max(40), z.string().max(40)).optional(),
 });
 
 export const commandeSchema = z.object({
@@ -27,16 +30,26 @@ export const commandeSchema = z.object({
   dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Choisis un jour." }),
   creneau: texte(1, 60, "Choisis un créneau."),
   notes: z.string().trim().max(1000, { error: "1000 caractères maximum." }).default(""),
+  express: z.boolean().default(false),
+  remplacement: z.enum(Object.keys(REMPLACEMENTS) as [keyof typeof REMPLACEMENTS, ...(keyof typeof REMPLACEMENTS)[]], {
+    error: "Choisis quoi faire si un article manque.",
+  }),
+  paiement: z.string().trim().max(40).default(""),
+  pourboire: z.number().int().min(0).max(1_000_000).default(0),
   lignes: z.array(ligneSchema).min(1, { error: "Ton panier est vide." }).max(LIGNES_MAX, { error: "Trop d'articles différents." }),
 });
 
 export type CommandeSaisie = z.infer<typeof commandeSchema>;
 
-/** Additionne les doublons d'un même produit (deux onglets, double ajout). */
-export function regrouperLignes(lignes: { produitId: string; quantite: number }[]) {
-  const total = new Map<string, number>();
-  for (const l of lignes) total.set(l.produitId, (total.get(l.produitId) ?? 0) + l.quantite);
-  return [...total].map(([produitId, quantite]) => ({ produitId, quantite: Math.min(quantite, QUANTITE_MAX) }));
+/** Additionne les doublons d'une même variante (deux onglets, double ajout). */
+export function regrouperLignes(lignes: { produitId: string; quantite: number; options?: Selection }[]) {
+  const total = new Map<string, { produitId: string; quantite: number; options?: Selection }>();
+  for (const l of lignes) {
+    const cle = cleDeVariante(l.produitId, l.options);
+    const avant = total.get(cle);
+    total.set(cle, { produitId: l.produitId, options: l.options, quantite: Math.min((avant?.quantite ?? 0) + l.quantite, QUANTITE_MAX) });
+  }
+  return [...total.values()];
 }
 
 /** Premier message d'erreur par champ, pour l'afficher sous le champ. */
