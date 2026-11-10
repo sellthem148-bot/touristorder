@@ -35,6 +35,7 @@ async function commander({ nom, tel, ville, adresse, creneau }) {
   await p.getByText(creneau, { exact: true }).click();
   await p.getByLabel("Ton nom").fill(nom);
   await p.getByLabel("Ton numéro WhatsApp").fill(tel);
+  await p.getByLabel("Ton adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await p.getByLabel("Ville").selectOption(ville);
   await p.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill(adresse);
   await p.getByText("Bit", { exact: true }).click();

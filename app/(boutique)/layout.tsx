@@ -25,7 +25,8 @@ export default function LayoutBoutique({ children }: LayoutProps<"/">) {
           </div>
           <div className="space-y-2 text-sm">
             <h2 className="font-bold text-white">Ton compte</h2>
-            <p><Link href="/commandes" className="hover:text-white hover:underline">Mes commandes</Link></p>
+            <p><Link href="/compte" className="hover:text-white hover:underline">Mon espace client</Link></p>
+            <p><Link href="/commandes" className="hover:text-white hover:underline">Mes commandes sur cet appareil</Link></p>
             <p><Link href="/panier" className="hover:text-white hover:underline">Mon panier</Link></p>
             <p><Link href="/admin" className="text-slate-400 hover:text-white hover:underline">Espace gérant</Link></p>
           </div>

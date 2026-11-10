@@ -117,3 +117,21 @@ export async function etatDuPanier(ids: string[]) {
   });
   return liste.map((p) => ({ ...p, options: lireGroupes(p.options) }));
 }
+
+/** Des produits précis, encore en ligne (pour « mes articles préférés »), dans l'ordre demandé. */
+export async function produitsParIds(ids: string[]) {
+  if (ids.length === 0) return [];
+  const liste = await prisma.produit.findMany({ where: { id: { in: ids.slice(0, 50) }, ...VISIBLE }, select: PRODUIT_PUBLIC });
+  const parId = new Map(liste.map((p) => [p.id, versPublic(p)]));
+  return ids.map((id) => parId.get(id)).filter((p): p is ProduitPublic => !!p);
+}
+
+/** Ce qu'il faut d'un produit pour le remettre dans un panier (« commander à nouveau »). */
+export async function produitsPourLePanier(ids: string[]) {
+  if (ids.length === 0) return [];
+  const liste = await prisma.produit.findMany({
+    where: { id: { in: ids.slice(0, 100) }, ...VISIBLE, epuise: false },
+    select: { id: true, nom: true, prix: true, photoUrl: true, options: true, categorie: { select: { emoji: true } } },
+  });
+  return liste.map((p) => ({ ...p, options: lireGroupes(p.options) }));
+}

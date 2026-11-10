@@ -31,4 +31,7 @@ npm run seed         # catégories + réglages ; seed:demo ajoute des produits d
 - Jours et créneaux proposés : `joursDeLivraison(reglages)` (`lib/creneaux.ts`, pur) — jours livrés ; le jour même seulement avant `heureLimite` et pour les créneaux qui commencent après maintenant + `delaiPreparation`.
 - Connexion admin : seuls les échecs comptent (`bloque` / `noterEchec`, `lib/limite.ts`). Utilisé par le panier ET par `creerCommande`.
 - La base du catalogue est `prisma/catalogue.ts` ; `npm run seed` n'ajoute que les articles absents (par nom) — n'y mettre aucun prix.
+- Espace client : `exigerClient()` en tête de chaque page/action de `/compte`, et l'id du client connecté dans chaque `where` (propriété). Jetons `lib/session-client.ts` (usage « lien » ≠ « session » ≠ admin). Connexion : même réponse que le compte existe ou non.
+- E-mails : gabarits purs dans `lib/courriels.ts` (tout texte externe via `echapper`), envoi `lib/courriel.ts` (Resend, ne lève jamais, `after()`), en dev écrits dans `.courriels/`. Montants : `lignesDeMontants` (`lib/montants.ts`).
+- Un client connecté commande avec l'e-mail de son compte ; le profil d'un compte n'est mis à jour par une commande que si c'est ce client qui est connecté.
 - Nouvelle table → relancer `prisma/rls.sql` sur Supabase.

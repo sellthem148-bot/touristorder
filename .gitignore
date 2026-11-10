@@ -42,3 +42,6 @@ next-env.d.ts
 
 !.env.example
 /public/uploads/
+
+# e-mails écrits en développement (sans clé Resend)
+/.courriels/

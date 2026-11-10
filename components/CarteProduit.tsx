@@ -86,7 +86,7 @@ export function CarteProduit({ produit, etroite = false }: { produit: ProduitPub
         <Prix prix={produit.prix} prixBarre={produit.prixBarre} />
         <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-800">{produit.nom}</h3>
         {produit.options.length > 0 && (
-          <p className="mt-0.5 text-xs text-slate-500">{produit.options.map((g) => `${g.choix.length} ${g.nom.toLowerCase()}`).join(" · ")}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{produit.options.map((g) => g.nom).join(", ")} au choix</p>
         )}
       </button>
       {ouvert && <FicheProduit produit={produit} fermer={() => setOuvert(false)} />}

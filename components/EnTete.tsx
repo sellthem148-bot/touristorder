@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { LienPanier } from "./LienPanier";
-import { IconeLoupe, IconeRecu, IconeSac } from "./Icones";
+import { IconeCompte, IconeLoupe, IconeSac } from "./Icones";
 
 export function Logo({ clair = false, compactSurMobile = false }: { clair?: boolean; compactSurMobile?: boolean }) {
   return (
@@ -34,12 +34,12 @@ export function EnTete() {
           />
         </form>
         <Link
-          href="/commandes"
+          href="/compte"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-700 hover:bg-slate-100"
-          aria-label="Mes commandes"
-          title="Mes commandes"
+          aria-label="Mon espace client"
+          title="Mon espace client"
         >
-          <IconeRecu />
+          <IconeCompte />
         </Link>
         <LienPanier />
       </div>

@@ -16,6 +16,14 @@ export const telephoneSchema = z
     return n >= 8 && n <= 15;
   }, { error: "Numéro invalide : indique-le avec l'indicatif (ex. +33 6 12 34 56 78)." });
 
+/** Une adresse e-mail : nettoyée (espaces, majuscules) AVANT d'être vérifiée, comparée et enregistrée. */
+export const emailSchema = z
+  .string({ error: "Ton adresse e-mail est requise." })
+  .trim()
+  .toLowerCase()
+  .min(1, { error: "Ton adresse e-mail est requise." })
+  .pipe(z.email({ error: "Adresse e-mail invalide." }).max(254, { error: "Adresse e-mail trop longue." }));
+
 export const ligneSchema = z.object({
   produitId: z.string().min(1).max(40),
   quantite: z.number().int().min(1).max(QUANTITE_MAX),
@@ -25,6 +33,7 @@ export const ligneSchema = z.object({
 export const commandeSchema = z.object({
   nomClient: texte(2, 80, "Ton nom est requis."),
   telephone: telephoneSchema,
+  email: emailSchema,
   ville: texte(1, 80, "Choisis une ville."),
   adresse: texte(5, 300, "Indique l'adresse ou le nom de l'hôtel (et le numéro de chambre)."),
   dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Choisis un jour." }),

@@ -127,6 +127,7 @@ describe("validation d'une commande", () => {
   const base = {
     nomClient: "  Sarah Cohen ",
     telephone: "+33 6 12 34 56 78",
+    email: "sarah@exemple.fr",
     ville: "Tel Aviv",
     adresse: "Hôtel Dan, chambre 512",
     dateLivraison: "2026-11-10",

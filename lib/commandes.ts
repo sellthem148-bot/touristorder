@@ -11,7 +11,7 @@ import { formatPrix } from "./argent";
 import { lireGroupes, resoudreSelection } from "./options";
 
 export type ResultatCommande =
-  | { ok: true; jeton: string; numero: number }
+  | { ok: true; jeton: string; numero: number; id: string }
   | { ok: false; erreur: string; champs?: Record<string, string>; panierPerime?: boolean };
 
 const CHAMPS = "Vérifie les champs en rouge.";
@@ -20,7 +20,7 @@ const CHAMPS = "Vérifie les champs en rouge.";
  * Crée une commande. Les prix (options, frais, express, pourboire) viennent
  * TOUJOURS de la base et des réglages, jamais du navigateur.
  */
-export async function creerCommande(entree: unknown): Promise<ResultatCommande> {
+export async function creerCommande(entree: unknown, options: { clientConnecteId?: string } = {}): Promise<ResultatCommande> {
   const lecture = commandeSchema.safeParse(entree);
   if (!lecture.success) {
     return { ok: false, erreur: CHAMPS, champs: erreursParChamp(lecture.error) };
@@ -104,10 +104,23 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
     return { ok: false, erreur: `Le minimum de commande pour ${ville.nom} est de ${formatPrix(minimum)} d'articles (hors frais).` };
   }
 
+  // L'espace client de cette adresse : créé à la première commande. Les coordonnées
+  // enregistrées ne sont remplacées que si c'est bien ce client qui est connecté —
+  // quelqu'un qui tape l'adresse d'un autre ne réécrit pas son profil.
+  const coordonnees = { nom: saisie.nomClient, telephone: saisie.telephone, ville: saisie.ville, adresse: saisie.adresse };
+  const existant = await prisma.client.findUnique({ where: { email: saisie.email }, select: { id: true, nom: true } });
+  const client = existant
+    ? existant.id === options.clientConnecteId
+      ? await prisma.client.update({ where: { id: existant.id }, data: coordonnees, select: { id: true } })
+      : existant
+    : await prisma.client.upsert({ where: { email: saisie.email }, update: {}, create: { email: saisie.email, ...coordonnees }, select: { id: true } });
+
   const jeton = randomBytes(18).toString("base64url");
   const commande = await prisma.commande.create({
     data: {
       jeton,
+      clientId: client.id,
+      email: saisie.email,
       nomClient: saisie.nomClient,
       telephone: saisie.telephone,
       ville: saisie.ville,
@@ -127,7 +140,7 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
       majorationPct: tarif.majorationPct,
       lignes: { create: aCopier },
     },
-    select: { jeton: true, numero: true },
+    select: { id: true, jeton: true, numero: true },
   });
-  return { ok: true, jeton: commande.jeton, numero: commande.numero };
+  return { ok: true, jeton: commande.jeton, numero: commande.numero, id: commande.id };
 }

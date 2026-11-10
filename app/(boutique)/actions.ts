@@ -1,11 +1,15 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { creerCommande } from "@/lib/commandes";
 import { etatDuPanier } from "@/lib/catalogue";
 import { autoriser } from "@/lib/limite";
 import { ipDuVisiteur } from "@/lib/ip";
 import { prisma } from "@/lib/prisma";
+import { clientConnecte } from "@/lib/client";
+import { envoyerCourrielsDeCommande } from "@/lib/commande-courriels";
+import { adresseDuSite } from "@/lib/site";
 
 export type EtatCommande = {
   erreur?: string;
@@ -35,9 +39,12 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     return { erreur: "Panier illisible, recharge la page." };
   }
 
+  // Un client connecté commande toujours avec l'adresse de son espace.
+  const client = await clientConnecte();
   const resultat = await creerCommande({
     nomClient: form.get("nomClient") ?? "",
     telephone: form.get("telephone") ?? "",
+    email: client?.email ?? form.get("email") ?? "",
     ville: form.get("ville") ?? "",
     adresse: form.get("adresse") ?? "",
     dateLivraison: form.get("dateLivraison") ?? "",
@@ -48,11 +55,15 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     paiement: form.get("paiement") ?? "",
     pourboire: Number(form.get("pourboire") ?? 0),
     lignes,
-  });
+  }, { clientConnecteId: client?.id });
 
   if (!resultat.ok) {
     return { erreur: resultat.erreur, champs: resultat.champs, panierPerime: resultat.panierPerime };
   }
+  // Les e-mails (confirmation au client, avis au gérant) partent après la réponse : la commande n'attend pas.
+  const site = await adresseDuSite();
+  const commandeId = resultat.id;
+  after(() => envoyerCourrielsDeCommande(commandeId, site));
   redirect(`/suivi/${resultat.jeton}?nouvelle=1`);
 }
 

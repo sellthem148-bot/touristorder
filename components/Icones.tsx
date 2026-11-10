@@ -8,6 +8,9 @@ export const IconePanier = ({ className = "h-5 w-5" }: P) => (
 export const IconeRecu = ({ className = "h-5 w-5" }: P) => (
   <svg {...base} className={className}><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>
 );
+export const IconeCompte = ({ className = "h-5 w-5" }: P) => (
+  <svg {...base} className={className}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+);
 export const IconeLoupe = ({ className = "h-5 w-5" }: P) => (
   <svg {...base} className={className}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
 );

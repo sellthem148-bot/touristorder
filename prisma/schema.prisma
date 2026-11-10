@@ -70,6 +70,10 @@ model Commande {
 
   nomClient      String
   telephone      String
+  // L'adresse e-mail donnée à la commande (confirmation) et l'espace client auquel elle rattache la commande.
+  email          String          @default("")
+  clientId       String?
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
   ville          String
   adresse        String
   dateLivraison  String // AAAA-MM-JJ, jour israélien
@@ -102,6 +106,21 @@ model Commande {
   updatedAt      DateTime        @updatedAt
 
   @@index([statut, createdAt])
+  @@index([clientId])
+}
+
+// L'espace client : créé à la première commande, retrouvé par l'adresse e-mail
+// (en minuscules). Pas de mot de passe : on y entre par un lien envoyé à cette adresse.
+model Client {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  nom       String     @default("")
+  telephone String     @default("")
+  ville     String     @default("")
+  adresse   String     @default("")
+  commandes Commande[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 // Une ligne garde une copie du produit au moment de la commande :

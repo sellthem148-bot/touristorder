@@ -19,11 +19,13 @@ type Props = {
   reglages: ReglagesPublics;
   jours: JourDeLivraison[];
   limitePassee: boolean; // l'heure limite pour être livré ce soir est passée
+  client: { email: string; nom: string; telephone: string; ville: string; adresse: string } | null; // connecté à son espace
 };
 
 type Valeurs = {
   nomClient: string;
   telephone: string;
+  email: string;
   ville: string;
   adresse: string;
   dateLivraison: string;
@@ -47,14 +49,16 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
   );
 }
 
-export function PageDuPanier({ reglages, jours, limitePassee }: Props) {
+export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
   const panier = usePanier();
   const [etat, envoyer, enCours] = useActionState<EtatCommande, FormData>(passerCommande, {});
   const [v, setV] = useState<Valeurs>({
-    nomClient: "",
-    telephone: "",
-    ville: reglages.villes.length === 1 ? reglages.villes[0].nom : "",
-    adresse: "",
+    // Un client connecté retrouve ses coordonnées (s'il habite toujours une ville livrée).
+    nomClient: client?.nom ?? "",
+    telephone: client?.telephone ?? "",
+    email: client?.email ?? "",
+    ville: client && reglages.villes.some((x) => x.nom === client.ville) ? client.ville : reglages.villes.length === 1 ? reglages.villes[0].nom : "",
+    adresse: client?.adresse ?? "",
     dateLivraison: jours[0]?.valeur ?? "",
     creneau: jours[0]?.creneaux[0] ?? "",
     notes: "",
@@ -125,7 +129,7 @@ export function PageDuPanier({ reglages, jours, limitePassee }: Props) {
   );
   const sousLeMinimum = totaux.sousTotal < minimum;
 
-  const texte = (nom: "nomClient" | "telephone" | "adresse" | "notes") => ({
+  const texte = (nom: "nomClient" | "telephone" | "email" | "adresse" | "notes") => ({
     id: nom,
     name: nom,
     value: v[nom],
@@ -205,6 +209,14 @@ export function PageDuPanier({ reglages, jours, limitePassee }: Props) {
               <input {...texte("telephone")} type="tel" autoComplete="tel" placeholder="+33 6 12 34 56 78" required />
               {messageErreur("telephone")}
             </div>
+          </div>
+          <div>
+            <label htmlFor="email" className="etiquette">Ton adresse e-mail</label>
+            <input {...texte("email")} type="email" autoComplete="email" inputMode="email" placeholder="prenom@exemple.fr" required readOnly={!!client} />
+            {messageErreur("email")}
+            <p className="mt-1 text-xs text-slate-500">
+              {client ? "Tu es connecté à ton espace client : la commande y sera ajoutée." : "Pour recevoir la confirmation et retrouver tes commandes dans ton espace client."}
+            </p>
           </div>
           <div>
             <label htmlFor="ville" className="etiquette">Ville</label>

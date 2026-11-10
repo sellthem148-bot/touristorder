@@ -13,7 +13,9 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - Panier enregistré dans le navigateur ; à l'ouverture, prix et options sont remis à jour depuis la base et ce qui n'existe plus est retiré.
 - Commande : nom, WhatsApp, ville, hôtel, jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
 - Page de suivi (lien secret) en frise : étape en cours, articles indisponibles non facturés, bouton WhatsApp. Elle se met à jour toute seule.
-- **Mes commandes** : le navigateur garde les liens de suivi de ses commandes (sans compte).
+- **E-mail de confirmation** à chaque commande (l'adresse e-mail est demandée à la commande) : livraison, articles, total, bouton « Suivre ma commande » et accès direct à l'espace client.
+- **Espace client** (`/compte`), sans mot de passe : on y entre par un lien reçu par e-mail (celui de la confirmation, valable 7 jours, ou un lien demandé sur la page de connexion, valable 30 minutes). Tableau de bord (commandes, en cours, articles, total dépensé), commande en cours avec son avancement, articles préférés, historique d'achat détaillé avec **« Commander à nouveau »**, informations (nom, WhatsApp, ville, adresse) qui pré-remplissent la commande suivante, déconnexion, suppression de l'espace. L'espace est créé à la première commande.
+- **Mes commandes** : le navigateur garde aussi les liens de suivi de ses commandes (sans se connecter).
 
 **Côté gérant** (`/admin`, protégé par mot de passe)
 - **Commandes** : en cours, livrées, annulées. Rafraîchissement automatique toutes les 30 s.
@@ -26,6 +28,8 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - **Prix rapides** : tous les articles d'une catégorie (ou « À compléter » : ceux sans prix) sur un écran, prix de vente, prix d'achat et « En ligne » pour chacun, un seul bouton pour tout enregistrer. Une valeur illisible n'enregistre rien et nomme l'article à corriger.
 - **Tarifs** (selon le moment de la livraison) : des plages horaires (jours cochés + heures, minuit passé ou journée entière) avec leurs propres frais de service, livraison, express (0 = pas d'express) et une **majoration en % des articles** (ex. +10 % la nuit). La première plage active (par priorité) qui contient le moment s'applique, sinon le tarif de base des Réglages. Une grille de la semaine montre quel tarif s'applique à chaque heure. Le client voit le tarif changer en direct quand il choisit le jour et le créneau ; la commande garde le tarif appliqué.
 - **Villes** : les villes livrées (19 au départ, autour de Netanya), chacune avec un **supplément de livraison** et, si besoin, un **minimum de commande**. Livraison payée par le client = livraison du moment (Tarifs) + supplément de la ville. Toute la liste se modifie d'un coup ; un tableau montre le prix de livraison de chaque ville pour chaque tarif (base, week-end, nuit…).
+- **Clients** : chaque client (nom, e-mail, WhatsApp, ville), son nombre de commandes et le montant livré, les meilleurs d'abord ; recherche ; bouton WhatsApp.
+- **Avis de nouvelle commande** : un e-mail au gérant (`EMAIL_GERANT`) à chaque commande, avec le lien vers la commande.
 - **Statistiques** : chiffre, marge estimée et panier moyen (jour, 7 jours, 30 jours), chiffre par jour, les plus vendus, pourboires, part d'express.
 - **Produits** : filtres « À compléter (sans prix) / En ligne / Masqués / Épuisés ». Nom, description, photo, prix de vente (vide = à définir : jamais visible ni commandable), prix barré, badge, options (une par ligne : `Taille : 2 ans | 4 ans | 8 ans +10`), catégorie, ordre, en ligne / masqué, épuisé / en stock, bouton **Dupliquer**. Trois champs ne sont **visibles que par toi** : le prix d'achat sur Wolt, la boutique où le commander et le lien Wolt. Aucune page publique ne les lit (`PRODUIT_PUBLIC` dans `lib/catalogue.ts`).
 - **Catégories** : créer, renommer, réordonner, masquer. Une catégorie qui contient des produits ne se supprime pas.
@@ -72,10 +76,19 @@ Vérifications : `npm run typecheck`, `npm run lint`, `npm test`, et les parcour
    - `SESSION_SECRET` : obtenu avec `openssl rand -base64 48` ;
    - `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_BUCKET=produits` ;
    - `NEXT_PUBLIC_NOM_DU_SITE` : le nom choisi ;
+   - `RESEND_API_KEY`, `EMAIL_EXPEDITEUR`, `EMAIL_GERANT` : les e-mails (voir ci-dessous) ;
    - `NEXT_PUBLIC_SITE_URL` (facultatif) : l'adresse publique, utilisée dans les liens de suivi envoyés sur WhatsApp.
 
    Puis déployer.
 4. Dans `/admin/reglages` : renseigner ton numéro WhatsApp, les frais, les villes et les créneaux.
+
+## E-mails (Resend)
+
+1. Crée un compte sur resend.com, ajoute et **vérifie ton nom de domaine** (enregistrements DNS donnés par Resend), crée une clé API.
+2. Variables : `RESEND_API_KEY`, `EMAIL_EXPEDITEUR` (ex. `Courses Express <commandes@ton-domaine.com>`, sur le domaine vérifié), `EMAIL_GERANT` (ton adresse, pour l'avis de nouvelle commande), `NEXT_PUBLIC_SITE_URL` (les liens des e-mails).
+3. Sans `RESEND_API_KEY` en production, aucune confirmation ne part et l'espace client ne peut pas envoyer de lien (la page le dit). Sans domaine vérifié, Resend n'envoie qu'à l'adresse du compte Resend.
+
+En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fichier `.html` à ouvrir dans un navigateur, et un `.txt`).
 
 ## Règles du code
 
@@ -85,6 +98,9 @@ Vérifications : `npm run typecheck`, `npm run lint`, `npm test`, et les parcour
 - **Une ligne de commande garde une copie du produit** (nom, prix, prix d'achat, boutique). Modifier ou supprimer un produit ne change pas les commandes passées.
 - **Les classes maison** (`bouton`, `champ`, `carte`…) sont des `@utility` Tailwind, dans `app/globals.css`. Le chargeur Tailwind de Turbopack sortait les règles de `@layer components` de leur couche, et elles écrasaient alors `bg-…` ou `w-…`.
 - Les jours sont des jours **israéliens** (`lib/dates.ts`).
+- **Espace client** : tout ce que lit ou écrit une page ou action de `/compte` porte l'identifiant du client CONNECTÉ dans son `where` (`exigerClient()`), jamais un identifiant reçu du navigateur seul. Les jetons (`lib/session-client.ts`) ont un usage (« lien » ou « session ») : l'un ne vaut pas l'autre, ni une session admin. La page de connexion répond pareil qu'un compte existe ou non.
+- **E-mails** : le texte est dans `lib/courriels.ts` (pur) et tout ce qui vient d'un client ou du catalogue passe par `echapper` ; l'envoi (`lib/courriel.ts`) ne lève jamais et part après la réponse (`after`) ; les journaux ne contiennent ni adresse ni contenu.
+- Les lignes de montants (articles, supplément, frais, pourboire) ont une seule définition : `lignesDeMontants` (`lib/montants.ts`), pour le site et les e-mails.
 - **Options d'un produit** : une seule définition (`lib/options.ts`) pour la saisie admin, le panier et le serveur, qui revérifie le choix et recalcule le supplément.
 - **Mobile** : une case masquée (`sr-only`) doit rester dans un parent `relative` (la classe `pastille` l'est), et un `fieldset` doit pouvoir rétrécir (`min-inline-size: 0`, dans `globals.css`). Sans cela, une rangée qui défile élargissait toute la page sur téléphone.
 

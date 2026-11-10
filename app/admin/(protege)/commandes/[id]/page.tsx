@@ -193,6 +193,7 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
             <h2 className="mb-1 text-lg font-bold">Client</h2>
             <p className="font-medium">{c.nomClient}</p>
             <p><a href={`tel:${c.telephone.replace(/[^\d+]/g, "")}`} className="text-marque underline">{c.telephone}</a></p>
+            {c.email && <p className="break-all text-slate-600">{c.email}</p>}
             <p className="whitespace-pre-line">{c.adresse}</p>
             <p>{c.ville}</p>
             <p className="pt-1 font-medium">{libelleDuJour(c.dateLivraison)} · {c.creneau}</p>
