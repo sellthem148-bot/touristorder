@@ -22,7 +22,7 @@ export default async function Accueil() {
   // Le tarif qui s'appliquerait à une livraison maintenant.
   const tarif = tarifPour(momentPresent(), reglages.plages, tarifDeBase(reglages));
   const amplitude = amplitudeDesCreneaux(reglages.creneaux);
-  const prochaine = joursDeLivraison(reglages.creneaux, reglages.joursLivres, reglages.delaiPreparation)[0];
+  const prochaine = joursDeLivraison(reglages)[0];
   const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
 
   return (
@@ -46,6 +46,9 @@ export default async function Accueil() {
                 : `Livraison dès ${formatPrixCourt(livraisonLaMoinsChere(tarif, reglages.villes))}`}
             </span>
             {amplitude && <span className="rounded-full bg-white/15 px-3 py-1.5">🌙 Livré le soir, {amplitude}</span>}
+            {reglages.heureLimite && (
+              <span className="rounded-full bg-soleil px-3 py-1.5 text-slate-900">Commande avant {reglages.heureLimite.replace(":", "h").replace("h00", "h")}, livré ce soir</span>
+            )}
             {prochaine && (
               <span className="rounded-full bg-white/15 px-3 py-1.5">
                 Prochaine livraison : {prochaine.libelle === "Aujourd'hui" ? "ce soir" : prochaine.libelle.toLowerCase()} dès {prochaine.creneaux[0].split(/\s*[–-]\s*/)[0]}

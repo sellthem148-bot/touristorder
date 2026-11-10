@@ -35,6 +35,7 @@ export async function reglagesPublics() {
     minimumCommande: r.minimumCommande,
     joursLivres: r.joursLivres,
     delaiPreparation: r.delaiPreparation,
+    heureLimite: r.heureLimite,
     villes,
     creneaux: r.creneaux,
     whatsapp: r.whatsapp,

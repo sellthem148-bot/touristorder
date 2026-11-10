@@ -9,18 +9,20 @@ import {
   creerJetonSession,
   motDePasseCorrect,
 } from "@/lib/session-admin";
-import { autoriser } from "@/lib/limite";
+import { bloque, noterEchec } from "@/lib/limite";
 import { ipDuVisiteur } from "@/lib/ip";
 
 export async function seConnecter(_avant: { erreur?: string }, form: FormData): Promise<{ erreur?: string }> {
   if (!configurationAdminValide()) {
     return { erreur: "ADMIN_PASSWORD (8 caractères min.) et SESSION_SECRET (32 min.) doivent être définis." };
   }
-  const ip = await ipDuVisiteur();
-  if (!autoriser(`connexion:${ip}`, 10, 15 * 60 * 1000)) {
-    return { erreur: "Trop d'essais. Réessaie dans 15 minutes." };
+  // Seuls les essais ratés comptent : 10 dans les 15 minutes bloquent cette adresse.
+  const cle = `connexion:${await ipDuVisiteur()}`;
+  if (bloque(cle, 10)) {
+    return { erreur: "Trop d'essais ratés. Réessaie dans 15 minutes." };
   }
   if (!motDePasseCorrect(String(form.get("motDePasse") ?? ""))) {
+    noterEchec(cle, 15 * 60 * 1000);
     return { erreur: "Mot de passe incorrect." };
   }
   const jeton = creerJetonSession();

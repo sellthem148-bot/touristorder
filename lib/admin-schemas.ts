@@ -125,6 +125,10 @@ export const reglagesSchema = z.object({
     .min(1, { error: "Coche au moins un jour de livraison." })
     .transform((j) => [...new Set(j)].sort((a, b) => a - b)),
   delaiPreparation: entier(0, 600),
+  heureLimite: z
+    .string()
+    .trim()
+    .refine((t) => t === "" || /^([01]\d|2[0-3]):([0-5]\d)$/.test(t), { error: "Heure limite au format HH:MM (ex. 17:00), ou vide." }),
 });
 
 const heure = z.string().trim().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { error: "Heure au format HH:MM (ex. 08:00, 21:30)." });

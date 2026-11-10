@@ -39,3 +39,18 @@ describe("session admin", () => {
     expect(motDePasseCorrect("")).toBe(false);
   });
 });
+
+describe("limite des connexions", () => {
+  it("seuls les échecs comptent ; 10 échecs bloquent pendant la fenêtre", async () => {
+    const { bloque, noterEchec, reinitialiserLimites } = await import("@/lib/limite");
+    reinitialiserLimites();
+    const t = 1_000_000;
+    expect(bloque("ip", 10, t)).toBe(false);
+    for (let i = 0; i < 9; i++) noterEchec("ip", 1000, t);
+    expect(bloque("ip", 10, t)).toBe(false);
+    noterEchec("ip", 1000, t);
+    expect(bloque("ip", 10, t)).toBe(true);
+    expect(bloque("ip", 10, t + 1001)).toBe(false); // fenêtre écoulée
+    expect(bloque("autre-ip", 10, t)).toBe(false);
+  });
+});

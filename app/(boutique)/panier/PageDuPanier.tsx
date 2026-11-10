@@ -18,6 +18,7 @@ import { actualiserPanier, passerCommande, type EtatCommande } from "../actions"
 type Props = {
   reglages: ReglagesPublics;
   jours: JourDeLivraison[];
+  limitePassee: boolean; // l'heure limite pour être livré ce soir est passée
 };
 
 type Valeurs = {
@@ -46,7 +47,7 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
   );
 }
 
-export function PageDuPanier({ reglages, jours }: Props) {
+export function PageDuPanier({ reglages, jours, limitePassee }: Props) {
   const panier = usePanier();
   const [etat, envoyer, enCours] = useActionState<EtatCommande, FormData>(passerCommande, {});
   const [v, setV] = useState<Valeurs>({
@@ -253,6 +254,11 @@ export function PageDuPanier({ reglages, jours }: Props) {
                 </label>
               ))}
             </div>
+            {limitePassee && (
+              <p className="mt-2 text-sm text-slate-600">
+                Les commandes pour ce soir sont closes depuis {reglages.heureLimite.replace(":", "h")} : prochaine livraison {jours[0]?.libelle.toLowerCase() ?? "bientôt"}.
+              </p>
+            )}
             {messageErreur("dateLivraison")}
           </fieldset>
 

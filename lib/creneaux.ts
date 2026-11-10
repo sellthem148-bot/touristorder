@@ -1,11 +1,19 @@
 // Les jours et créneaux de livraison proposés au client : une seule définition,
 // pour le panier (ce qu'on propose) et le serveur (ce qu'on accepte).
 import { ajouterJours, jourEnIsrael, libelleDuJour } from "./dates";
-import { debutDuCreneau, jourDeLaSemaine, momentPresent } from "./tarifs";
+import { debutDuCreneau, enMinutes, heureValide, jourDeLaSemaine, momentPresent } from "./tarifs";
 
 export type JourDeLivraison = { valeur: string; libelle: string; creneaux: string[] };
 
 export const NOMBRE_DE_JOURS = 8;
+
+/** Ce que les réglages disent des livraisons. */
+export type ReglesDeLivraison = {
+  creneaux: string[];
+  joursLivres: number[];
+  delaiPreparation: number; // minutes
+  heureLimite: string; // « HH:MM » : commande avant cette heure pour le soir même ; vide = pas de limite
+};
 
 /** L'heure de fin d'un créneau (« 19:00 – 20:00 » → 1200 ; « 23:00 – 00:00 » → 1440). null s'il n'y en a pas. */
 export function finDuCreneau(creneau: string): number | null {
@@ -15,25 +23,32 @@ export function finDuCreneau(creneau: string): number | null {
   return fin <= debut ? fin + 24 * 60 : fin; // passe minuit
 }
 
+/** L'heure limite du jour même est-elle passée ? (false s'il n'y en a pas.) */
+export function heureLimitePassee(heureLimite: string, maintenant: Date = new Date()): boolean {
+  return heureValide(heureLimite) && momentPresent(maintenant).minutes >= enMinutes(heureLimite);
+}
+
 /**
  * Les prochains jours livrés (sur NOMBRE_DE_JOURS jours) et, pour chacun, les créneaux
- * encore possibles. Aujourd'hui : seulement les créneaux qui commencent au moins
- * `delaiMinutes` après maintenant (le temps de commander sur Wolt et de préparer).
- * Un créneau sans heure (« Dès que possible ») reste proposé. Un jour sans créneau disparaît.
+ * encore possibles. Aujourd'hui : seulement avant l'heure limite (le temps que Wolt
+ * livre les articles dans la journée), et seulement les créneaux qui commencent au
+ * moins `delaiPreparation` après maintenant. Un créneau sans heure (« Dès que possible »)
+ * reste proposé. Un jour sans créneau disparaît.
  */
 export function joursDeLivraison(
-  creneaux: string[],
-  joursLivres: number[],
-  delaiMinutes: number,
+  regles: ReglesDeLivraison,
   maintenant: Date = new Date(),
   nombre: number = NOMBRE_DE_JOURS,
 ): JourDeLivraison[] {
+  const { creneaux, joursLivres, delaiPreparation } = regles;
   const aujourdhui = jourEnIsrael(maintenant);
-  const limite = momentPresent(maintenant).minutes + Math.max(0, delaiMinutes);
+  const fermeAujourdhui = heureLimitePassee(regles.heureLimite, maintenant);
+  const limite = momentPresent(maintenant).minutes + Math.max(0, delaiPreparation);
   const jours: JourDeLivraison[] = [];
   for (let i = 0; i < nombre; i++) {
     const jour = ajouterJours(aujourdhui, i);
     if (!joursLivres.includes(jourDeLaSemaine(jour))) continue;
+    if (i === 0 && fermeAujourdhui) continue;
     const possibles =
       i === 0
         ? creneaux.filter((c) => {

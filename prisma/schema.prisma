@@ -136,6 +136,9 @@ model Reglages {
   minimumCommande Int      @default(0)
   creneaux        String[] @default([])
   joursLivres     Int[]    @default([0, 1, 2, 3, 4, 5, 6]) // 0 = dimanche … 6 = samedi
+  // Commande jusqu'à cette heure (« HH:MM ») pour être livrée le soir même ; vide = pas d'heure limite.
+  // Le gérant reçoit les articles par Wolt dans la journée, puis livre le soir.
+  heureLimite     String   @default("17:00")
   delaiPreparation Int     @default(60) // minutes entre la commande et le début du créneau (commande sur Wolt + reconditionnement)
   whatsapp        String   @default("") // ton numéro, format international sans + (ex. 972501234567)
   messageAccueil  String   @default("")

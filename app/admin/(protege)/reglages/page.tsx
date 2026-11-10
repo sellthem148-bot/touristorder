@@ -85,6 +85,14 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
             </div>
             <p className="mt-1 text-xs text-slate-500">Les jours non cochés ne sont pas proposés au client.</p>
           </fieldset>
+          <div className="grid gap-4">
+          <div>
+            <label htmlFor="heureLimite" className="etiquette">Commande avant… pour être livré le soir même</label>
+            <input id="heureLimite" name="heureLimite" type="time" defaultValue={r.heureLimite} className="champ" />
+            <p className="mt-1 text-xs text-slate-500">
+              Le temps que Wolt te livre les articles dans la journée. Après cette heure, le client est livré le soir suivant. Vide = pas d&apos;heure limite.
+            </p>
+          </div>
           <div>
             <label htmlFor="delaiPreparation" className="etiquette">Délai de préparation (minutes)</label>
             <input id="delaiPreparation" name="delaiPreparation" defaultValue={r.delaiPreparation} inputMode="numeric" className="champ" />
@@ -92,6 +100,7 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
               Pour le soir même, un créneau n&apos;est proposé que s&apos;il commence au moins ce délai après la commande
               (le temps de commander sur Wolt, de recevoir et de préparer).
             </p>
+          </div>
           </div>
         </div>
 

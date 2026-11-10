@@ -17,6 +17,7 @@ node tests/navigateur/parcours-client-et-admin.mjs /tmp/captures
 node tests/navigateur/parcours-prix-et-tarifs.mjs /tmp/captures
 node tests/navigateur/parcours-villes.mjs /tmp/captures
 node tests/navigateur/parcours-soir.mjs /tmp/captures
+node tests/navigateur/parcours-journee.mjs /tmp/captures   # en dernier : ses commandes s'ajoutent aux statistiques du jour
 node tests/navigateur/largeur.mjs /tmp/captures     # aucune page plus large qu'un téléphone de 320 px
 ```
 

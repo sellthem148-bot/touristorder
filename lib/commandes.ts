@@ -40,7 +40,7 @@ export async function creerCommande(entree: unknown): Promise<ResultatCommande> 
   }
   // Le jour doit être un jour livré, et le créneau encore possible ce jour-là
   // (le soir même : au moins le délai de préparation avant son début).
-  const jour = joursDeLivraison(reglages.creneaux, reglages.joursLivres, reglages.delaiPreparation).find((j) => j.valeur === saisie.dateLivraison);
+  const jour = joursDeLivraison(reglages).find((j) => j.valeur === saisie.dateLivraison);
   if (!jour) {
     return { ok: false, erreur: CHAMPS, champs: { dateLivraison: "Ce jour n'est plus disponible : choisis-en un autre." } };
   }

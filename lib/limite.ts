@@ -19,4 +19,21 @@ export function autoriser(cle: string, max: number, fenetreMs: number, maintenan
 
 export function reinitialiserLimites() {
   compteurs.clear();
+  echecs.clear();
+}
+
+// Compteur d'échecs (connexion) : seuls les essais ratés comptent, une bonne
+// connexion ne consomme rien. Bloqué dès `max` échecs dans la fenêtre.
+const echecs = new Map<string, { n: number; fin: number }>();
+
+export function bloque(cle: string, max: number, maintenant = Date.now()): boolean {
+  const c = echecs.get(cle);
+  return !!c && c.fin > maintenant && c.n >= max;
+}
+
+export function noterEchec(cle: string, fenetreMs: number, maintenant = Date.now()) {
+  if (echecs.size > 10_000) echecs.clear();
+  const c = echecs.get(cle);
+  if (!c || c.fin <= maintenant) echecs.set(cle, { n: 1, fin: maintenant + fenetreMs });
+  else c.n += 1;
 }

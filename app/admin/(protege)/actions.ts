@@ -270,6 +270,7 @@ export async function enregistrerReglages(form: FormData) {
     fraisRegroupes: form.get("fraisRegroupes") === "on",
     joursLivres: form.getAll("joursLivres").map(String),
     delaiPreparation: texte(form, "delaiPreparation"),
+    heureLimite: texte(form, "heureLimite"),
   });
   if (!lecture.success) {
     const [champ, message] = Object.entries(erreursParChamp(lecture.error))[0];
@@ -428,4 +429,15 @@ export async function ajouterVille(form: FormData) {
     data: { nom, supplementLivraison: supplement, minimumCommande: minimum, ordre: (dernier._max.ordre ?? 0) + 10 },
   });
   redirect(avecMessage("/admin/villes", "ok", `« ${nom} » ajoutée.`));
+}
+
+// ─── Ma journée ───────────────────────────────────────────────────────────
+
+/** Marque « commandées sur Wolt » les commandes reçues cochées (ou toutes celles listées). */
+export async function marquerCommandees(form: FormData) {
+  await exigerAdmin();
+  const ids = [...new Set(form.getAll("ids").map(String))].filter((x) => x.length > 0 && x.length <= 40).slice(0, 200);
+  if (ids.length === 0) return;
+  await prisma.commande.updateMany({ where: { id: { in: ids }, statut: "RECUE" }, data: { statut: "COMMANDEE" } });
+  refresh();
 }

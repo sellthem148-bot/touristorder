@@ -23,3 +23,14 @@ export function messagePourLeClient(statut: StatutCommande, i: Infos): string {
 export function prenomDe(nom: string): string {
   return nom.trim().split(/\s+/)[0] || nom;
 }
+
+/** « J'arrive » : envoyé depuis la tournée du soir. */
+export function messageJArrive(i: { prenom: string; numero: number; total: number; paiement: string; site: string }): string {
+  const paiement = i.paiement ? ` (${i.paiement})` : "";
+  return `Bonjour ${i.prenom}, c'est ${i.site} ! Je suis en route avec ta commande n°${i.numero}, j'arrive dans une dizaine de minutes. Total à régler : ${formatPrix(i.total)}${paiement}.`;
+}
+
+/** Lien Waze vers l'adresse du client (ouvre l'appli sur téléphone). */
+export function lienWaze(adresse: string, ville: string): string {
+  return `https://waze.com/ul?q=${encodeURIComponent(`${adresse.replace(/\s+/g, " ").trim()}, ${ville}`)}&navigate=yes`;
+}
