@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { ARTICLES_DE_LA_LISTE } from "../prisma/articles-liste";
+import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "../prisma/articles-liste";
+import { prixNonVerifie } from "@/lib/prix-indicatif";
 import { CATEGORIES_WOLT, enAgorot } from "../prisma/articles-wolt";
 import { CATALOGUE, CATEGORIES } from "../prisma/catalogue";
 
@@ -37,7 +38,7 @@ describe("liste de produits dressée par le gérant", () => {
     for (const absent of ["Lait frais Tnuva 3 % 1 L", "Pilons de poulet frais, environ 1 kg", "Coca-Cola Zero 1,5 L", "Biscuits Oreo Original 176 g"]) expect(noms.has(absent), absent).toBe(false);
   });
 
-  it("le prix de la liste n'est jamais un prix de vente : l'article est installé sans prix, masqué", () => {
+  it("à l'installation, le prix de la liste n'est pas un prix de vente : l'article arrive sans prix, masqué", () => {
     const installation = lire("prisma/remplissage.ts");
     const corps = installation.slice(installation.indexOf("export async function installerLaListeDuGerant"), installation.indexOf("export async function installerLesPhotosFrais"));
     expect(corps).toMatch(/prix: 0,/);
@@ -64,6 +65,39 @@ describe("liste de produits dressée par le gérant", () => {
     const boissons = ARTICLES_DE_LA_LISTE.filter((a) => a.categorie === "Boissons");
     const premier = boissons.findIndex((a) => a.alcool);
     expect(boissons.slice(premier).every((a) => a.alcool)).toBe(true);
+  });
+
+  it("la mise en vente décidée par le gérant : tout sauf l'alcool et la mélatonine, une seule fois, sans toucher à ce qu'il a modifié", () => {
+    expect(ARTICLES_MIS_EN_VENTE).toHaveLength(360);
+    expect(ARTICLES_MIS_EN_VENTE.some((a) => a.alcool || a.masque)).toBe(false);
+    const gardes = ARTICLES_DE_LA_LISTE.filter((a) => !ARTICLES_MIS_EN_VENTE.includes(a));
+    expect(gardes.filter((a) => !a.alcool).map((a) => a.nom)).toEqual(["Mélatonine végétale gommes pour le sommeil × 60"]);
+    // Aucun nom d'alcool n'a échappé au repérage.
+    expect(ARTICLES_MIS_EN_VENTE.filter((a) => /bi[èe]re|\bvin\b|vodka|whisk|rhum|gin\b|tequila|liqueur|cidre|prosecco|arak|bourbon|aperol|campari|baileys|breezer|sauvignon|chardonnay|chianti|cabernet|marselan/i.test(a.nom)).map((a) => a.nom)).toEqual([]);
+
+    const source = lire("prisma/remplissage.ts");
+    const corps = source.slice(source.indexOf("export async function mettreEnVenteLaListe"), source.indexOf("export async function installerLesPhotosFrais"));
+    // Une seule fois : le repère est lu d'abord, et posé dans la même transaction que la mise en vente.
+    expect(corps).toMatch(/if \(r\.listeEnVenteLe\) return/);
+    expect(corps).toMatch(/\$transaction\(\[/);
+    expect(corps).toMatch(/listeEnVenteLe: new Date\(\)/);
+    // Seulement les articles restés tels qu'installés : sans prix, masqués, avec leur prix de liste.
+    expect(corps).toMatch(/"prix" = 0 AND "actif" = false AND "prixIndicatif" > 0/);
+    expect(corps).toMatch(/ARTICLES_MIS_EN_VENTE\.map/);
+    // Le prix d'achat reste vide : on ne sait pas ce que l'article coûte sur Wolt.
+    expect(corps).not.toMatch(/"prixAchat"\s*=/);
+    // La mise en ligne de production l'appelle après l'installation de la liste.
+    const preparer = lire("prisma/preparer.ts");
+    expect(preparer.indexOf("mettreEnVenteLaListe(prisma)")).toBeGreaterThan(preparer.indexOf("installerLaListeDuGerant(prisma)"));
+  });
+
+  it("un article vendu au prix de la liste reste repéré « prix non vérifié » tant que le prix d'achat n'est pas noté", () => {
+    expect(prixNonVerifie({ prix: 1490, prixIndicatif: 1490, prixAchat: null })).toBe(true);
+    expect(prixNonVerifie({ prix: 1690, prixIndicatif: 1490, prixAchat: null })).toBe(true); // prix corrigé, achat pas encore noté
+    expect(prixNonVerifie({ prix: 1690, prixIndicatif: 1490, prixAchat: 1690 })).toBe(false); // vérifié sur Wolt
+    expect(prixNonVerifie({ prix: 0, prixIndicatif: 1490, prixAchat: null })).toBe(false); // à compléter : pas en vente
+    expect(prixNonVerifie({ prix: 735, prixIndicatif: null, prixAchat: 735 })).toBe(false); // un article relevé sur Wolt
+    expect(prixNonVerifie({ prix: 735, prixIndicatif: null, prixAchat: null })).toBe(false); // un article du gérant, sans liste
   });
 
   it("les prix sont ceux de la liste, sans arrondi", () => {

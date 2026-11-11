@@ -9,6 +9,7 @@ import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { lienWaze, messageJArrive, messagePourLeClient, prenomDe } from "@/lib/messages-client";
 import { COULEUR_PAIEMENT, estReglee, etatDuPaiement, libelleDuSolde, libellePaiement, resteAPayer } from "@/lib/paiement";
+import { prixNonVerifie } from "@/lib/prix-indicatif";
 import { lireReglages } from "@/lib/reglages";
 import { adresseDuSite } from "@/lib/site";
 import { NOM_DU_SITE } from "@/lib/marque";
@@ -29,7 +30,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
     prisma.commande.findMany({
       where: { dateLivraison: jour, statut: { not: "ANNULEE" } },
       orderBy: [{ createdAt: "asc" }],
-      include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }], include: { produit: { select: { nomWolt: true } } } } },
+      include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }], include: { produit: { select: { id: true, nomWolt: true, prix: true, prixIndicatif: true, prixAchat: true } } } } },
     }),
     lireReglages(),
     adresseDuSite(),
@@ -47,15 +48,16 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
   const livrees = commandes.filter((c) => c.statut === "LIVREE");
 
   // Liste de courses de toutes les commandes à passer, additionnée par boutique puis par article.
-  const parBoutique = new Map<string, Map<string, { quantite: number; numeros: number[]; nomWolt: string }>>();
+  const parBoutique = new Map<string, Map<string, { quantite: number; numeros: number[]; nomWolt: string; aVerifier: string }>>();
   for (const c of aCommander) {
     for (const l of c.lignes) {
       if (l.indisponible) continue;
       const boutique = l.boutique || "Boutique non précisée";
       const articles = parBoutique.get(boutique) ?? new Map();
       const cle = l.options ? `${l.nom} (${l.options})` : l.nom;
-      const a = articles.get(cle) ?? { quantite: 0, numeros: [], nomWolt: l.produit?.nomWolt ?? "" };
-      articles.set(cle, { quantite: a.quantite + l.quantite, numeros: [...a.numeros, c.numero], nomWolt: a.nomWolt });
+      // Vendu au prix de la liste du gérant, jamais vérifié : c'est en l'achetant qu'il voit le vrai prix.
+      const a = articles.get(cle) ?? { quantite: 0, numeros: [], nomWolt: l.produit?.nomWolt ?? "", aVerifier: l.produit && prixNonVerifie(l.produit) ? l.produit.id : "" };
+      articles.set(cle, { quantite: a.quantite + l.quantite, numeros: [...a.numeros, c.numero], nomWolt: a.nomWolt, aVerifier: a.aVerifier });
       parBoutique.set(boutique, articles);
     }
   }
@@ -197,6 +199,12 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                       <span className="min-w-0">
                         <strong>{a.quantite} ×</strong> {nom}
                         {a.nomWolt && <span dir="rtl" lang="he" className="block text-xs text-slate-500">{a.nomWolt}</span>}
+                        {a.aVerifier && (
+                          <span className="block text-xs font-semibold text-amber-700">
+                            Prix de ta liste, pas vérifié sur Wolt —{" "}
+                            <Link href={`/admin/produits/${a.aVerifier}`} className="underline">noter le vrai prix</Link>
+                          </span>
+                        )}
                       </span>
                       <span className="shrink-0 text-xs text-slate-500">n° {[...new Set(a.numeros)].join(", ")}</span>
                     </li>

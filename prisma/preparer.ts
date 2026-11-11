@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { installerLaListeDuGerant, installerLesArticlesWolt, installerLesPhotosFrais, remplirLaBase, mettreLesReglagesANiveau } from "./remplissage";
+import { installerLaListeDuGerant, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -87,6 +87,8 @@ async function main() {
       // La liste dressée par le gérant : des articles « à compléter », sans prix de vente, une seule fois.
       dire(await installerLaListeDuGerant(prisma));
     }
+    // La décision du gérant : ces articles en vente au prix de sa liste. Une seule fois, jamais sur un article qu'il a touché.
+    dire(await mettreEnVenteLaListe(prisma));
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.
     dire(await installerLesPhotosFrais(prisma));
     // 4. Les réglages restés à une ancienne valeur par défaut (jamais ceux que le gérant a modifiés).

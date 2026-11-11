@@ -157,6 +157,9 @@ model LigneCommande {
 // Une seule ligne (id = 1).
 model Reglages {
   id              Int      @id @default(1)
+  // Le jour où les articles de la liste du gérant ont été mis en vente au prix de sa liste (sa décision) :
+  // l'opération ne se refait jamais, un article qu'il remasque ensuite reste masqué.
+  listeEnVenteLe  DateTime?
   fraisService    Int      @default(1500)
   fraisLivraison  Int      @default(3000)
   fraisExpress    Int      @default(0) // supplément livraison express ; 0 = pas d'express

@@ -9,12 +9,18 @@
 // Donc :
 // - ces articles sont installés « à compléter » : SANS prix de vente (prix = 0), donc masqués et
 //   impossibles à commander. Le prix de la liste est gardé à part (`Produit.prixIndicatif`), montré
-//   au gérant seul dans « Prix rapides » comme repère ; il tape le vrai prix de Wolt et l'article
-//   passe en ligne. Ne jamais copier `prixIndicatif` dans `prix` ;
+//   au gérant seul dans « Prix rapides » comme repère ;
+// - le gérant, prévenu de ce risque avec ces exemples, a DÉCIDÉ le 11 novembre 2026 de les mettre en
+//   vente tout de suite au prix de sa liste (« fais-le ») : `mettreEnVenteLaListe`, une seule fois,
+//   pour ARTICLES_MIS_EN_VENTE. Ces articles restent repérés « prix non vérifié » dans son espace
+//   (lib/prix-indicatif.ts) tant qu'il n'a pas noté ce qu'ils coûtent sur Wolt. Cette décision vaut
+//   pour cette liste-là : une autre liste repasse par « à compléter » ;
 // - les 55 produits de la liste que le site vend déjà (même article) ne sont pas repris ;
 // - les textes sont ceux du gérant, nettoyés (typographie, format rangé dans le nom, mention
 //   « prix régulé » retirée). Rien n'y a été vérifié sur un emballage ;
-// - l'alcool (`alcool`) suit la règle des autres lots : jamais mis en ligne par l'installation.
+// - l'alcool (`alcool`) suit la règle des autres lots : jamais mis en ligne par le code, c'est le gérant
+//   qui décide de le vendre (vente d'alcool : âge de l'acheteur, interdiction la nuit) ; de même un
+//   article marqué `masque`.
 //
 // Installé une seule fois (prisma/remplissage.ts, `installerLaListeDuGerant`).
 
@@ -23,9 +29,11 @@ export type ArticleDeListe = {
   categorie: string;
   nom: string;
   description: string;
-  /** Le prix de la liste, en shekels : un repère pour le gérant, JAMAIS un prix de vente. */
+  /** Le prix de la liste, en shekels : pas un prix de Wolt. Voir ARTICLES_MIS_EN_VENTE. */
   prixIndicatif: number;
   alcool?: boolean;
+  /** Reste masqué même après la mise en vente de la liste (la raison est écrite à côté de l'article). */
+  masque?: boolean;
 };
 
 const CREMERIE = "Crèmerie & œufs";
@@ -416,7 +424,8 @@ export const ARTICLES_DE_LA_LISTE: ArticleDeListe[] = [
   { categorie: HYGIENE, nom: "Coton-tiges boîte écologique × 200", description: "Bâtonnets ouatés avec tige en papier biodégradable.", prixIndicatif: 8.5 },
   { categorie: HYGIENE, nom: "Disques démaquillants Demak'Up × 80", description: "Coton double face non pelucheux.", prixIndicatif: 11.9 },
   { categorie: HYGIENE, nom: "Baume à lèvres réparateur Carmex 7,5 g", description: "Soin protecteur au camphre et menthol.", prixIndicatif: 16.5 },
-  { categorie: HYGIENE, nom: "Mélatonine végétale gommes pour le sommeil × 60", description: "Gummies sans sucres pour faciliter l'endormissement.", prixIndicatif: 49 },
+  // La mélatonine est un médicament délivré sur ordonnance en Israël : pas mise en vente par le code.
+  { categorie: HYGIENE, nom: "Mélatonine végétale gommes pour le sommeil × 60", description: "Gummies sans sucres pour faciliter l'endormissement.", prixIndicatif: 49, masque: true },
   // ── Maison & entretien (27) ────────────────────────────────────────────────────
   { categorie: MAISON, nom: "Cillit Bang pistolet anticalcaire 750 ml", description: "Formule active instantanée contre le tartre et la rouille.", prixIndicatif: 16.9 },
   { categorie: MAISON, nom: "Nettoyant vitres Sano Clear bleu 750 ml", description: "Nettoyant dégraissant sans traces pour miroirs.", prixIndicatif: 12.9 },
@@ -450,3 +459,6 @@ export const ARTICLES_DE_LA_LISTE: ArticleDeListe[] = [
   { categorie: ELEC, nom: "Câble Lightning vers USB pour iPhone 1 m", description: "Câble certifié Apple charge et synchronisation.", prixIndicatif: 29.9 },
   { categorie: ELEC, nom: "Chargeur secteur mural rapide 30W GaN", description: "Prise compacte avec technologie rapide GaN.", prixIndicatif: 49.9 },
 ];
+
+/** Ce que la décision du gérant met en vente au prix de sa liste : tout, sauf l'alcool et les articles marqués `masque`. */
+export const ARTICLES_MIS_EN_VENTE: ArticleDeListe[] = ARTICLES_DE_LA_LISTE.filter((a) => !a.alcool && !a.masque);

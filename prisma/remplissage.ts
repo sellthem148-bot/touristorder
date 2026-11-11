@@ -1,7 +1,7 @@
 // Le remplissage de la base, partagé par `npm run seed` (prisma/seed.ts) et par la préparation
 // automatique de la production (prisma/preparer.ts).
 import { ANCIEN_MESSAGE_ACCUEIL, ANCIENS_PAIEMENTS, MESSAGE_ACCUEIL_PAR_DEFAUT, PAIEMENTS_PAR_DEFAUT } from "../lib/marque";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { DOSSIER_PHOTOS_FRAIS } from "../lib/credits-photos";
 import { PHOTOS_FRAIS } from "./photos-frais";
 import { slugDe } from "../lib/slug";
@@ -10,7 +10,7 @@ import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalog
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
-import { ARTICLES_DE_LA_LISTE } from "./articles-liste";
+import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "./articles-liste";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -153,6 +153,29 @@ export async function installerLaListeDuGerant(prisma: PrismaClient): Promise<st
     })),
   });
   return `Liste du gérant : ${ARTICLES_DE_LA_LISTE.length} articles ajoutés « à compléter », masqués, avec leur prix indicatif.`;
+}
+
+/**
+ * Met en vente les articles de la liste du gérant au prix de sa liste : SA décision (11 novembre 2026),
+ * prise après avoir vu que ces prix sont souvent plus bas que ceux de Wolt (prisma/articles-liste.ts).
+ * - Une seule fois (`Reglages.listeEnVenteLe`) : un article qu'il remasque ou remet « à compléter »
+ *   ensuite ne revient pas en vente.
+ * - Seulement les articles restés tels qu'installés (sans prix, masqués) : jamais un article qu'il a
+ *   déjà chiffré, renommé ou supprimé. Jamais l'alcool ni un article marqué `masque`.
+ * - Le prix d'achat reste vide : on ne sait pas ce que l'article coûte sur Wolt, et c'est ce vide qui
+ *   le garde repéré « prix non vérifié » dans l'espace gérant (lib/prix-indicatif.ts).
+ */
+export async function mettreEnVenteLaListe(prisma: PrismaClient): Promise<string> {
+  const r = await prisma.reglages.findUnique({ where: { id: 1 }, select: { listeEnVenteLe: true } });
+  if (!r) return "Liste du gérant : réglages pas encore créés, rien mis en vente.";
+  if (r.listeEnVenteLe) return "Liste du gérant : déjà mise en vente, rien de changé.";
+  const noms = ARTICLES_MIS_EN_VENTE.map((a) => a.nom);
+  const [misEnVente] = await prisma.$transaction([
+    prisma.$executeRaw`UPDATE "Produit" SET "prix" = "prixIndicatif", "actif" = true, "updatedAt" = now()
+      WHERE "nom" IN (${Prisma.join(noms)}) AND "prix" = 0 AND "actif" = false AND "prixIndicatif" > 0`,
+    prisma.reglages.update({ where: { id: 1 }, data: { listeEnVenteLe: new Date() } }),
+  ]);
+  return `Liste du gérant : ${misEnVente} article(s) mis en vente au prix de la liste (décision du gérant) ; ${ARTICLES_DE_LA_LISTE.length - noms.length} gardés masqués (alcool, médicament).`;
 }
 
 /**
