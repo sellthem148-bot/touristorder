@@ -8,6 +8,10 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "sw
 
 const TITRE = `${NOM_DU_SITE} — vos courses livrées à votre logement en Israël`;
 
+// Le commit en service, lisible dans le code source de chaque page (<meta name="version">) : le seul
+// moyen de vérifier de l'extérieur qu'une mise en ligne a bien eu lieu. Rien de secret (dépôt, commit).
+const VERSION = (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7);
+
 export const metadata: Metadata = {
   metadataBase: new URL(ADRESSE_DU_SITE),
   title: { default: TITRE, template: `%s · ${NOM_DU_SITE}` },
@@ -21,6 +25,7 @@ export const metadata: Metadata = {
     description: DESCRIPTION_DU_SITE,
   },
   twitter: { card: "summary_large_image" },
+  ...(VERSION ? { other: { version: VERSION } } : {}),
 };
 
 export const viewport: Viewport = {
