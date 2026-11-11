@@ -2,24 +2,13 @@ import Link from "next/link";
 import { Search, User } from "lucide-react";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { LienPanier } from "./LienPanier";
+import { Sigle } from "./Sigle";
 
-/** Les initiales du nom : « Tourist Order » → « TO ». */
-export function monogramme(nom: string): string {
-  const mots = nom.trim().split(/\s+/).filter(Boolean);
-  const lettres = mots.length >= 2 ? mots[0][0] + mots[1][0] : (mots[0] ?? "").slice(0, 2);
-  return lettres.toUpperCase();
-}
-
-/** Le logo : un monogramme dans un carré, et le nom. */
+/** Le logo : le sigle (un T et un O couleur soleil dans une tuile), et le nom. */
 export function Logo({ clair = false, sansNom = false, compactSurMobile = false }: { clair?: boolean; sansNom?: boolean; compactSurMobile?: boolean }) {
   return (
     <span className="flex items-center gap-2.5">
-      <span
-        className={`flex h-9 w-9 items-center justify-center rounded-xl text-[13px] font-extrabold tracking-tight ${clair ? "bg-white text-encre" : "bg-encre text-white"}`}
-        aria-hidden="true"
-      >
-        {monogramme(NOM_DU_SITE)}
-      </span>
+      <Sigle taille={36} clair={clair} />
       {!sansNom && (
         <span className={`text-[17px] font-bold tracking-tight ${clair ? "text-white" : "text-encre"} ${compactSurMobile ? "hidden sm:inline" : ""}`}>{NOM_DU_SITE}</span>
       )}

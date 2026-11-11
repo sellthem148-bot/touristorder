@@ -41,6 +41,22 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 
 Côté client, le site est volontairement sobre : texte et boutons en encre, fond clair, traits fins, une seule couleur d'accent, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un article s'affiche comme une ligne de menu — nom, format, prix — avec sa photo seulement s'il en a une (les photos s'ajoutent dans l'espace gérant, fiche du produit). Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
 
+### Logo
+
+Le sigle est un **T** et un **O plein, couleur soleil**, dans une tuile encre : les initiales de Tourist Order, le O en soleil. Le jaune (`#f2b632`) ne sert qu'à lui. Un seul tracé (`lib/sigle.ts`) dessine le logo du site (`components/Sigle.tsx`), l'icône de l'onglet, l'icône de téléphone et la carte d'aperçu de lien.
+
+Les fichiers à réutiliser ailleurs (WhatsApp, Instagram, autocollants, cartes) sont dans `public/logo/`, donc aussi téléchargeables depuis le site (`https://www.touristorder.com/logo/<fichier>`) :
+
+| Fichier | Usage |
+|---|---|
+| `tourist-order-logo.svg` / `.png` | Logo complet, sur fond clair |
+| `tourist-order-logo-clair.svg` / `.png` | Logo complet, sur fond sombre |
+| `tourist-order-logo-empile.svg` / `.png` | Sigle au-dessus du nom (affiche, autocollant) |
+| `tourist-order-sigle.svg` / `.png` | Sigle seul (`-clair` : sur fond sombre) |
+| `tourist-order-profil.svg` / `.png` | Photo de profil : fond plein, tient dans un rond |
+
+Les `.svg` sont vectoriels (impression, toute taille) et le nom y est tracé en courbes : ils ne dépendent d'aucune police. `tests/logo.test.ts` vérifie que ces fichiers portent le même tracé que le site. La police de la carte d'aperçu est dans `assets/polices/` (Geist, licence OFL jointe).
+
 ## Lancer en local
 
 Prérequis : Node 20.9 ou plus récent, et PostgreSQL.
