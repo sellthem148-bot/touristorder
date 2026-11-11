@@ -24,7 +24,8 @@ export type CategorieWolt =
   | "Apéro & snacks"
   | "Bébé & enfants"
   | "Maison & entretien"
-  | "Shabbat & casher";
+  | "Shabbat & casher"
+  | "Chargeurs & électronique";
 
 export type ArticleWolt = {
   categorie: CategorieWolt;
@@ -296,6 +297,9 @@ export const REMPLACES_PAR_WOLT: ReadonlySet<string> = new Set([
   "Sacs poubelle",
   "Gobelets jetables × 50",
   "Jus de raisin pour Kiddoush",
+  // Remplacés par les articles de Dynamica (prisma/articles-dynamica.ts)
+  "Chargeur téléphone 20 W",
+  "Écouteurs filaires",
 ]);
 
 /** Le prix en agorot. */

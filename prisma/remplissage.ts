@@ -4,7 +4,8 @@ import type { PrismaClient } from "@prisma/client";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
-import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot } from "./articles-wolt";
+import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
+import { ARTICLES_DYNAMICA, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -34,16 +35,22 @@ const DEMO: { nom: string; prix: number; prixAchat: number; prixBarre?: number; 
   { nom: "Bouquet de fleurs", prix: 18990, prixAchat: 14990, options: "Taille : Moyen | Grand +60" },
 ];
 
+/** Un relevé de prix d'une boutique de Wolt : installé en une fois, une seule fois. */
+export type LotWolt = { nom: string; boutique: string; articles: ArticleWolt[] };
+
+export const LOTS_WOLT: LotWolt[] = [
+  { nom: "Wolt Market", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT },
+  { nom: "Dynamica", boutique: BOUTIQUE_DYNAMICA, articles: ARTICLES_DYNAMICA },
+];
+
 /**
- * Installe les articles réels de Wolt Market, avec leur prix (prisma/articles-wolt.ts). UNE SEULE FOIS :
- * dès qu'un article du lot existe (reconnu à son nom sur Wolt), on ne touche plus à rien — les prix
- * se gèrent ensuite dans l'admin, et un article supprimé par le gérant ne revient pas.
+ * Installe les articles réels de Wolt, avec leur prix, lot par lot (prisma/articles-*.ts).
+ * Chaque lot UNE SEULE FOIS : dès qu'un de ses articles existe (reconnu à son nom sur Wolt), on ne
+ * touche plus à ce lot — les prix se gèrent ensuite dans l'admin, et un article supprimé par le
+ * gérant ne revient pas. Un nouveau lot s'ajoute sans toucher aux précédents.
  * Un article « à compléter » du même nom (sans prix) est complété ; un article qui a déjà un prix n'est jamais modifié.
  */
 export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<string> {
-  const dejaLa = await prisma.produit.count({ where: { nomWolt: { in: ARTICLES_WOLT.map((a) => a.nomWolt) } } });
-  if (dejaLa > 0) return `Articles Wolt : déjà installés (${dejaLa}), rien de changé.`;
-
   for (const c of CATEGORIES_WOLT) {
     await prisma.categorie.upsert({
       where: { nom: c.nom },
@@ -52,36 +59,45 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
     });
   }
   const categories = new Map((await prisma.categorie.findMany({ select: { id: true, nom: true } })).map((c) => [c.nom, c.id]));
-  const existants = new Map((await prisma.produit.findMany({ select: { id: true, nom: true, prix: true } })).map((p) => [p.nom, p]));
 
-  let crees = 0;
-  let completes = 0;
-  for (const [i, a] of ARTICLES_WOLT.entries()) {
-    const categorieId = categories.get(a.categorie);
-    if (!categorieId) throw new Error(`Catégorie inconnue : ${a.categorie} (${a.nom})`);
-    const prix = enAgorot(a.prix);
-    const donnees = {
-      description: a.description,
-      prix,
-      prixAchat: prix, // même prix que Wolt : la marge est sur les frais
-      actif: !a.horsLigne,
-      badge: a.populaire ? "populaire" : "",
-      boutique: BOUTIQUE_WOLT,
-      nomWolt: a.nomWolt,
-      categorieId,
-    };
-    const existant = existants.get(a.nom);
-    if (existant) {
-      if (existant.prix > 0) continue; // déjà chiffré par le gérant : on n'y touche pas
-      await prisma.produit.update({ where: { id: existant.id }, data: donnees });
-      completes += 1;
-    } else {
-      await prisma.produit.create({ data: { nom: a.nom, ordre: i, ...donnees } });
-      crees += 1;
+  const bilans: string[] = [];
+  for (const lot of LOTS_WOLT) {
+    const dejaLa = await prisma.produit.count({ where: { nomWolt: { in: lot.articles.map((a) => a.nomWolt) } } });
+    if (dejaLa > 0) {
+      bilans.push(`${lot.nom} : déjà installé (${dejaLa}), rien de changé`);
+      continue;
     }
+    const existants = new Map((await prisma.produit.findMany({ select: { id: true, nom: true, prix: true } })).map((p) => [p.nom, p]));
+    let crees = 0;
+    let completes = 0;
+    for (const [i, a] of lot.articles.entries()) {
+      const categorieId = categories.get(a.categorie);
+      if (!categorieId) throw new Error(`Catégorie inconnue : ${a.categorie} (${a.nom})`);
+      const prix = enAgorot(a.prix);
+      const donnees = {
+        description: a.description,
+        prix,
+        prixAchat: prix, // même prix que Wolt : la marge est sur les frais
+        actif: !a.horsLigne,
+        badge: a.populaire ? "populaire" : "",
+        boutique: lot.boutique,
+        nomWolt: a.nomWolt,
+        categorieId,
+      };
+      const existant = existants.get(a.nom);
+      if (existant) {
+        if (existant.prix > 0) continue; // déjà chiffré par le gérant : on n'y touche pas
+        await prisma.produit.update({ where: { id: existant.id }, data: donnees });
+        completes += 1;
+      } else {
+        await prisma.produit.create({ data: { nom: a.nom, ordre: i, ...donnees } });
+        crees += 1;
+      }
+    }
+    const horsLigne = lot.articles.filter((a) => a.horsLigne).length;
+    bilans.push(`${lot.nom} : ${crees} ajouté(s) avec leur prix${completes ? `, ${completes} complété(s)` : ""}${horsLigne ? ` (${horsLigne} hors ligne)` : ""}`);
   }
-  const horsLigne = ARTICLES_WOLT.filter((a) => a.horsLigne).length;
-  return `Articles Wolt : ${crees} ajouté(s) avec leur prix${completes ? `, ${completes} complété(s)` : ""} (${horsLigne} hors ligne), ${CATEGORIES_WOLT.length} rayons.`;
+  return `Articles Wolt — ${bilans.join(" ; ")}.`;
 }
 
 /**

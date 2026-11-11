@@ -66,7 +66,7 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
    - crée ou met à jour les tables (`prisma db push`, sans `--accept-data-loss` : un changement qui effacerait des données arrête la mise en ligne) ;
    - active la « row level security » sur toutes les tables (`prisma/rls.sql`), sinon la clé publique de Supabase pourrait les lire ;
    - sur une base toute neuve seulement, installe la base du catalogue (articles sans prix, masqués), les catégories, les villes et les plages d'exemple ;
-   - une seule fois, installe les **177 articles réels de Wolt Market Netanya Center avec leur prix** (`prisma/articles-wolt.ts`, relevé du 10 novembre 2026) et leurs quatre rayons (Crèmerie & œufs, Pain & pâtisserie, Boucherie & poisson, Surgelés & glaces). Ensuite les prix se changent dans l'admin (« Prix rapides ») ;
+   - installe les **articles réels de Wolt avec leur prix**, lot par lot et chaque lot une seule fois : 177 articles de Wolt Market Netanya Center (`prisma/articles-wolt.ts`, relevé du 10 novembre 2026, avec quatre rayons en plus : Crèmerie & œufs, Pain & pâtisserie, Boucherie & poisson, Surgelés & glaces) et 30 articles d'électronique de Dynamica Netanya (`prisma/articles-dynamica.ts`, 11 novembre 2026). Ensuite les prix se changent dans l'admin (« Prix rapides »). Pour ajouter une boutique : un nouveau fichier d'articles et une ligne dans `LOTS_WOLT` (`prisma/remplissage.ts`) ;
    - crée le dossier public `produits` de Supabase Storage (photos).
 
    Un aperçu (preview) ne touche jamais à la base. Sans base branchée, la mise en ligne continue et le dit dans son journal (`[base] …`).

@@ -100,3 +100,63 @@ describe("fiche produit : le nom sur Wolt", () => {
     expect(produitSchema.safeParse({ ...base, nomWolt: "א".repeat(201) }).success).toBe(false);
   });
 });
+
+describe("articles de Dynamica (électronique)", () => {
+  it("30 articles, tous dans « Chargeurs & électronique », aux prix du relevé", async () => {
+    const { ARTICLES_DYNAMICA } = await import("../prisma/articles-dynamica");
+    expect(ARTICLES_DYNAMICA).toHaveLength(30);
+    for (const a of ARTICLES_DYNAMICA) {
+      expect(a.categorie, a.nom).toBe("Chargeurs & électronique");
+      expect(a.nom, a.nom).not.toMatch(/[֐-׿]/);
+      expect(a.nom.length, a.nom).toBeLessThanOrEqual(120);
+      expect(a.nomWolt.trim().length, a.nom).toBeGreaterThan(5);
+      expect(a.description.trim().length, a.nom).toBeGreaterThan(0);
+    }
+    // Chaque prix, tel qu'il est affiché sur la page Wolt de la boutique.
+    expect(Object.fromEntries(ARTICLES_DYNAMICA.map((a) => [a.nom, enAgorot(a.prix)]))).toEqual({
+      "Chargeur Apple 20 W USB-C": 11900,
+      "Chargeur Samsung 25 W + câble USB-C noir": 9900,
+      "Chargeur USB-C 25 W blanc": 9900,
+      "Chargeur rapide PureGear 45 W USB-C noir": 13900,
+      "Batterie externe magnétique Samsung blanc": 19900,
+      "Alimentation pour routeur noir": 5000,
+      "Écouteurs filaires Samsung AKG jack 3,5 mm noir": 6900,
+      "Écouteurs filaires d'origine Samsung AKG noir": 11900,
+      "Écouteurs filaires d'origine Samsung AKG blanc": 11900,
+      "Écouteurs sans fil Samsung Galaxy Buds Core noir": 29900,
+      "Écouteurs sans fil Samsung Galaxy Buds Core blanc": 29900,
+      "Étui silicone pour AirPods 4 rose": 4900,
+      "Enceinte Bluetooth JBL Grip noir": 23900,
+      "Enceinte Bluetooth JBL Flip 7 rouge": 31900,
+      "Enceinte Bluetooth JBL Charge 6 rouge": 45500,
+      "Samsung Galaxy A07 64 Go noir": 52900,
+      "Tablette Samsung Galaxy Tab A11 8,7 pouces Wi-Fi gris": 59900,
+      "Verre trempé PG Glass iPhone 16/17/18 Pro Max": 9900,
+      "Verre trempé anti-regards PG Glass iPhone 17 Pro": 11900,
+      "Verre trempé anti-regards PG Glass iPhone 17/18 Pro": 11900,
+      "Verre trempé anti-regards PG Glass iPhone 17/18 Pro Max": 11900,
+      "Verre trempé OtterBox iPhone 17/18 Pro": 11900,
+      "Verre trempé OtterBox iPhone 17/18 Pro Max": 11900,
+      "Coque transparente Hard Shell iPhone 17/18 Pro": 9900,
+      "Coque MagSafe transparente Dualtek iPhone 17 Pro Max": 14900,
+      "Kit Samsung Galaxy S25 : coque React + verre trempé": 17900,
+      "Manette PS5 DualSense rouge": 32900,
+      "Casque sans fil PS5 Pulse Elite noir": 59900,
+      "Manette Xbox sans fil rouge": 29900,
+      "Télécommande MB Pro pour décodeur MasterBox": 5900,
+    });
+  });
+
+  it("tous lots confondus : aucun nom en double, ni entre eux ni avec la base du catalogue", async () => {
+    const { LOTS_WOLT } = await import("../prisma/remplissage");
+    const tous = LOTS_WOLT.flatMap((l) => l.articles);
+    expect(tous).toHaveLength(207);
+    expect(new Set(tous.map((a) => a.nom)).size).toBe(tous.length);
+    expect(new Set(tous.map((a) => a.nomWolt)).size).toBe(tous.length);
+    const rayons = new Set<string>([...CATEGORIES.map((c) => c.nom), ...CATEGORIES_WOLT.map((c) => c.nom)]);
+    for (const a of tous) expect(rayons.has(a.categorie), `${a.nom} → ${a.categorie}`).toBe(true);
+    const restants = new Set(CATALOGUE.filter((a) => !REMPLACES_PAR_WOLT.has(a.nom)).map((a) => a.nom));
+    expect(tous.filter((a) => restants.has(a.nom)).map((a) => a.nom)).toEqual([]);
+    expect(new Set(LOTS_WOLT.map((l) => l.boutique)).size).toBe(LOTS_WOLT.length);
+  });
+});
