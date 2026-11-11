@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { creerJetonClient, lireJetonClient, DUREE_LIEN_CONNEXION_MS } from "@/lib/session-client";
 import { creerJetonSession, jetonSessionValide } from "@/lib/session-admin";
-import { courrielDeConfirmation, courrielDeConnexion, courrielNouvelleCommande, echapper, type CommandePourCourriel } from "@/lib/courriels";
+import { adresseDeReponse, corpsPourResend, courrielDeConfirmation, courrielDeConnexion, courrielNouvelleCommande, echapper, type CommandePourCourriel } from "@/lib/courriels";
 import { produitsPreferes, resumeDuClient, selectionDepuisLibelle } from "@/lib/espace-client";
 import { lignesDeMontants } from "@/lib/montants";
 import { commandeSchema, emailSchema } from "@/lib/validation";
@@ -192,5 +192,29 @@ describe("commander à nouveau", () => {
     expect(resoudreSelection(options, selectionDepuisLibelle("Taille : 8 ans"))).toEqual({ ok: true, supplement: 1000, libelle: "Taille : 8 ans" });
     expect(resoudreSelection(options, selectionDepuisLibelle("Taille : 12 ans")).ok).toBe(false); // taille retirée depuis
     expect(resoudreSelection([], selectionDepuisLibelle("Taille : 4 ans")).ok).toBe(false); // le produit n'a plus d'options
+  });
+});
+
+describe("envoi : l'adresse de réponse", () => {
+  const courriel = { a: "sarah@exemple.test", sujet: "Ta commande n°12", html: "<p>Merci</p>", texte: "Merci" };
+  const expediteur = "Tourist Order <commandes@touristorder.com>";
+
+  it("sans EMAIL_REPONSE : pas d'en-tête de réponse", () => {
+    expect(adresseDeReponse({})).toBeUndefined();
+    expect(corpsPourResend(courriel, expediteur, {})).toEqual({
+      from: expediteur, to: ["sarah@exemple.test"], subject: "Ta commande n°12", html: "<p>Merci</p>", text: "Merci",
+    });
+  });
+
+  it("avec EMAIL_REPONSE : le client qui répond écrit à cette adresse", () => {
+    const corps = corpsPourResend(courriel, expediteur, { EMAIL_REPONSE: "  contact@touristorder.com " });
+    expect(corps.reply_to).toBe("contact@touristorder.com");
+    expect(corps.from).toBe(expediteur);
+  });
+
+  it("une valeur qui n'est pas une adresse est ignorée (jamais d'en-tête injecté)", () => {
+    for (const valeur of ["", "pas une adresse", "a@b", "a@b.c, autre@d.e", "a@b.c\nBcc: x@y.z", "<a@b.c>", "x".repeat(250) + "@exemple.test"]) {
+      expect(adresseDeReponse({ EMAIL_REPONSE: valeur }), valeur).toBeUndefined();
+    }
   });
 });

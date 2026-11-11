@@ -200,3 +200,23 @@ export function courrielDeConnexion(o: { site: string; lien: string; minutes: nu
     texte: `Ton lien pour ouvrir ton espace client (valable ${o.minutes} minutes) :\n${o.lien}\n\nSi tu n'as rien demandé, ignore cet e-mail.`,
   };
 }
+
+/**
+ * L'adresse à laquelle un client répond quand il fait « Répondre » à un de nos e-mails (EMAIL_REPONSE).
+ * L'expéditeur (commandes@…) n'a pas forcément de boîte de réception : sans elle, une réponse se perd.
+ * Rien si la variable est absente ou n'est pas une adresse.
+ */
+export function adresseDeReponse(env: Record<string, string | undefined> = process.env): string | undefined {
+  const adresse = (env.EMAIL_REPONSE ?? "").trim();
+  return /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(adresse) && adresse.length <= 254 ? adresse : undefined;
+}
+
+/** Ce qu'on envoie à Resend pour un e-mail (pur : testé sans réseau). */
+export function corpsPourResend(
+  c: { a: string; sujet: string; html: string; texte: string },
+  expediteur: string,
+  env: Record<string, string | undefined> = process.env,
+) {
+  const reponse = adresseDeReponse(env);
+  return { from: expediteur, to: [c.a], subject: c.sujet, html: c.html, text: c.texte, ...(reponse ? { reply_to: reponse } : {}) };
+}

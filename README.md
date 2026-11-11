@@ -81,10 +81,22 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 
 **Autre façon** (base Supabase créée à la main, sur son propre compte) : poser `DATABASE_URL` (« Transaction pooler », port 6543) et `DIRECT_URL` (« Session pooler », port 5432), `NEXT_PUBLIC_SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` dans Vercel. Ces noms passent avant ceux de l'intégration ; le reste est identique.
 
+## État de la production (11 novembre 2026)
+
+- **Site** : https://www.touristorder.com (`touristorder.com` redirige vers `www`), aussi sur https://touristorder.vercel.app. Domaine acheté chez Hostinger, DNS pointés sur Vercel.
+- **Code** : dépôt GitHub `sellthem148-bot/touristorder`, branche `main`. **Chaque `git push` sur `main` met le site en ligne** (1 à 2 minutes) : c'est la seule façon de redéployer, le bouton « Redeploy » de Vercel demande au gérant un code par e-mail qu'il ne reçoit pas.
+- **Vercel** : équipe « Sellthem148 » (offre Hobby), projet `touristorder`, fonctions à Francfort (`vercel.json`). Une variable d'environnement ajoutée ou changée n'est prise en compte qu'à la mise en ligne suivante.
+- **Base** : Supabase créée depuis Vercel (Storage), branchée au projet ; les tables, la sécurité (RLS) et le catalogue ont été installés par `prisma/preparer.ts`.
+- **Variables posées dans Vercel** : `ADMIN_PASSWORD`, `RESEND_API_KEY`, `EMAIL_EXPEDITEUR`, `EMAIL_GERANT` (plus celles de l'intégration Supabase). Pas de `SESSION_SECRET` : la clé est dérivée (`lib/cle-session.ts`).
+- **E-mails** : domaine `touristorder.com` ajouté chez Resend (DKIM et SPF en place). Le domaine n'a pas de boîte de réception : une réponse d'un client à un e-mail du site se perd, sauf si `EMAIL_REPONSE` est posée.
+- **Catalogue en ligne** : 205 articles visibles (175 de Wolt Market Netanya Center, 30 de Dynamica Netanya), bière et vin installés hors ligne, aucune photo pour l'instant.
+- **À savoir** : le dépôt est public. Avant de le passer en privé, vérifier que Vercel (offre Hobby) déploie encore les envois dont l'auteur n'est pas le propriétaire du compte.
+
 ## E-mails (Resend)
 
 1. Crée un compte sur resend.com, ajoute et **vérifie ton nom de domaine** (enregistrements DNS donnés par Resend), crée une clé API.
 2. Variables : `RESEND_API_KEY`, `EMAIL_EXPEDITEUR` (ex. `Tourist Order <commandes@touristorder.com>`, sur le domaine vérifié), `EMAIL_GERANT` (ton adresse, pour l'avis de nouvelle commande), `NEXT_PUBLIC_SITE_URL` (les liens des e-mails).
+   `EMAIL_REPONSE` (facultative) : l'adresse à laquelle un client répond s'il fait « Répondre » ; elle est visible du client.
 3. Sans `RESEND_API_KEY` en production, aucune confirmation ne part et l'espace client ne peut pas envoyer de lien (la page le dit). Sans domaine vérifié, Resend n'envoie qu'à l'adresse du compte Resend.
 
 En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fichier `.html` à ouvrir dans un navigateur, et un `.txt`).

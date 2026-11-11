@@ -2,6 +2,7 @@ import "server-only";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NOM_DU_SITE } from "./marque";
+import { corpsPourResend } from "./courriels";
 
 // L'envoi des e-mails : un seul chemin (Resend, par son API HTTP).
 // - Ne lève jamais : une commande enregistrée ne doit pas échouer parce qu'un e-mail n'est pas parti.
@@ -47,11 +48,16 @@ export async function envoyerCourriel(c: Courriel): Promise<ResultatEnvoi> {
     const reponse = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${cle}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: expediteur(), to: [c.a], subject: sujet, html: c.html, text: c.texte }),
+      body: JSON.stringify(corpsPourResend({ ...c, sujet }, expediteur())),
       signal: AbortSignal.timeout(8000),
     });
     if (!reponse.ok) {
-      console.error(`[courriel] refusé par Resend (${reponse.status}) : ${sujet}`);
+      // Le code d'erreur de Resend (« validation_error », « missing_api_key »…) : ni adresse ni contenu.
+      const code = await reponse
+        .json()
+        .then((j: unknown) => (j && typeof j === "object" && typeof (j as { name?: unknown }).name === "string" ? (j as { name: string }).name.slice(0, 60) : ""))
+        .catch(() => "");
+      console.error(`[courriel] refusé par Resend (${reponse.status}${code ? ` ${code}` : ""}) : ${sujet}`);
       return { ok: false, raison: `Refusé par le service d'envoi (${reponse.status}).` };
     }
     return { ok: true };
