@@ -2,7 +2,7 @@
 // Market, 450 produits », reçu le 11 novembre 2026) : nom, format, description et un prix INDICATIF.
 //
 // Ce n'est PAS un relevé de Wolt : les prix ne sont pas ceux de la boutique. Sur les articles de cette
-// liste que le site vendait déjà au vrai prix de Wolt, environ quatre sur dix étaient trop bas, parfois
+// liste que le site vendait déjà au vrai prix de Wolt (une cinquantaine), la moitié étaient trop bas, parfois
 // de beaucoup (pilons de poulet : 37,90 dans la liste, 72,82 sur Wolt ; salade d'aubergines : 13,90
 // contre 26,40). Vendre à ces prix ferait perdre de l'argent au gérant sur chaque commande.
 //
