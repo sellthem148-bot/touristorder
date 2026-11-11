@@ -46,6 +46,8 @@ export const produitSchema = z.object({
     .trim()
     .max(500, { error: "Lien trop long." })
     .refine((t) => t === "" || /^https:\/\/[^\s]+$/.test(t), { error: "Le lien doit commencer par https://" }),
+  // Le nom exact de l'article sur Wolt (souvent en hébreu) : privé, pour le retrouver au moment de commander.
+  nomWolt: z.string().trim().max(200, { error: "200 caractères maximum." }),
   ordre: entier(0, 9999),
   actif: z.boolean(),
   epuise: z.boolean(),

@@ -7,7 +7,8 @@
 //   1. structure   : `prisma db push` (sans --accept-data-loss : un changement qui perdrait des
 //                    données arrête la mise en ligne au lieu de les effacer) ;
 //   2. sécurité    : RLS sur toutes les tables (prisma/rls.sql) ;
-//   3. catalogue   : la base du catalogue, seulement si la base est toute neuve ;
+//   3. catalogue   : la base du catalogue si la base est toute neuve ; les articles réels de Wolt
+//                    Market avec leur prix, une seule fois (prisma/articles-wolt.ts) ;
 //   4. photos      : le dossier public « produits » de Supabase Storage, s'il manque.
 //
 // Sans base branchée, il prévient et laisse la mise en ligne continuer.
@@ -17,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { remplirLaBase } from "./remplissage";
+import { installerLesArticlesWolt, remplirLaBase } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -80,7 +81,9 @@ async function main() {
     if (categories === 0 && produits === 0 && commandes === 0) {
       dire(`base neuve. ${await remplirLaBase(prisma)}`);
     } else {
-      dire(`catalogue : ${categories} catégories, ${produits} articles déjà là, rien d'ajouté.`);
+      dire(`catalogue : ${categories} catégories, ${produits} articles déjà là.`);
+      // Les articles réels de Wolt : une seule fois, même sur une base déjà en service.
+      dire(await installerLesArticlesWolt(prisma));
     }
   } finally {
     await prisma.$disconnect();

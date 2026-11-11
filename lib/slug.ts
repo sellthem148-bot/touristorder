@@ -2,6 +2,9 @@
 export function slugDe(texte: string): string {
   return (
     texte
+      // « œufs » → « oeufs » (la décomposition Unicode ne sépare pas les lettres liées).
+      .replace(/œ/gi, "oe")
+      .replace(/æ/gi, "ae")
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "")
       .toLowerCase()

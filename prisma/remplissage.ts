@@ -4,6 +4,7 @@ import type { PrismaClient } from "@prisma/client";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
+import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot } from "./articles-wolt";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -34,8 +35,60 @@ const DEMO: { nom: string; prix: number; prixAchat: number; prixBarre?: number; 
 ];
 
 /**
- * Remplit la base : catégories, réglages, villes et plages d'exemple, et la base du catalogue
- * (sans prix, masquée). N'écrase jamais rien : seulement ce qui manque. `demo` pose des prix inventés.
+ * Installe les articles réels de Wolt Market, avec leur prix (prisma/articles-wolt.ts). UNE SEULE FOIS :
+ * dès qu'un article du lot existe (reconnu à son nom sur Wolt), on ne touche plus à rien — les prix
+ * se gèrent ensuite dans l'admin, et un article supprimé par le gérant ne revient pas.
+ * Un article « à compléter » du même nom (sans prix) est complété ; un article qui a déjà un prix n'est jamais modifié.
+ */
+export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<string> {
+  const dejaLa = await prisma.produit.count({ where: { nomWolt: { in: ARTICLES_WOLT.map((a) => a.nomWolt) } } });
+  if (dejaLa > 0) return `Articles Wolt : déjà installés (${dejaLa}), rien de changé.`;
+
+  for (const c of CATEGORIES_WOLT) {
+    await prisma.categorie.upsert({
+      where: { nom: c.nom },
+      update: {},
+      create: { nom: c.nom, emoji: c.emoji, slug: slugDe(c.nom), ordre: c.ordre },
+    });
+  }
+  const categories = new Map((await prisma.categorie.findMany({ select: { id: true, nom: true } })).map((c) => [c.nom, c.id]));
+  const existants = new Map((await prisma.produit.findMany({ select: { id: true, nom: true, prix: true } })).map((p) => [p.nom, p]));
+
+  let crees = 0;
+  let completes = 0;
+  for (const [i, a] of ARTICLES_WOLT.entries()) {
+    const categorieId = categories.get(a.categorie);
+    if (!categorieId) throw new Error(`Catégorie inconnue : ${a.categorie} (${a.nom})`);
+    const prix = enAgorot(a.prix);
+    const donnees = {
+      description: a.description,
+      prix,
+      prixAchat: prix, // même prix que Wolt : la marge est sur les frais
+      actif: !a.horsLigne,
+      badge: a.populaire ? "populaire" : "",
+      boutique: BOUTIQUE_WOLT,
+      nomWolt: a.nomWolt,
+      categorieId,
+    };
+    const existant = existants.get(a.nom);
+    if (existant) {
+      if (existant.prix > 0) continue; // déjà chiffré par le gérant : on n'y touche pas
+      await prisma.produit.update({ where: { id: existant.id }, data: donnees });
+      completes += 1;
+    } else {
+      await prisma.produit.create({ data: { nom: a.nom, ordre: i, ...donnees } });
+      crees += 1;
+    }
+  }
+  const horsLigne = ARTICLES_WOLT.filter((a) => a.horsLigne).length;
+  return `Articles Wolt : ${crees} ajouté(s) avec leur prix${completes ? `, ${completes} complété(s)` : ""} (${horsLigne} hors ligne), ${CATEGORIES_WOLT.length} rayons.`;
+}
+
+/**
+ * Remplit la base : catégories, réglages, villes et plages d'exemple, la base du catalogue
+ * (sans prix, masquée) et les articles réels de Wolt Market avec leur prix.
+ * N'écrase jamais rien : seulement ce qui manque.
+ * `demo` : le jeu de test — la base entière avec des prix inventés, sans les articles Wolt.
  */
 export async function remplirLaBase(prisma: PrismaClient, { demo = false }: { demo?: boolean } = {}): Promise<string> {
 
@@ -74,6 +127,8 @@ export async function remplirLaBase(prisma: PrismaClient, { demo = false }: { de
   let ajoutes = 0;
   for (const [i, a] of CATALOGUE.entries()) {
     if (existants.has(a.nom)) continue;
+    // Remplacé par un article réel de Wolt (sauf dans le jeu de test, qui garde la base entière).
+    if (!demo && REMPLACES_PAR_WOLT.has(a.nom)) continue;
     const categorieId = categories.get(a.categorie);
     if (!categorieId) throw new Error(`Catégorie inconnue : ${a.categorie}`);
     await prisma.produit.create({
@@ -109,8 +164,11 @@ export async function remplirLaBase(prisma: PrismaClient, { demo = false }: { de
     }
   }
 
+  const wolt = demo ? "" : ` ${await installerLesArticlesWolt(prisma)}`;
+
   return (
     `Catalogue : ${ajoutes} article(s) ajouté(s) sans prix (${CATALOGUE.length} dans la base), ${CATEGORIES.length} catégories.` +
-    (demo ? ` Prix d'exemple posés sur ${DEMO.length} articles.` : "")
+    (demo ? ` Prix d'exemple posés sur ${DEMO.length} articles.` : "") +
+    wolt
   );
 }

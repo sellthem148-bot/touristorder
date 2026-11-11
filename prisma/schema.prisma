@@ -46,6 +46,7 @@ model Produit {
   prixAchat   Int? // ce que l'article te coûte sur Wolt, en agorot
   boutique    String          @default("") // où le commander (ex. « Wolt Market Dizengoff »)
   lienWolt    String          @default("")
+  nomWolt     String          @default("") // le nom exact de l'article sur Wolt (hébreu), pour le retrouver
 
   lignes      LigneCommande[]
   createdAt   DateTime        @default(now())

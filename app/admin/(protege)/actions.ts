@@ -90,7 +90,7 @@ export async function enregistrerProduit(_avant: EtatProduit, form: FormData): P
   await exigerAdmin();
   const produitId = id(form);
   const valeurs: Record<string, string> = Object.fromEntries(
-    ["nom", "description", "prix", "prixAchat", "prixBarre", "categorieId", "boutique", "lienWolt", "ordre", "badge", "options"].map(
+    ["nom", "description", "prix", "prixAchat", "prixBarre", "categorieId", "boutique", "lienWolt", "nomWolt", "ordre", "badge", "options"].map(
       (k) => [k, texte(form, k)],
     ),
   );

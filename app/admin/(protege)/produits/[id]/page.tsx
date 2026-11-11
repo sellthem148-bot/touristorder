@@ -48,6 +48,7 @@ export default async function ModifierProduit({ params, searchParams }: PageProp
           categorieId: p.categorieId,
           boutique: p.boutique,
           lienWolt: p.lienWolt,
+          nomWolt: p.nomWolt,
           ordre: String(p.ordre),
           actif: p.actif,
           photoUrl: p.photoUrl,

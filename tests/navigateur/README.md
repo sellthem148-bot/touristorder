@@ -6,8 +6,8 @@ sur une base locale fraîche, jamais sur la production.
 
 ```bash
 # base locale neuve + prix d'exemple
-psql "$DATABASE_URL" -c 'TRUNCATE "LigneCommande","Commande","Produit","Categorie","PlageTarifaire","Reglages" CASCADE;'
-npm run seed:demo
+psql "$DATABASE_URL" -c 'TRUNCATE "LigneCommande","Commande","Client","Produit","Categorie","PlageTarifaire","Ville","Reglages" CASCADE;'
+npm run seed:demo           # le jeu de test : la base du catalogue + 18 prix inventés, SANS les articles réels de Wolt
 psql "$DATABASE_URL" -c "UPDATE \"Reglages\" SET whatsapp='+972 50 123 4567';"
 npm run dev -- -p 3100
 

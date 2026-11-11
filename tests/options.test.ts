@@ -79,7 +79,7 @@ describe("pourboire et express", () => {
 
 describe("formulaires admin (nouveaux champs)", () => {
   const produit = {
-    nom: "Maillot", description: "", prix: "89,90", prixAchat: "", prixBarre: "", categorieId: "c", boutique: "", lienWolt: "",
+    nom: "Maillot", description: "", prix: "89,90", prixAchat: "", prixBarre: "", categorieId: "c", boutique: "", lienWolt: "", nomWolt: "",
     ordre: "", actif: true, epuise: false, badge: "", options: "",
   };
   it("prix barré : seulement s'il est plus cher", () => {

@@ -162,7 +162,7 @@ describe("validation d'une commande", () => {
 
 describe("formulaires admin", () => {
   const produit = {
-    nom: "Chargeur", description: "", prix: "49,90", prixAchat: "", prixBarre: "", categorieId: "c1", boutique: "", lienWolt: "",
+    nom: "Chargeur", description: "", prix: "49,90", prixAchat: "", prixBarre: "", categorieId: "c1", boutique: "", lienWolt: "", nomWolt: "",
     ordre: "", actif: true, epuise: false, badge: "", options: "",
   };
   it("produit : prix en agorot, prix d'achat facultatif", () => {

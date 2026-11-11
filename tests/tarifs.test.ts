@@ -111,7 +111,7 @@ describe("formulaires", () => {
     expect(plageSchema.safeParse({ ...p, jours: ["7"] }).success).toBe(false);
     expect(plageSchema.safeParse({ ...p, majorationPct: "150" }).success).toBe(false);
   });
-  const produit = { nom: "Lait", description: "", prix: "", prixAchat: "", prixBarre: "", categorieId: "c", boutique: "", lienWolt: "", ordre: "", actif: false, epuise: false, badge: "", options: "" };
+  const produit = { nom: "Lait", description: "", prix: "", prixAchat: "", prixBarre: "", categorieId: "c", boutique: "", lienWolt: "", nomWolt: "", ordre: "", actif: false, epuise: false, badge: "", options: "" };
   it("produit : prix vide = à définir, mais jamais en ligne sans prix", () => {
     expect(produitSchema.parse(produit).prix).toBe(0);
     expect(produitSchema.safeParse({ ...produit, actif: true }).success).toBe(false);

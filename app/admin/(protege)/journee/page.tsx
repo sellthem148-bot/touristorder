@@ -25,7 +25,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
   const commandes = await prisma.commande.findMany({
     where: { dateLivraison: jour, statut: { not: "ANNULEE" } },
     orderBy: [{ createdAt: "asc" }],
-    include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }] } },
+    include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }], include: { produit: { select: { nomWolt: true } } } } },
   });
   // La tournée : par créneau (dans l'ordre des heures), puis par ville.
   const ordreCreneau = (c: string) => debutDuCreneau(c) ?? -1;
@@ -36,20 +36,20 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
   const livrees = commandes.filter((c) => c.statut === "LIVREE");
 
   // Liste de courses de toutes les commandes à passer, additionnée par boutique puis par article.
-  const parBoutique = new Map<string, Map<string, { quantite: number; numeros: number[] }>>();
+  const parBoutique = new Map<string, Map<string, { quantite: number; numeros: number[]; nomWolt: string }>>();
   for (const c of aCommander) {
     for (const l of c.lignes) {
       if (l.indisponible) continue;
       const boutique = l.boutique || "Boutique non précisée";
       const articles = parBoutique.get(boutique) ?? new Map();
       const cle = l.options ? `${l.nom} (${l.options})` : l.nom;
-      const a = articles.get(cle) ?? { quantite: 0, numeros: [] };
-      articles.set(cle, { quantite: a.quantite + l.quantite, numeros: [...a.numeros, c.numero] });
+      const a = articles.get(cle) ?? { quantite: 0, numeros: [], nomWolt: l.produit?.nomWolt ?? "" };
+      articles.set(cle, { quantite: a.quantite + l.quantite, numeros: [...a.numeros, c.numero], nomWolt: a.nomWolt });
       parBoutique.set(boutique, articles);
     }
   }
   const listeTexte = [...parBoutique]
-    .map(([b, articles]) => `${b}\n${[...articles].map(([nom, a]) => `- ${a.quantite} × ${nom}`).join("\n")}`)
+    .map(([b, articles]) => `${b}\n${[...articles].map(([nom, a]) => `- ${a.quantite} × ${nom}${a.nomWolt ? ` — ${a.nomWolt}` : ""}`).join("\n")}`)
     .join("\n\n");
 
   // Ce qu'il reste à encaisser ce soir, par mode de paiement.
@@ -121,7 +121,10 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                 <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
                   {[...articles].map(([nom, a]) => (
                     <li key={nom} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                      <span><strong>{a.quantite} ×</strong> {nom}</span>
+                      <span className="min-w-0">
+                        <strong>{a.quantite} ×</strong> {nom}
+                        {a.nomWolt && <span dir="rtl" lang="he" className="block text-xs text-slate-500">{a.nomWolt}</span>}
+                      </span>
                       <span className="shrink-0 text-xs text-slate-500">n° {[...new Set(a.numeros)].join(", ")}</span>
                     </li>
                   ))}

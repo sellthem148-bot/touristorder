@@ -18,6 +18,7 @@ type Produit = {
   categorieId: string;
   boutique: string;
   lienWolt: string;
+  nomWolt: string;
   ordre: string;
   actif: boolean;
   epuise: boolean;
@@ -203,6 +204,12 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
             <label htmlFor="lienWolt" className="etiquette">Lien Wolt du produit</label>
             <input {...attrs("lienWolt")} defaultValue={v("lienWolt")} type="url" placeholder="https://wolt.com/…" />
             {erreur("lienWolt")}
+          </div>
+          <div>
+            <label htmlFor="nomWolt" className="etiquette">Nom de l&apos;article sur Wolt</label>
+            <input {...attrs("nomWolt")} defaultValue={v("nomWolt")} dir="auto" placeholder="חלב תנובה 3% 1 ליטר" />
+            {erreur("nomWolt")}
+            <p className="mt-1 text-xs text-slate-500">Tel qu&apos;il est écrit sur Wolt (hébreu) : il s&apos;affiche dans ta liste de courses de « Ma journée ».</p>
           </div>
         </div>
 
