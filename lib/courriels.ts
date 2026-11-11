@@ -35,8 +35,26 @@ function bouton(lien: string, libelle: string, plein = true): string {
   return `<a href="${echapper(lien)}" style="display:inline-block;${style}padding:12px 22px;border-radius:10px;font-weight:600;font-size:15px;text-decoration:none;font-family:${POLICE};">${echapper(libelle)}</a>`;
 }
 
+/** L'adresse de l'image du logo, pour un e-mail : le sigle sur fond clair, servi par le site. */
+export function adresseDuLogo(adresseDuSite: string): string {
+  return `${adresseDuSite.replace(/\/$/, "")}/logo/tourist-order-sigle-clair.png`;
+}
+
+/**
+ * Le bandeau : le logo (s'il est fourni) et le nom. Le nom reste du texte : une messagerie
+ * qui bloque les images affiche quand même la marque, et l'image n'a pas de texte de remplacement.
+ */
+function bandeau(site: string, logo?: string | null): string {
+  const nom = `font-size:18px;font-weight:700;letter-spacing:-0.01em;color:#ffffff;font-family:${POLICE};`;
+  if (!logo) return `<span style="${nom}">${echapper(site)}</span>`;
+  return `<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+    <td style="padding:0 12px 0 0;line-height:0;"><img src="${echapper(logo)}" width="36" height="36" alt="" style="display:block;border:0;border-radius:9px;"></td>
+    <td style="${nom}">${echapper(site)}</td>
+  </tr></table>`;
+}
+
 /** La mise en page commune : bandeau à la marque, carte blanche, pied. */
-function gabarit(o: { site: string; apercu: string; titre: string; corps: string; pied: string }): string {
+function gabarit(o: { site: string; logo?: string | null; apercu: string; titre: string; corps: string; pied: string }): string {
   return `<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${echapper(o.titre)}</title></head>
@@ -45,8 +63,8 @@ function gabarit(o: { site: string; apercu: string; titre: string; corps: string
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${FOND};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
-<tr><td style="background:${ENCRE};border-radius:14px 14px 0 0;padding:20px 28px;">
-  <span style="font-size:18px;font-weight:700;letter-spacing:-0.01em;color:#ffffff;font-family:${POLICE};">${echapper(o.site)}</span>
+<tr><td style="background:${ENCRE};border-radius:14px 14px 0 0;padding:18px 28px;">
+  ${bandeau(o.site, o.logo)}
 </td></tr>
 <tr><td style="background:#ffffff;border-radius:0 0 14px 14px;padding:28px;border:1px solid ${TRAIT};border-top:0;">
   <h1 style="margin:0 0 12px;font-size:24px;line-height:1.25;font-weight:800;color:${ENCRE};">${echapper(o.titre)}</h1>
@@ -62,6 +80,7 @@ function gabarit(o: { site: string; apercu: string; titre: string; corps: string
 
 export type CommandePourCourriel = {
   site: string;
+  logo?: string | null; // adresse de l'image du logo (adresseDuLogo) ; absente = nom seul
   numero: number;
   nomClient: string;
   prenom: string;
@@ -162,7 +181,7 @@ export function courrielDeConfirmation(c: CommandePourCourriel): CourrielPret {
   ].join("\n");
   return {
     sujet: `Ta commande n°${c.numero} est enregistrée — livraison ${c.jour.toLowerCase()}, ${c.creneau}`,
-    html: gabarit({ site: c.site, apercu: `Livraison ${quand} · total ${formatPrix(c.totaux.total)}`, titre: "Commande enregistrée", corps, pied }),
+    html: gabarit({ site: c.site, logo: c.logo, apercu: `Livraison ${quand} · total ${formatPrix(c.totaux.total)}`, titre: "Commande enregistrée", corps, pied }),
     texte,
   };
 }
@@ -184,20 +203,20 @@ export function courrielNouvelleCommande(c: CommandePourCourriel & { lienAdmin: 
   ${c.notes ? `<p style="margin:18px 0 0;font-size:14px;color:${DOUX};">Note du client : ${multiligne(c.notes)}</p>` : ""}`;
   return {
     sujet: `Nouvelle commande n°${c.numero} — ${c.ville}, ${c.jour.toLowerCase()} ${c.creneau} — ${formatPrix(c.totaux.total)}`,
-    html: gabarit({ site: c.site, apercu: `${c.nomClient}, ${c.ville}, ${quand}`, titre: `Nouvelle commande n°${c.numero}`, corps, pied: "E-mail envoyé au gérant à chaque nouvelle commande." }),
+    html: gabarit({ site: c.site, logo: c.logo, apercu: `${c.nomClient}, ${c.ville}, ${quand}`, titre: `Nouvelle commande n°${c.numero}`, corps, pied: "E-mail envoyé au gérant à chaque nouvelle commande." }),
     texte: [`Nouvelle commande n°${c.numero}`, `${c.nomClient} · ${c.telephone}`, `${quand}`, `${c.adresse.replace(/\s+/g, " ")}, ${c.ville}`, "", texteDesArticles(c), "", `Ouvrir : ${c.lienAdmin}`].join("\n"),
   };
 }
 
 /** Le lien de connexion à l'espace client, demandé depuis la page de connexion. */
-export function courrielDeConnexion(o: { site: string; lien: string; minutes: number }): CourrielPret {
+export function courrielDeConnexion(o: { site: string; logo?: string | null; lien: string; minutes: number }): CourrielPret {
   const corps = `
   <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Voici ton lien pour ouvrir ton espace client. Il est valable ${o.minutes} minutes.</p>
   <p style="margin:0 0 20px;">${bouton(o.lien, "Ouvrir mon espace")}</p>
   <p style="margin:0;font-size:14px;line-height:1.5;color:${DOUX};">Si tu n'as rien demandé, ignore cet e-mail : personne n'entre sans ce lien.</p>`;
   return {
     sujet: `Ton lien de connexion à ${o.site}`,
-    html: gabarit({ site: o.site, apercu: `Lien valable ${o.minutes} minutes`, titre: "Ton espace client", corps, pied: `Tu reçois cet e-mail parce qu'une connexion à ${echapper(o.site)} a été demandée avec cette adresse.` }),
+    html: gabarit({ site: o.site, logo: o.logo, apercu: `Lien valable ${o.minutes} minutes`, titre: "Ton espace client", corps, pied: `Tu reçois cet e-mail parce qu'une connexion à ${echapper(o.site)} a été demandée avec cette adresse.` }),
     texte: `Ton lien pour ouvrir ton espace client (valable ${o.minutes} minutes) :\n${o.lien}\n\nSi tu n'as rien demandé, ignore cet e-mail.`,
   };
 }

@@ -119,6 +119,8 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
    `EMAIL_REPONSE` (facultative) : l'adresse à laquelle un client répond s'il fait « Répondre » ; elle est visible du client.
 3. Sans `RESEND_API_KEY` en production, aucune confirmation ne part et l'espace client ne peut pas envoyer de lien (la page le dit). Sans domaine vérifié, Resend n'envoie qu'à l'adresse du compte Resend.
 
+Chaque e-mail porte le logo à côté du nom, dans son bandeau : une petite image servie par le site (`/logo/tourist-order-sigle-clair.png`). Le nom reste du texte, pour les messageries qui bloquent les images.
+
 En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fichier `.html` à ouvrir dans un navigateur, et un `.txt`).
 
 ## Règles du code

@@ -12,7 +12,7 @@ import { autoriser } from "@/lib/limite";
 import { ipDuVisiteur } from "@/lib/ip";
 import { adresseDuSite } from "@/lib/site";
 import { envoyerCourriel } from "@/lib/courriel";
-import { courrielDeConnexion } from "@/lib/courriels";
+import { adresseDuLogo, courrielDeConnexion } from "@/lib/courriels";
 import { produitsPourLePanier } from "@/lib/catalogue";
 import { resoudreSelection, type Selection } from "@/lib/options";
 import { selectionDepuisLibelle } from "@/lib/espace-client";
@@ -41,9 +41,10 @@ export async function demanderLien(_avant: EtatConnexion, form: FormData): Promi
   if (client) {
     const jeton = creerJetonClient("lien", client.id, DUREE_LIEN_CONNEXION_MS);
     if (jeton) {
-      const lien = `${await adresseDuSite()}/compte/acces?jeton=${jeton}`;
+      const site = await adresseDuSite();
+      const lien = `${site}/compte/acces?jeton=${jeton}`;
       // Après la réponse : le temps d'envoi ne distingue pas une adresse connue d'une inconnue.
-      after(() => envoyerCourriel({ a: email, ...courrielDeConnexion({ site: NOM_DU_SITE, lien, minutes: DUREE_LIEN_CONNEXION_MS / 60000 }) }));
+      after(() => envoyerCourriel({ a: email, ...courrielDeConnexion({ site: NOM_DU_SITE, logo: adresseDuLogo(site), lien, minutes: DUREE_LIEN_CONNEXION_MS / 60000 }) }));
     }
   }
   return { envoye: true };

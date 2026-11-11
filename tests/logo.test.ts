@@ -21,7 +21,7 @@ describe("fichiers du logo", () => {
       "tourist-order-sigle-clair.svg",
       "tourist-order-sigle.svg",
     ]);
-    for (const image of ["tourist-order-logo.png", "tourist-order-logo-clair.png", "tourist-order-logo-empile.png", "tourist-order-profil.png", "tourist-order-sigle.png"]) {
+    for (const image of ["tourist-order-logo.png", "tourist-order-logo-clair.png", "tourist-order-logo-empile.png", "tourist-order-profil.png", "tourist-order-sigle.png", "tourist-order-sigle-clair.png"]) {
       // Signature d'un fichier PNG.
       expect(readFileSync(join(DOSSIER, image)).subarray(1, 4).toString("latin1"), image).toBe("PNG");
     }

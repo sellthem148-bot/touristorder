@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { creerJetonClient, lireJetonClient, DUREE_LIEN_CONNEXION_MS } from "@/lib/session-client";
 import { creerJetonSession, jetonSessionValide } from "@/lib/session-admin";
-import { adresseDeReponse, corpsPourResend, courrielDeConfirmation, courrielDeConnexion, courrielNouvelleCommande, echapper, type CommandePourCourriel } from "@/lib/courriels";
+import { adresseDeReponse, adresseDuLogo, corpsPourResend, courrielDeConfirmation, courrielDeConnexion, courrielNouvelleCommande, echapper, type CommandePourCourriel } from "@/lib/courriels";
 import { produitsPreferes, resumeDuClient, selectionDepuisLibelle } from "@/lib/espace-client";
 import { lignesDeMontants } from "@/lib/montants";
 import { commandeSchema, emailSchema } from "@/lib/validation";
@@ -161,6 +161,30 @@ describe("autres e-mails", () => {
     expect(c.html).toContain('href="https://exemple.test/compte/acces?jeton=a.b.c"');
     expect(c.html).toContain("30 minutes");
     expect(c.texte).toContain("https://exemple.test/compte/acces?jeton=a.b.c");
+  });
+  it("logo : une image à côté du nom quand son adresse est fournie, le nom seul sinon", () => {
+    expect(adresseDuLogo("https://exemple.test/")).toBe("https://exemple.test/logo/tourist-order-sigle-clair.png");
+    const logo = adresseDuLogo("https://exemple.test");
+    for (const html of [
+      courrielDeConfirmation({ ...commande, logo }).html,
+      courrielNouvelleCommande({ ...commande, logo, lienAdmin: "https://exemple.test/admin/commandes/1" }).html,
+      courrielDeConnexion({ site: "Courses Express", logo, lien: "https://exemple.test/x", minutes: 30 }).html,
+    ]) {
+      // Taille fixée et aucun texte de remplacement : une messagerie qui bloque les images n'affiche que le nom.
+      expect(html).toContain(`<img src="${logo}" width="36" height="36" alt=""`);
+      expect(html.match(/<img /g)).toHaveLength(1);
+      expect(html).toContain(">Courses Express</td>");
+    }
+    const sans = courrielDeConfirmation(commande);
+    expect(sans.html).not.toContain("<img");
+    expect(sans.html).toContain(">Courses Express</span>");
+    // Le texte brut ne change pas.
+    expect(courrielDeConfirmation({ ...commande, logo }).texte).toBe(sans.texte);
+  });
+  it("logo : son adresse est rendue inoffensive comme tout texte externe", () => {
+    const html = courrielDeConnexion({ site: "Courses Express", logo: 'https://x.test/a.png" onerror="alert(1)', lien: "https://exemple.test/x", minutes: 30 }).html;
+    expect(html).not.toContain('onerror="alert');
+    expect(html).toContain("&quot; onerror=&quot;");
   });
 });
 

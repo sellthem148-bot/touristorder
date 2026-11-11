@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "./prisma";
 import { envoyerCourriel } from "./courriel";
-import { courrielDeConfirmation, courrielNouvelleCommande, type CommandePourCourriel } from "./courriels";
+import { adresseDuLogo, courrielDeConfirmation, courrielNouvelleCommande, type CommandePourCourriel } from "./courriels";
 import { creerJetonClient, DUREE_LIEN_CONFIRMATION_MS } from "./session-client";
 import { libelleDuJour } from "./dates";
 import { lireReglages } from "./reglages";
@@ -33,6 +33,7 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
     const jetonEspace = c.clientId ? creerJetonClient("lien", c.clientId, DUREE_LIEN_CONFIRMATION_MS) : null;
     const donnees: CommandePourCourriel = {
       site: NOM_DU_SITE,
+      logo: adresseDuLogo(site),
       numero: c.numero,
       nomClient: c.nomClient,
       prenom: prenomDe(c.nomClient),
