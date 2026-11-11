@@ -35,6 +35,7 @@ export default function LayoutBoutique({ children }: LayoutProps<"/">) {
             <p><Link href="/conditions" className="hover:text-encre hover:underline">Conditions générales de vente</Link></p>
             <p><Link href="/confidentialite" className="hover:text-encre hover:underline">Confidentialité</Link></p>
             <p><Link href="/mentions-legales" className="hover:text-encre hover:underline">Mentions légales</Link></p>
+            <p><Link href="/credits" className="hover:text-encre hover:underline">Crédits photos</Link></p>
           </div>
         </div>
         <div className="border-t border-slate-200">

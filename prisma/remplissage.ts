@@ -2,6 +2,8 @@
 // automatique de la production (prisma/preparer.ts).
 import { ANCIEN_MESSAGE_ACCUEIL, ANCIENS_PAIEMENTS, MESSAGE_ACCUEIL_PAR_DEFAUT, PAIEMENTS_PAR_DEFAUT } from "../lib/marque";
 import type { PrismaClient } from "@prisma/client";
+import { DOSSIER_PHOTOS_FRAIS } from "../lib/credits-photos";
+import { PHOTOS_FRAIS } from "./photos-frais";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
@@ -99,6 +101,25 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
     bilans.push(`${lot.nom} : ${crees} ajouté(s) avec leur prix${completes ? `, ${completes} complété(s)` : ""}${horsLigne ? ` (${horsLigne} hors ligne)` : ""}`);
   }
   return `Articles Wolt — ${bilans.join(" ; ")}.`;
+}
+
+/**
+ * Pose les photos libres de droits des produits frais (prisma/photos-frais.ts) sur les articles
+ * qui n'ont pas encore de photo. Une seule fois : dès qu'un article porte une photo de ce dossier,
+ * le lot est considéré comme installé — une photo retirée ou remplacée par le gérant ne revient pas.
+ */
+export async function installerLesPhotosFrais(prisma: PrismaClient): Promise<string> {
+  const dejaLa = await prisma.produit.count({ where: { photoUrl: { startsWith: `${DOSSIER_PHOTOS_FRAIS}/` } } });
+  if (dejaLa > 0) return `Photos des produits frais : déjà installées (${dejaLa} article(s)).`;
+  const nomWolt = new Map(ARTICLES_WOLT.map((a) => [a.nom, a.nomWolt]));
+  let posees = 0;
+  for (const [nom, fichier] of Object.entries(PHOTOS_FRAIS)) {
+    const repere = nomWolt.get(nom);
+    if (!repere) continue;
+    // Retrouvé par son nom sur Wolt (le gérant a pu renommer l'article) ; jamais sur un article qui a déjà une photo.
+    posees += (await prisma.produit.updateMany({ where: { nomWolt: repere, photoUrl: "" }, data: { photoUrl: `${DOSSIER_PHOTOS_FRAIS}/${fichier}` } })).count;
+  }
+  return `Photos des produits frais : ${posees} article(s) illustré(s).`;
 }
 
 // Le numéro WhatsApp du site (celui des boutons « Nous écrire sur WhatsApp »), donné par le gérant.
@@ -218,7 +239,7 @@ export async function remplirLaBase(prisma: PrismaClient, { demo = false }: { de
     }
   }
 
-  const wolt = demo ? "" : ` ${await installerLesArticlesWolt(prisma)}`;
+  const wolt = demo ? "" : ` ${await installerLesArticlesWolt(prisma)} ${await installerLesPhotosFrais(prisma)}`;
 
   return (
     `Catalogue : ${ajoutes} article(s) ajouté(s) sans prix (${CATALOGUE.length} dans la base), ${CATEGORIES.length} catégories.` +

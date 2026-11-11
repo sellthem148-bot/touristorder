@@ -49,6 +49,13 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 
 Côté client, le site est volontairement sobre : texte et boutons en encre, fond clair, traits fins, une seule couleur d'accent, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un article s'affiche comme une ligne de menu — nom, format, prix — avec sa photo seulement s'il en a une (les photos s'ajoutent dans l'espace gérant, fiche du produit). Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
 
+### Photos des produits
+
+Un article montre sa photo seulement s'il en a une. Deux sources :
+
+- **Les photos du gérant** : espace gérant → « Photos rapides » (ou la fiche du produit). Elles sont enregistrées dans le stockage du site.
+- **Des photos d'illustration libres de droits** pour les produits frais sans marque (fruits, légumes, œufs, viande et poisson à la coupe) : 41 photos de Wikimedia Commons, dans `public/produits/frais`, recadrées en carré de 600 px. La correspondance article → photo est dans `prisma/photos-frais.ts` ; les auteurs et les licences dans `lib/credits-photos.ts`, affichés sur la page `/credits` (lien « Crédits photos » en bas du site) — c'est l'attribution que ces licences demandent. Elles sont posées **une seule fois** à la mise en ligne, et seulement sur un article sans photo : une photo ajoutée, remplacée ou retirée par le gérant n'est jamais écrasée. Jamais de photo d'illustration pour un article de marque.
+
 ### Logo
 
 Le sigle est un **T** et un **O plein, couleur soleil**, dans une tuile encre : les initiales de Tourist Order, le O en soleil. Le jaune (`#f2b632`) ne sert qu'à lui. Un seul tracé (`lib/sigle.ts`) dessine le logo du site (`components/Sigle.tsx`), l'icône de l'onglet, l'icône de téléphone et la carte d'aperçu de lien.

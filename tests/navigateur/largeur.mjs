@@ -11,7 +11,7 @@ await p.getByRole("button", { name: /^Choisir les options de Maillot/ }).first()
 await p.getByRole("button", { name: "Fermer" }).click();
 await p.goto(B + "/");
 await p.getByRole("button", { name: /^Ajouter Pack d'eau/ }).first().click();
-for (const u of ["/panier", "/categorie/plage-soleil", "/recherche?q=couches", "/recherche?q=introuvable", "/commandes", "/compte/connexion", "/conditions", "/confidentialite", "/mentions-legales", "/contact"]) { await p.goto(B + u); await p.waitForTimeout(600); await mesure(u); }
+for (const u of ["/panier", "/categorie/plage-soleil", "/recherche?q=couches", "/recherche?q=introuvable", "/commandes", "/compte/connexion", "/conditions", "/confidentialite", "/mentions-legales", "/contact", "/credits"]) { await p.goto(B + u); await p.waitForTimeout(600); await mesure(u); }
 await p.goto(B + "/admin/connexion"); await p.getByLabel("Mot de passe").fill(process.env.ADMIN_PASSWORD || "admin123"); await p.getByRole("button", { name: "Se connecter" }).click(); await p.waitForURL(B + "/admin");
 await mesure("/admin");
 await p.locator('a[href^="/admin/commandes/"]').first().click(); await p.waitForURL(/commandes\//); await mesure("admin commande");
