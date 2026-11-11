@@ -16,17 +16,17 @@ export default async function ConnexionClient({ searchParams }: PageProps<"/comp
         <p className="surtitre">Espace client</p>
         <h1 className="text-2xl font-bold">Mon espace client</h1>
         <p className="text-slate-600">
-          Pas de mot de passe : entre l&apos;adresse e-mail utilisée pour commander, on t&apos;envoie un lien pour entrer.
+          Pas de mot de passe : indiquez l&apos;adresse e-mail utilisée pour commander, nous vous envoyons un lien pour entrer.
         </p>
         {lienInvalide && (
           <p role="alert" className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
-            Ce lien n&apos;est plus valable. Demande-en un nouveau ci-dessous.
+            Ce lien n&apos;est plus valable. Demandez-en un nouveau ci-dessous.
           </p>
         )}
         <FormulaireLien />
       </div>
       <p className="text-center text-sm text-slate-600">
-        Ton espace est créé automatiquement à ta première commande.{" "}
+        Votre espace est créé automatiquement à votre première commande.{" "}
         <Link href="/commandes" className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">Voir les commandes passées sur cet appareil</Link>
       </p>
     </div>

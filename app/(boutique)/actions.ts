@@ -29,14 +29,14 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
 
   const ip = await ipDuVisiteur();
   if (!autoriser(`commande:${ip}`, 15, 10 * 60 * 1000)) {
-    return { erreur: "Trop de commandes en peu de temps. Réessaie dans quelques minutes." };
+    return { erreur: "Trop de commandes en peu de temps. Réessayez dans quelques minutes." };
   }
 
   let lignes: unknown = [];
   try {
     lignes = JSON.parse(String(form.get("lignes") ?? "[]"));
   } catch {
-    return { erreur: "Panier illisible, recharge la page." };
+    return { erreur: "Panier illisible : rechargez la page." };
   }
 
   // Un client connecté commande toujours avec l'adresse de son espace.
@@ -50,6 +50,7 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     dateLivraison: form.get("dateLivraison") ?? "",
     creneau: form.get("creneau") ?? "",
     notes: form.get("notes") ?? "",
+    demandeLibre: form.get("demandeLibre") ?? "",
     express: form.get("express") === "1",
     remplacement: form.get("remplacement") ?? "",
     paiement: form.get("paiement") ?? "",

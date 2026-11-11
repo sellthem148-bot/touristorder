@@ -84,6 +84,12 @@ model Commande {
   // Si un article manque : CONTACTER | EQUIVALENT | RETIRER
   remplacement   String          @default("CONTACTER")
   paiement       String          @default("")
+  // Le client paie AVANT que le gérant commande sur Wolt. `montantPaye` = ce qui a été réglé ;
+  // le solde (total − montantPaye) dit s'il reste à payer ou à rembourser. Lu par lib/paiement.ts.
+  montantPaye    Int             @default(0)
+  payeLe         DateTime?
+  // « Je ne trouve pas mon article » : ce que le client demande hors catalogue (texte libre).
+  demandeLibre   String          @default("")
 
   sousTotal      Int
   fraisService   Int
@@ -152,7 +158,10 @@ model Reglages {
   fraisLivraison  Int      @default(3000)
   fraisExpress    Int      @default(0) // supplément livraison express ; 0 = pas d'express
   pourboires      Int[]    @default([0, 1000, 1500, 2000]) // montants proposés ; vide = pas de pourboire
-  paiements       String[] @default(["Espèces", "Bit", "PayBox"])
+  paiements       String[] @default(["Bit", "PayBox", "Virement"])
+  // Réservé au gérant : les coordonnées de paiement (numéro Bit / PayBox, RIB). Jamais sur le site :
+  // elles ne partent que dans le message WhatsApp que le gérant envoie au client.
+  coordonneesPaiement String @default("")
   minimumCommande Int      @default(0)
   creneaux        String[] @default([])
   joursLivres     Int[]    @default([0, 1, 2, 3, 4, 5, 6]) // 0 = dimanche … 6 = samedi
@@ -165,6 +174,15 @@ model Reglages {
   ouvert          Boolean  @default(true)
   // Afficher au client une seule ligne « Frais de service (livraison comprise) ».
   fraisRegroupes  Boolean  @default(false)
+  // Alerte Telegram à chaque commande : le jeton du robot (secret, jamais réaffiché) et la discussion reliée.
+  telegramJeton      String @default("")
+  telegramDiscussion String @default("")
+  telegramNom        String @default("")
+  // L'entreprise, pour les pages légales et le reçu (remplies par le gérant quand il les a).
+  entrepriseNom      String @default("")
+  entrepriseNumero   String @default("")
+  entrepriseAdresse  String @default("")
+  emailContact       String @default("")
   updatedAt       DateTime @updatedAt
 }
 

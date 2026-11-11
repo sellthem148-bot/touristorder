@@ -5,7 +5,7 @@ import { prixPourChamp } from "@/lib/argent";
 import { JOURS_COURTS } from "@/lib/tarifs";
 import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { Messages } from "@/components/admin/Messages";
-import { enregistrerReglages } from "../actions";
+import { delierTelegram, enregistrerReglages, enregistrerTelegram, essayerTelegram, relierTelegram } from "../actions";
 
 export const metadata = { title: "Réglages" };
 
@@ -118,6 +118,22 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
         </div>
 
         <div>
+          <label htmlFor="coordonneesPaiement" className="etiquette">Tes coordonnées de paiement (privé)</label>
+          <textarea
+            id="coordonneesPaiement"
+            name="coordonneesPaiement"
+            rows={4}
+            maxLength={600}
+            defaultValue={r.coordonneesPaiement}
+            className="champ"
+            placeholder={"Bit ou PayBox : 05x xxx xxxx\nVirement : IBAN IL00 0000 0000 0000 0000 000, au nom de…"}
+          />
+          <p className="mt-1 text-xs text-slate-500">
+            Jamais affichées sur le site. Elles sont glissées dans le message WhatsApp « Envoyer le montant » que tu envoies au client : le paiement se fait avant que tu commandes sur Wolt.
+          </p>
+        </div>
+
+        <div>
           <label htmlFor="whatsapp" className="etiquette">Ton numéro WhatsApp</label>
           <input id="whatsapp" name="whatsapp" defaultValue={r.whatsapp} type="tel" placeholder="+972 50 123 4567" className="champ" />
           <p className="mt-1 text-xs text-slate-500">Le bouton « Nous écrire sur WhatsApp » du client ouvre une conversation avec ce numéro.</p>
@@ -128,8 +144,76 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
           <textarea id="messageAccueil" name="messageAccueil" rows={2} defaultValue={r.messageAccueil} className="champ" />
         </div>
 
+        <fieldset className="grid gap-4 sm:grid-cols-2">
+          <legend className="mb-1 font-bold">Ton entreprise (pages légales, reçus)</legend>
+          <p className="col-span-full -mt-1 mb-1 text-xs text-slate-500">
+            Affichées dans les mentions légales, les conditions de vente et sur les reçus. Tu peux les remplir plus tard : une ligne vide n&apos;est simplement pas affichée.
+          </p>
+          <div>
+            <label htmlFor="entrepriseNom" className="etiquette">Nom de l&apos;entreprise ou du responsable</label>
+            <input id="entrepriseNom" name="entrepriseNom" defaultValue={r.entrepriseNom} maxLength={120} className="champ" />
+          </div>
+          <div>
+            <label htmlFor="entrepriseNumero" className="etiquette">Numéro d&apos;entreprise</label>
+            <input id="entrepriseNumero" name="entrepriseNumero" defaultValue={r.entrepriseNumero} maxLength={60} className="champ" placeholder="Numéro d'enregistrement (עוסק / ח.פ)" />
+          </div>
+          <div>
+            <label htmlFor="entrepriseAdresse" className="etiquette">Adresse</label>
+            <input id="entrepriseAdresse" name="entrepriseAdresse" defaultValue={r.entrepriseAdresse} maxLength={300} className="champ" />
+          </div>
+          <div>
+            <label htmlFor="emailContact" className="etiquette">E-mail de contact</label>
+            <input id="emailContact" name="emailContact" type="email" defaultValue={r.emailContact} maxLength={254} className="champ" placeholder="contact@…" />
+          </div>
+        </fieldset>
+
         <button type="submit" className="bouton">Enregistrer</button>
       </form>
+
+      <section className="carte space-y-4 p-4 sm:p-5" aria-labelledby="t-telegram">
+        <div>
+          <h2 id="t-telegram" className="text-lg font-bold">Alerte Telegram</h2>
+          <p className="text-sm text-slate-600">Un message sur ton téléphone à chaque nouvelle commande, en plus de l&apos;e-mail.</p>
+        </div>
+        {r.telegramJeton && r.telegramDiscussion ? (
+          <>
+            <p className="rounded-2xl bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
+              Alerte active{r.telegramNom ? ` (robot @${r.telegramNom})` : ""} : chaque nouvelle commande t&apos;est envoyée sur Telegram.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <form action={essayerTelegram}><button type="submit" className="bouton-secondaire">Envoyer un essai</button></form>
+              <form action={delierTelegram}><button type="submit" className="bouton-danger">Retirer l&apos;alerte</button></form>
+            </div>
+          </>
+        ) : r.telegramJeton ? (
+          <>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700">
+              <li>Dans Telegram, ouvre ton robot{r.telegramNom ? <> (<strong>@{r.telegramNom}</strong>)</> : null} et écris-lui « bonjour ».</li>
+              <li>Reviens ici et appuie sur « Relier ».</li>
+            </ol>
+            <div className="flex flex-wrap gap-2">
+              <form action={relierTelegram}><button type="submit" className="bouton">Relier</button></form>
+              <form action={delierTelegram}><button type="submit" className="bouton-secondaire">Changer de robot</button></form>
+            </div>
+          </>
+        ) : (
+          <>
+            <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700">
+              <li>Dans Telegram, cherche <strong>@BotFather</strong> et envoie-lui <strong>/newbot</strong>.</li>
+              <li>Donne un nom au robot (ex. « Tourist Order commandes ») puis un identifiant qui finit par « bot ».</li>
+              <li>BotFather te donne un jeton (une longue suite de chiffres et de lettres) : colle-le ici.</li>
+            </ol>
+            <form action={enregistrerTelegram} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="jeton" className="etiquette">Jeton du robot</label>
+                <input id="jeton" name="jeton" type="password" autoComplete="off" required className="champ" placeholder="123456789:AA…" />
+              </div>
+              <button type="submit" className="bouton">Ajouter le robot</button>
+            </form>
+            <p className="text-xs text-slate-500">Le jeton reste sur le site et n&apos;est plus jamais affiché. Ne l&apos;envoie à personne.</p>
+          </>
+        )}
+      </section>
     </div>
   );
 }

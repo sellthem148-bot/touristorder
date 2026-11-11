@@ -5,14 +5,16 @@ import { refresh } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { calculerTotaux, QUANTITE_MAX } from "@/lib/calcul";
+import { calculerTotaux, LIGNES_MAX, QUANTITE_MAX } from "@/lib/calcul";
 import { estStatut } from "@/lib/statuts";
-import { categorieSchema, plageSchema, produitSchema, reglagesSchema } from "@/lib/admin-schemas";
+import { estReglee } from "@/lib/paiement";
+import { categorieSchema, ligneLibreSchema, plageSchema, produitSchema, reglagesSchema } from "@/lib/admin-schemas";
 import { erreursParChamp } from "@/lib/validation";
 import { enregistrerPhoto, supprimerPhoto } from "@/lib/stockage";
 import { slugDe } from "@/lib/slug";
 import { lireReglages } from "@/lib/reglages";
 import { lirePrix } from "@/lib/argent";
+import { derniereDiscussion, envoyerTelegram, estJetonTelegram, robotTelegram } from "@/lib/telegram";
 
 const texte = (form: FormData, cle: string) => String(form.get(cle) ?? "");
 const id = (form: FormData, cle = "id") => {
@@ -34,6 +36,24 @@ export async function changerStatut(form: FormData) {
 }
 
 /** Ajuste une ligne (quantité réellement trouvée, ou indisponible) et recalcule la commande. */
+/** Recalcule les montants d'une commande d'après ses lignes et les frais copiés à la commande. */
+async function recalculer(tx: Prisma.TransactionClient, commandeId: string) {
+  const commande = await tx.commande.findUniqueOrThrow({
+    where: { id: commandeId },
+    select: {
+      tarifService: true, tarifLivraison: true, tarifPourboire: true, majorationPct: true,
+      lignes: { select: { prixUnitaire: true, quantite: true, indisponible: true } },
+    },
+  });
+  const totaux = calculerTotaux(commande.lignes, {
+    fraisService: commande.tarifService,
+    fraisLivraison: commande.tarifLivraison,
+    pourboire: commande.tarifPourboire,
+    majorationPct: commande.majorationPct,
+  });
+  await tx.commande.update({ where: { id: commandeId }, data: totaux });
+}
+
 export async function modifierLigne(form: FormData) {
   await exigerAdmin();
   const ligneId = id(form, "ligneId");
@@ -47,21 +67,71 @@ export async function modifierLigne(form: FormData) {
       data: { quantite, indisponible },
       select: { commandeId: true },
     });
-    const commande = await tx.commande.findUniqueOrThrow({
-      where: { id: ligne.commandeId },
-      select: {
-        tarifService: true, tarifLivraison: true, tarifPourboire: true, majorationPct: true,
-        lignes: { select: { prixUnitaire: true, quantite: true, indisponible: true } },
-      },
-    });
-    const totaux = calculerTotaux(commande.lignes, {
-      fraisService: commande.tarifService,
-      fraisLivraison: commande.tarifLivraison,
-      pourboire: commande.tarifPourboire,
-      majorationPct: commande.majorationPct,
-    });
-    await tx.commande.update({ where: { id: ligne.commandeId }, data: totaux });
+    await recalculer(tx, ligne.commandeId);
   });
+  refresh();
+}
+
+/**
+ * Ajoute à une commande un article hors catalogue (la « demande libre » du client, une fois
+ * trouvée et chiffrée). Le total est recalculé : s'il était déjà payé, un complément apparaît.
+ */
+export async function ajouterLigneLibre(form: FormData) {
+  await exigerAdmin();
+  const commandeId = id(form);
+  if (!commandeId) return;
+  const chemin = `/admin/commandes/${commandeId}`;
+  const lecture = ligneLibreSchema.safeParse({
+    nom: texte(form, "nom"),
+    quantite: texte(form, "quantite"),
+    prix: texte(form, "prix"),
+    prixAchat: texte(form, "prixAchat"),
+    boutique: texte(form, "boutique"),
+  });
+  if (!lecture.success) {
+    const [champ, message] = Object.entries(erreursParChamp(lecture.error))[0];
+    redirect(avecMessage(chemin, "erreur", `${champ} : ${message}`));
+  }
+  const l = lecture.data;
+  const ajoutee = await prisma.$transaction(async (tx) => {
+    const commande = await tx.commande.findUnique({ where: { id: commandeId }, select: { _count: { select: { lignes: true } } } });
+    if (!commande || commande._count.lignes >= LIGNES_MAX) return false;
+    await tx.ligneCommande.create({
+      data: { commandeId, produitId: null, nom: l.nom, prixUnitaire: l.prix, prixAchatUnitaire: l.prixAchat, boutique: l.boutique, quantite: l.quantite },
+    });
+    await recalculer(tx, commandeId);
+    return true;
+  });
+  redirect(avecMessage(chemin, ajoutee ? "ok" : "erreur", ajoutee ? "Article ajouté : le total est à jour." : "Impossible d'ajouter cet article."));
+}
+
+/**
+ * Solde la commande : ce qui a été reçu (ou remboursé) devient égal à ce qu'elle doit.
+ * Un seul geste pour « paiement reçu », « complément reçu » et « remboursement fait ».
+ */
+export async function solderCommande(form: FormData) {
+  await exigerAdmin();
+  const commandeId = id(form);
+  if (!commandeId) return;
+  await prisma.$transaction(async (tx) => {
+    const c = await tx.commande.findUnique({ where: { id: commandeId }, select: { total: true, statut: true, payeLe: true } });
+    if (!c) return;
+    const du = c.statut === "ANNULEE" ? 0 : c.total;
+    await tx.commande.update({
+      where: { id: commandeId },
+      // Une commande annulée et remboursée n'a plus rien de payé.
+      data: { montantPaye: du, payeLe: du === 0 ? null : (c.payeLe ?? new Date()) },
+    });
+  });
+  refresh();
+}
+
+/** Erreur de saisie : la commande redevient « à payer ». */
+export async function annulerPaiement(form: FormData) {
+  await exigerAdmin();
+  const commandeId = id(form);
+  if (!commandeId) return;
+  await prisma.commande.updateMany({ where: { id: commandeId }, data: { montantPaye: 0, payeLe: null } });
   refresh();
 }
 
@@ -271,6 +341,11 @@ export async function enregistrerReglages(form: FormData) {
     joursLivres: form.getAll("joursLivres").map(String),
     delaiPreparation: texte(form, "delaiPreparation"),
     heureLimite: texte(form, "heureLimite"),
+    coordonneesPaiement: texte(form, "coordonneesPaiement"),
+    entrepriseNom: texte(form, "entrepriseNom"),
+    entrepriseNumero: texte(form, "entrepriseNumero"),
+    entrepriseAdresse: texte(form, "entrepriseAdresse"),
+    emailContact: texte(form, "emailContact"),
   });
   if (!lecture.success) {
     const [champ, message] = Object.entries(erreursParChamp(lecture.error))[0];
@@ -438,6 +513,60 @@ export async function marquerCommandees(form: FormData) {
   await exigerAdmin();
   const ids = [...new Set(form.getAll("ids").map(String))].filter((x) => x.length > 0 && x.length <= 40).slice(0, 200);
   if (ids.length === 0) return;
-  await prisma.commande.updateMany({ where: { id: { in: ids }, statut: "RECUE" }, data: { statut: "COMMANDEE" } });
+  // Le paiement passe avant les achats : une commande pas encore réglée reste « reçue ».
+  const candidates = await prisma.commande.findMany({
+    where: { id: { in: ids }, statut: "RECUE" },
+    select: { id: true, total: true, montantPaye: true, payeLe: true, statut: true },
+  });
+  const reglees = candidates.filter(estReglee).map((c) => c.id);
+  if (reglees.length === 0) return;
+  await prisma.commande.updateMany({ where: { id: { in: reglees }, statut: "RECUE" }, data: { statut: "COMMANDEE" } });
   refresh();
+}
+
+// ── Alerte Telegram ──────────────────────────────────────────────────────────
+
+/** Enregistre le jeton du robot (donné par @BotFather), après l'avoir vérifié auprès de Telegram. */
+export async function enregistrerTelegram(form: FormData) {
+  await exigerAdmin();
+  const jeton = texte(form, "jeton").trim();
+  if (!estJetonTelegram(jeton)) {
+    redirect(avecMessage("/admin/reglages", "erreur", "Ce jeton ne ressemble pas à celui d'un robot Telegram (ex. 123456789:AAxx…)."));
+  }
+  const robot = await robotTelegram(jeton);
+  if (!robot) {
+    redirect(avecMessage("/admin/reglages", "erreur", "Telegram ne reconnaît pas ce jeton : copie-le à nouveau depuis @BotFather."));
+  }
+  await lireReglages();
+  await prisma.reglages.update({ where: { id: 1 }, data: { telegramJeton: jeton, telegramDiscussion: "", telegramNom: robot.nom } });
+  redirect(avecMessage("/admin/reglages", "ok", "Robot enregistré. Écris-lui un message dans Telegram, puis appuie sur « Relier »."));
+}
+
+/** Relie l'alerte à la discussion du dernier message reçu par le robot, et y envoie un essai. */
+export async function relierTelegram() {
+  await exigerAdmin();
+  const r = await lireReglages();
+  if (!r.telegramJeton) redirect(avecMessage("/admin/reglages", "erreur", "Enregistre d'abord le jeton du robot."));
+  const discussion = await derniereDiscussion(r.telegramJeton);
+  if (!discussion) {
+    redirect(avecMessage("/admin/reglages", "erreur", "Le robot n'a reçu aucun message : ouvre-le dans Telegram, écris-lui « bonjour », puis réessaie."));
+  }
+  const envoye = await envoyerTelegram(r.telegramJeton, discussion.id, "Alerte reliée. Tu recevras ici chaque nouvelle commande.");
+  if (!envoye) redirect(avecMessage("/admin/reglages", "erreur", "Telegram a refusé le message d'essai. Réessaie dans un instant."));
+  await prisma.reglages.update({ where: { id: 1 }, data: { telegramDiscussion: discussion.id } });
+  redirect(avecMessage("/admin/reglages", "ok", `Alerte Telegram reliée${discussion.nom ? ` à ${discussion.nom}` : ""} : un message d'essai vient de partir.`));
+}
+
+export async function essayerTelegram() {
+  await exigerAdmin();
+  const r = await lireReglages();
+  const envoye = await envoyerTelegram(r.telegramJeton, r.telegramDiscussion, "Message d'essai : l'alerte fonctionne.");
+  redirect(avecMessage("/admin/reglages", envoye ? "ok" : "erreur", envoye ? "Message d'essai envoyé sur Telegram." : "Le message d'essai n'est pas parti : relie à nouveau le robot."));
+}
+
+export async function delierTelegram() {
+  await exigerAdmin();
+  await lireReglages();
+  await prisma.reglages.update({ where: { id: 1 }, data: { telegramJeton: "", telegramDiscussion: "", telegramNom: "" } });
+  redirect(avecMessage("/admin/reglages", "ok", "Alerte Telegram retirée."));
 }

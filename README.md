@@ -12,6 +12,9 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - Badges Populaire / Nouveau / Promo (avec prix barré) ; un produit **épuisé** reste visible mais ne se commande pas.
 - Panier enregistré dans le navigateur ; à l'ouverture, prix et options sont remis à jour depuis la base et ce qui n'existe plus est retiré.
 - Commande : nom, WhatsApp, ville, hôtel, jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
+- **Paiement à la commande** (Bit, PayBox, virement) : le client règle avant que le gérant commande sur Wolt. Les coordonnées de paiement ne sont jamais sur le site : le client les reçoit sur WhatsApp. Sa page de suivi dit où en est le paiement (en attente avec le montant, reçu, complément à régler, remboursement à venir).
+- **« Je ne trouve pas mon article »** : une demande libre, dans le panier ou seule (recherche sans résultat → « Demander cet article »). Le gérant cherche l'article, l'ajoute à la commande avec son prix ; rien n'est à régler avant.
+- **Pages d'information** : conditions générales de vente, confidentialité, mentions légales, contact (liens dans le pied de page ; les conditions sont rappelées au moment de commander). Le site **vouvoie** le client.
 - Page de suivi (lien secret) en frise : étape en cours, articles indisponibles non facturés, bouton WhatsApp. Elle se met à jour toute seule.
 - **E-mail de confirmation** à chaque commande (l'adresse e-mail est demandée à la commande) : livraison, articles, total, bouton « Suivre ma commande » et accès direct à l'espace client.
 - **Espace client** (`/compte`), sans mot de passe : on y entre par un lien reçu par e-mail (celui de la confirmation, valable 7 jours, ou un lien demandé sur la page de connexion, valable 30 minutes). Tableau de bord (commandes, en cours, articles, total dépensé), commande en cours avec son avancement, articles préférés, historique d'achat détaillé avec **« Commander à nouveau »**, informations (nom, WhatsApp, ville, adresse) qui pré-remplissent la commande suivante, déconnexion, suppression de l'espace. L'espace est créé à la première commande.
@@ -29,11 +32,15 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - **Tarifs** (selon le moment de la livraison) : des plages horaires (jours cochés + heures, minuit passé ou journée entière) avec leurs propres frais de service, livraison, express (0 = pas d'express) et une **majoration en % des articles** (ex. +10 % la nuit). La première plage active (par priorité) qui contient le moment s'applique, sinon le tarif de base des Réglages. Une grille de la semaine montre quel tarif s'applique à chaque heure. Le client voit le tarif changer en direct quand il choisit le jour et le créneau ; la commande garde le tarif appliqué.
 - **Villes** : les villes livrées (19 au départ, autour de Netanya), chacune avec un **supplément de livraison** et, si besoin, un **minimum de commande**. Livraison payée par le client = livraison du moment (Tarifs) + supplément de la ville. Toute la liste se modifie d'un coup ; un tableau montre le prix de livraison de chaque ville pour chaque tarif (base, week-end, nuit…).
 - **Clients** : chaque client (nom, e-mail, WhatsApp, ville), son nombre de commandes et le montant livré, les meilleurs d'abord ; recherche ; bouton WhatsApp.
-- **Avis de nouvelle commande** : un e-mail au gérant (`EMAIL_GERANT`) à chaque commande, avec le lien vers la commande.
+- **Avis de nouvelle commande** : un e-mail au gérant (`EMAIL_GERANT`) à chaque commande, avec le lien vers la commande, et une **alerte Telegram** immédiate sur son téléphone (Réglages → « Alerte Telegram » : créer un robot avec @BotFather, coller son jeton, lui écrire, appuyer sur « Relier »).
+- **Paiement** : chaque commande porte son étiquette (à payer, payée, reste à payer, à rembourser). Un bouton envoie au client, sur WhatsApp, le montant, le mode et les coordonnées de paiement (saisies une fois dans Réglages, privées) ; un autre note « Paiement reçu ». Un article ajouté après le paiement fait apparaître un complément, un article indisponible un remboursement. Filtre « À payer » dans les commandes.
+- **Article hors catalogue** : dans le détail d'une commande, ajouter un article qui n'est pas au catalogue (nom, quantité, prix de vente, prix Wolt) ; le total est recalculé.
+- **Reçu** : chaque commande a un reçu à imprimer ou à enregistrer en PDF (ce que le client a payé, sans prix d'achat ni boutique). Ce n'est pas une facture fiscale.
+- **Comptabilité** (dans Statistiques) : deux fichiers à télécharger, par mois ou depuis le début — les **ventes** (une ligne par commande : montants, encaissé, reste dû, à rembourser, marge estimée) et les **achats Wolt** (une ligne par article réellement acheté, au prix d'achat). Ils s'ouvrent dans Excel.
 - **Statistiques** : chiffre, marge estimée et panier moyen (jour, 7 jours, 30 jours), chiffre par jour, les plus vendus, pourboires, part d'express.
 - **Produits** : filtres « À compléter (sans prix) / En ligne / Masqués / Épuisés ». Nom, description, photo, prix de vente (vide = à définir : jamais visible ni commandable), prix barré, badge, options (une par ligne : `Taille : 2 ans | 4 ans | 8 ans +10`), catégorie, ordre, en ligne / masqué, épuisé / en stock, bouton **Dupliquer**. Trois champs ne sont **visibles que par toi** : le prix d'achat sur Wolt, la boutique où le commander et le lien Wolt. Aucune page publique ne les lit (`PRODUIT_PUBLIC` dans `lib/catalogue.ts`).
 - **Catégories** : créer, renommer, réordonner, masquer. Une catégorie qui contient des produits ne se supprime pas.
-- **Ma journée** (la page de travail du gérant) : pour aujourd'hui ou demain, (1) « À commander sur Wolt » : la liste de courses de toutes les commandes reçues, additionnée par boutique et par article (« 2 × Couches Huggies (Taille : 4) — n° 35, 36 »), à copier, et un bouton pour les marquer « commandées sur Wolt » ; (2) « Ma tournée » : les livraisons par créneau puis par ville, avec adresse, montant à encaisser et paiement, liens **Waze** et **WhatsApp « j'arrive »**, boutons « En route » et « Livrée » ; et le total à encaisser par mode de paiement.
+- **Ma journée** (la page de travail du gérant) : pour aujourd'hui ou demain, d'abord « Paiements à recevoir » (les commandes pas encore réglées, avec le bouton WhatsApp et « Paiement reçu ») — seules les commandes réglées entrent dans la liste Wolt ; puis (1) « À commander sur Wolt » : la liste de courses de toutes les commandes reçues, additionnée par boutique et par article (« 2 × Couches Huggies (Taille : 4) — n° 35, 36 »), à copier, et un bouton pour les marquer « commandées sur Wolt » ; (2) « Ma tournée » : les livraisons par créneau puis par ville, avec adresse, montant à encaisser et paiement, liens **Waze** et **WhatsApp « j'arrive »**, boutons « En route » et « Livrée » ; et le total à encaisser par mode de paiement.
 - **Livraison le soir** : par défaut, cinq créneaux de 19h à minuit. **Heure limite** (Réglages, 17:00 par défaut) : une commande passée avant est livrée le soir même — le temps que Wolt livre les articles au gérant dans la journée ; après, le soir suivant (le client voit pourquoi). Réglages → « Jours où tu livres » (les autres ne sont pas proposés) et « Délai de préparation » (60 min par défaut : pour le soir même, un créneau n'est proposé que s'il commence au moins ce délai après la commande, le temps de commander sur Wolt et de préparer). Le serveur refuse un créneau devenu trop proche. L'accueil affiche « Livré le soir, 19h – 00h » et la prochaine livraison.
 - **Réglages** : tarif de base (frais de service, livraison, supplément express (0 = pas d'express), minimum de commande général), « Frais de service (livraison comprise) » en une seule ligne pour le client, pourboires proposés, modes de paiement, créneaux, ton WhatsApp, message d'accueil, ouverture et fermeture des commandes.
 
@@ -112,6 +119,12 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 - **Catalogue en ligne** : 205 articles visibles (175 de Wolt Market Netanya Center, 30 de Dynamica Netanya), bière et vin installés hors ligne, aucune photo pour l'instant.
 - **À savoir** : le dépôt est public. Avant de le passer en privé, vérifier que Vercel (offre Hobby) déploie encore les envois dont l'auteur n'est pas le propriétaire du compte.
 
+## Référencement
+
+Le site donne aux moteurs de recherche un plan (`/sitemap.xml` : accueil, rayons, pages d'information) et ses règles (`/robots.txt` : jamais l'espace gérant, l'espace client, le panier ni les pages de suivi). Chaque page a son titre, sa description et son adresse canonique ; l'accueil porte des données structurées (nom, logo, recherche).
+
+Pour que Google prenne le site en compte plus vite : ouvrir Google Search Console, ajouter la propriété « Domaine » `touristorder.com`, copier l'enregistrement TXT donné par Google dans la zone DNS du domaine (chez Hostinger), puis indiquer le plan du site `https://www.touristorder.com/sitemap.xml`.
+
 ## E-mails (Resend)
 
 1. Crée un compte sur resend.com, ajoute et **vérifie ton nom de domaine** (enregistrements DNS donnés par Resend), crée une clé API.
@@ -139,7 +152,8 @@ En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fi
 
 ## Pas encore fait (V2)
 
-- Paiement en ligne (Stripe, PayPlus ou Tranzila).
-- Notification automatique du gérant à chaque nouvelle commande (e-mail ou Telegram). Pour l'instant, la liste se rafraîchit toutes les 30 s et le client est invité à écrire sur WhatsApp.
+- Paiement par carte bancaire en ligne (il faut un compte chez un prestataire de paiement israélien : PayPlus, Grow, Tranzila, CardCom…).
+- Facture fiscale : le reçu du site n'en est pas une ; elle se fait dans un logiciel de facturation agréé.
+- Limite du nombre de commandes par créneau.
 - Plusieurs langues (anglais, hébreu).
 - Fiche produit détaillée et variantes (tailles).

@@ -98,7 +98,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
 
       {preferes.length > 0 && (
         <section aria-labelledby="t-preferes" className="space-y-3">
-          <h2 id="t-preferes" className="text-xl font-extrabold">Tes articles préférés</h2>
+          <h2 id="t-preferes" className="text-xl font-extrabold">Vos articles préférés</h2>
           <RailProduits produits={preferes} />
         </section>
       )}
@@ -166,7 +166,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
       <section aria-labelledby="t-infos" className="carte space-y-4 p-5">
         <div>
           <h2 id="t-infos" className="text-xl font-extrabold">Mes informations</h2>
-          <p className="text-sm text-slate-600">Elles pré-remplissent ta prochaine commande. Ton adresse e-mail ({client.email}) sert à te connecter.</p>
+          <p className="text-sm text-slate-600">Elles pré-remplissent votre prochaine commande. Votre adresse e-mail ({client.email}) sert à vous connecter.</p>
         </div>
         <FormulaireProfil
           client={{ nom: client.nom, telephone: client.telephone, ville: client.ville, adresse: client.adresse }}
@@ -181,7 +181,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
         <details id="supprimer" className="max-w-md text-sm" open={params.erreur === "confirmation"}>
           <summary className="cursor-pointer text-slate-500 hover:underline">Supprimer mon espace client</summary>
           <form action={supprimerMonEspace} className="mt-3 space-y-2 rounded-2xl border border-red-200 bg-white p-4">
-            <p>Ton espace et tes informations sont supprimés. Tes commandes passées restent chez nous pour la comptabilité, sans lien avec toi.</p>
+            <p>Votre espace et vos informations sont supprimés. Vos commandes passées restent chez nous pour la comptabilité, sans lien avec vous.</p>
             <label htmlFor="confirmation" className="etiquette">Écris « supprimer » pour confirmer</label>
             <input id="confirmation" name="confirmation" autoComplete="off" className={`champ ${params.erreur === "confirmation" ? "champ-erreur" : ""}`} />
             {params.erreur === "confirmation" && <p role="alert" className="text-sm font-medium text-red-700">Écris le mot « supprimer » pour confirmer.</p>}

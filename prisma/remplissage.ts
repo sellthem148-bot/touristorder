@@ -1,5 +1,6 @@
 // Le remplissage de la base, partagé par `npm run seed` (prisma/seed.ts) et par la préparation
 // automatique de la production (prisma/preparer.ts).
+import { ANCIEN_MESSAGE_ACCUEIL, ANCIENS_PAIEMENTS, MESSAGE_ACCUEIL_PAR_DEFAUT, PAIEMENTS_PAR_DEFAUT } from "../lib/marque";
 import type { PrismaClient } from "@prisma/client";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
@@ -100,6 +101,37 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
   return `Articles Wolt — ${bilans.join(" ; ")}.`;
 }
 
+// Les descriptions du catalogue de départ qui tutoyaient le client, et leur nouveau texte.
+const ANCIENNES_DESCRIPTIONS: [string, string][] = [
+  ["Précise la marque en note si besoin", "Précisez la marque en note si besoin"],
+  ["Pour brancher tes appareils français", "Pour brancher vos appareils français"],
+  ["Pour un anniversaire — précise le message en note", "Pour un anniversaire — précisez le message en note"],
+];
+
+/**
+ * Met à niveau les réglages restés à leur ancienne valeur par défaut : modes de paiement
+ * (le paiement se fait désormais à la commande : Bit, PayBox, virement) et message d'accueil
+ * (vouvoiement), et les descriptions d'articles qui tutoyaient. Ne touche jamais une valeur que le
+ * gérant a modifiée. Sans effet la deuxième fois.
+ */
+export async function mettreLesReglagesANiveau(prisma: PrismaClient): Promise<string> {
+  const r = await prisma.reglages.findUnique({ where: { id: 1 }, select: { paiements: true, messageAccueil: true } });
+  if (!r) return "Réglages : pas encore créés.";
+  const data: { paiements?: string[]; messageAccueil?: string } = {};
+  if (r.paiements.length === ANCIENS_PAIEMENTS.length && r.paiements.every((p, i) => p === ANCIENS_PAIEMENTS[i])) data.paiements = PAIEMENTS_PAR_DEFAUT;
+  if (r.messageAccueil === ANCIEN_MESSAGE_ACCUEIL) data.messageAccueil = MESSAGE_ACCUEIL_PAR_DEFAUT;
+  const changes = Object.keys(data);
+  if (changes.length > 0) await prisma.reglages.update({ where: { id: 1 }, data });
+
+  // Les descriptions d'articles restées à leur ancien texte (tutoiement) : jamais celles que le gérant a réécrites.
+  let descriptions = 0;
+  for (const [ancienne, nouvelle] of ANCIENNES_DESCRIPTIONS) {
+    descriptions += (await prisma.produit.updateMany({ where: { description: ancienne }, data: { description: nouvelle } })).count;
+  }
+  if (changes.length === 0 && descriptions === 0) return "Réglages et descriptions : rien à mettre à niveau.";
+  return `Mis à niveau : ${[...changes, ...(descriptions > 0 ? [`${descriptions} description(s) d'article`] : [])].join(", ")}.`;
+}
+
 /**
  * Remplit la base : catégories, réglages, villes et plages d'exemple, la base du catalogue
  * (sans prix, masquée) et les articles réels de Wolt Market avec leur prix.
@@ -127,7 +159,7 @@ export async function remplirLaBase(prisma: PrismaClient, { demo = false }: { de
       fraisExpress: 2000,
       // Livraison le soir seulement (le gérant travaille la journée).
       creneaux: ["19:00 – 20:00", "20:00 – 21:00", "21:00 – 22:00", "22:00 – 23:00", "23:00 – 00:00"],
-      messageAccueil: "Commande quand tu veux, on te livre le soir à ton hôtel : chargeur oublié, couches, maillot, courses…",
+      messageAccueil: MESSAGE_ACCUEIL_PAR_DEFAUT,
     },
   });
 

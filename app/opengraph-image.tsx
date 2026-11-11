@@ -6,7 +6,7 @@ import { NOM_DU_SITE } from "@/lib/marque";
 import { SIGLE } from "@/lib/sigle";
 
 // La carte d'aperçu quand le lien du site est partagé (WhatsApp, Messages, réseaux sociaux).
-export const alt = `${NOM_DU_SITE} — tes courses livrées à ton logement, le soir même`;
+export const alt = `${NOM_DU_SITE} — vos courses livrées à votre logement, le soir même`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -36,9 +36,9 @@ export default async function Apercu() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 26 }}>
           <div style={{ display: "flex", fontSize: 80, fontWeight: 700, lineHeight: 1.06, letterSpacing: -3, maxWidth: 1000 }}>
-            Tes courses livrées à ton logement, le soir même.
+            Vos courses livrées à votre logement, le soir même.
           </div>
-          <div style={{ display: "flex", fontSize: 32, fontWeight: 500, color: "#a1a1aa" }}>Israël · Service en français · Paiement à la livraison</div>
+          <div style={{ display: "flex", fontSize: 32, fontWeight: 500, color: "#a1a1aa" }}>Israël · Service en français · Livraison le soir</div>
         </div>
       </div>
     ),

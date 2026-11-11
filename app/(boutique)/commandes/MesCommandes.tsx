@@ -28,14 +28,14 @@ export function MesCommandes() {
 
   if (etat.etape === "chargement") return <p className="py-10 text-center text-slate-500">Chargement…</p>;
   if (etat.etape === "erreur") {
-    return <p className="carte p-6 text-center text-slate-700">Impossible de charger tes commandes. Vérifie ta connexion et réessaie.</p>;
+    return <p className="carte p-6 text-center text-slate-700">Impossible de charger vos commandes. Vérifiez votre connexion et réessayez.</p>;
   }
   if (etat.commandes.length === 0) {
     return (
       <div className="carte space-y-3 p-8 text-center">
         <ReceiptText className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
         <p className="font-bold">Aucune commande sur cet appareil.</p>
-        <p className="text-sm text-slate-600">Tes commandes apparaissent ici, sur le téléphone ou l&apos;ordinateur qui les a passées.</p>
+        <p className="text-sm text-slate-600">Vos commandes apparaissent ici, sur le téléphone ou l&apos;ordinateur qui les a passées.</p>
         <Link href="/" className="bouton">Voir le catalogue</Link>
       </div>
     );

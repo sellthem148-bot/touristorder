@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { lirePrix } from "./argent";
+import { QUANTITE_MAX } from "./calcul";
 import { lireOptionsSaisies } from "./options";
 import { BADGES } from "./choix-commande";
 
@@ -131,6 +132,41 @@ export const reglagesSchema = z.object({
     .string()
     .trim()
     .refine((t) => t === "" || /^([01]\d|2[0-3]):([0-5]\d)$/.test(t), { error: "Heure limite au format HH:MM (ex. 17:00), ou vide." }),
+  // Privé : glissé dans le message WhatsApp envoyé au client, jamais affiché sur le site.
+  coordonneesPaiement: z.string().trim().max(600, { error: "600 caractères maximum." }),
+  // L'entreprise (pages légales, reçu) : chaque champ peut rester vide.
+  entrepriseNom: z.string().trim().max(120, { error: "120 caractères maximum." }),
+  entrepriseNumero: z.string().trim().max(60, { error: "60 caractères maximum." }),
+  entrepriseAdresse: z.string().trim().max(300, { error: "300 caractères maximum." }),
+  emailContact: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(254, { error: "Adresse e-mail trop longue." })
+    .refine((t) => t === "" || z.email().safeParse(t).success, { error: "Adresse e-mail invalide." }),
+});
+
+/** Un article hors catalogue ajouté par le gérant à une commande. */
+export const ligneLibreSchema = z.object({
+  nom: z.string().trim().min(1, { error: "Nom de l'article requis." }).max(120, { error: "120 caractères maximum." }),
+  quantite: z.string().transform((t, ctx) => {
+    const n = Number(t.trim());
+    if (!Number.isInteger(n) || n < 1 || n > QUANTITE_MAX) {
+      ctx.addIssue({ code: "custom", message: `Quantité entre 1 et ${QUANTITE_MAX}.` });
+      return z.NEVER;
+    }
+    return n;
+  }),
+  prix: z.string().transform((t, ctx) => {
+    const p = lirePrix(t);
+    if (p == null || p <= 0) {
+      ctx.addIssue({ code: "custom", message: "Prix de vente invalide (ex. 24,90)." });
+      return z.NEVER;
+    }
+    return p;
+  }),
+  prixAchat: prixFacultatif,
+  boutique: z.string().trim().max(80, { error: "80 caractères maximum." }),
 });
 
 const heure = z.string().trim().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { error: "Heure au format HH:MM (ex. 08:00, 21:30)." });

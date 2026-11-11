@@ -98,6 +98,7 @@ describe("formulaires admin (nouveaux champs)", () => {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "20", minimumCommande: "",
       pourboires: "20 10 12,50 10", paiements: "", creneaux: "Dès que possible",
       whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: true, joursLivres: ["1"], delaiPreparation: "", heureLimite: "",
+      coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     });
     expect(r.pourboires).toEqual([1000, 1250, 2000]);
     expect(r.paiements).toEqual([]);

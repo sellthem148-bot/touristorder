@@ -2,6 +2,8 @@ import { exigerAdmin } from "@/lib/admin";
 import { formatPrix } from "@/lib/argent";
 import type { Periode } from "@/lib/statistiques";
 import { lireStatistiques } from "@/lib/statistiques-lecture";
+import { derniersMois } from "@/lib/export";
+import { jourEnIsrael } from "@/lib/dates";
 
 export const metadata = { title: "Statistiques" };
 
@@ -24,6 +26,7 @@ export default async function PageStatistiques() {
   await exigerAdmin();
   const s = await lireStatistiques();
   const max = Math.max(1, ...s.parJour.map((j) => j.chiffre));
+  const mois = derniersMois(jourEnIsrael());
 
   return (
     <div className="space-y-5">
@@ -33,6 +36,29 @@ export default async function PageStatistiques() {
         <Bloc titre="7 derniers jours" p={s.semaine} />
         <Bloc titre="30 derniers jours" p={s.mois} />
       </div>
+
+      <section className="carte space-y-3 p-5" aria-labelledby="t-compta">
+        <div>
+          <h2 id="t-compta" className="font-extrabold">Comptabilité : exporter</h2>
+          <p className="text-sm text-slate-600">
+            Deux fichiers à ouvrir dans Excel ou à donner à ton comptable : les ventes (ce que les clients paient) et les achats Wolt (ce que les articles te coûtent).
+          </p>
+        </div>
+        <form method="get" className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="sm:w-56">
+            <label htmlFor="mois" className="etiquette">Période (date de livraison)</label>
+            <select id="mois" name="mois" className="champ" defaultValue={mois[0].valeur}>
+              {mois.map((m) => <option key={m.valeur} value={m.valeur}>{m.libelle}</option>)}
+              <option value="tout">Tout depuis le début</option>
+            </select>
+          </div>
+          <button type="submit" formAction="/admin/export/ventes" className="bouton">Exporter les ventes</button>
+          <button type="submit" formAction="/admin/export/achats" className="bouton-secondaire">Exporter les achats Wolt</button>
+        </form>
+        <p className="text-xs text-slate-500">
+          Les achats sont estimés d&apos;après le prix d&apos;achat de chaque article (hors frais de livraison Wolt) : le montant exact est sur tes reçus Wolt. Un reçu par commande s&apos;imprime depuis la commande.
+        </p>
+      </section>
 
       <section className="carte p-5">
         <h2 className="mb-4 font-extrabold">Chiffre par jour (14 jours)</h2>

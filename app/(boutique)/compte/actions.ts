@@ -31,7 +31,7 @@ export async function demanderLien(_avant: EtatConnexion, form: FormData): Promi
 
   const ip = await ipDuVisiteur();
   if (!autoriser(`lien-ip:${ip}`, 8, 15 * 60 * 1000) || !autoriser(`lien-email:${email}`, 3, 60 * 60 * 1000)) {
-    return { erreur: "Trop de demandes. Réessaie dans un moment." };
+    return { erreur: "Trop de demandes. Réessayez dans un moment." };
   }
   if (process.env.NODE_ENV === "production" && !process.env.RESEND_API_KEY) {
     return { erreur: "L'envoi d'e-mails n'est pas encore configuré sur ce site." };
@@ -56,7 +56,7 @@ export async function seDeconnecterClient() {
 }
 
 const profilSchema = z.object({
-  nom: z.string().trim().min(2, { error: "Ton nom est requis." }).max(80, { error: "80 caractères maximum." }),
+  nom: z.string().trim().min(2, { error: "Votre nom est requis." }).max(80, { error: "80 caractères maximum." }),
   telephone: telephoneSchema,
   ville: z.string().trim().max(80),
   adresse: z.string().trim().max(300, { error: "300 caractères maximum." }),
@@ -72,10 +72,10 @@ export async function enregistrerProfil(_avant: EtatProfil, form: FormData): Pro
     ville: String(form.get("ville") ?? ""),
     adresse: String(form.get("adresse") ?? ""),
   });
-  if (!lecture.success) return { erreur: "Vérifie les champs en rouge.", champs: erreursParChamp(lecture.error) };
+  if (!lecture.success) return { erreur: "Vérifiez les champs en rouge.", champs: erreursParChamp(lecture.error) };
   // Une ville vide est permise ; sinon, seulement une ville livrée.
   if (lecture.data.ville && !(await prisma.ville.findFirst({ where: { nom: lecture.data.ville, active: true }, select: { id: true } }))) {
-    return { erreur: "Vérifie les champs en rouge.", champs: { ville: "On ne livre pas encore cette ville." } };
+    return { erreur: "Vérifiez les champs en rouge.", champs: { ville: "Nous ne livrons pas encore cette ville." } };
   }
   await prisma.client.update({ where: { id: client.id }, data: lecture.data });
   return { ok: true };

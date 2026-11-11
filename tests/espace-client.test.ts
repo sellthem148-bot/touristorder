@@ -64,7 +64,7 @@ describe("adresse e-mail", () => {
   it("vide : « requise », pas « invalide »", () => {
     const r = emailSchema.safeParse("   ");
     expect(r.success).toBe(false);
-    expect(r.error?.issues.map((i) => i.message)).toEqual(["Ton adresse e-mail est requise."]);
+    expect(r.error?.issues.map((i) => i.message)).toEqual(["Votre adresse e-mail est requise."]);
   });
   it("la commande exige une adresse e-mail", () => {
     const base = {
@@ -88,6 +88,7 @@ const commande: CommandePourCourriel = {
   creneau: "20:00 – 21:00",
   paiement: "Bit",
   notes: "",
+  demandeLibre: "",
   lignes: [
     { nom: "Couches Huggies", options: "Taille : 4", quantite: 2, prixUnitaire: 6990 },
     { nom: "Pack d'eau 6 × 1,5 L", options: "", quantite: 1, prixUnitaire: 2490 },
@@ -97,13 +98,14 @@ const commande: CommandePourCourriel = {
   lienSuivi: "https://exemple.test/suivi/abc",
   lienEspace: "https://exemple.test/compte/acces?jeton=xyz",
   lienWhatsapp: "https://wa.me/972501234567?text=Bonjour",
+  lienPaiement: "https://wa.me/972501234567?text=Regler",
 };
 
 describe("e-mail de confirmation", () => {
   it("contient la commande, la livraison, le total et les deux liens", () => {
     const c = courrielDeConfirmation(commande);
     const html = sansInsecable(c.html);
-    expect(c.sujet).toBe("Ta commande n°42 est enregistrée — livraison demain, 20:00 – 21:00");
+    expect(c.sujet).toBe("Votre commande n°42 est enregistrée — livraison demain, 20:00 – 21:00");
     expect(html).toContain("Merci Sarah !");
     expect(html).toContain("<strong>2 ×</strong> Couches Huggies");
     expect(html).toContain("Taille : 4");
@@ -112,7 +114,11 @@ describe("e-mail de confirmation", () => {
     expect(html).toContain("234,70 ₪");
     expect(html).toContain('href="https://exemple.test/suivi/abc"');
     expect(html).toContain('href="https://exemple.test/compte/acces?jeton=xyz"');
-    expect(html).toContain("Paiement à la livraison : Bit.");
+    // Le paiement se fait à la commande ; les coordonnées ne sont jamais dans l'e-mail, on les demande sur WhatsApp.
+    expect(html).toContain("Paiement à la commande : 234,70 ₪ par Bit.");
+    expect(html).not.toContain("à la livraison");
+    expect(html).toContain('href="https://wa.me/972501234567?text=Regler"');
+    expect(html).toContain("Recevoir les coordonnées de paiement");
     expect(html).toContain("Hôtel Daniel,<br>chambre 120, Herzliya");
     const texte = sansInsecable(c.texte);
     expect(texte).toContain("- 2 × Couches Huggies (Taille : 4) : 139,80 ₪");
@@ -130,8 +136,29 @@ describe("e-mail de confirmation", () => {
     expect(c.html).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
     expect(echapper(`a&b<c>"d"'e'`)).toBe("a&amp;b&lt;c&gt;&quot;d&quot;&#39;e&#39;");
   });
+  it("demande d'article hors catalogue : affichée, échappée, et sans rien à régler si le panier est vide", () => {
+    const avec = courrielDeConfirmation({ ...commande, demandeLibre: "1 crème solaire <b>enfant</b>" });
+    expect(avec.html).toContain("Votre demande hors catalogue :");
+    expect(avec.html).toContain("1 crème solaire &lt;b&gt;enfant&lt;/b&gt;");
+    expect(avec.texte).toContain("Votre demande hors catalogue : 1 crème solaire <b>enfant</b>");
+
+    const seule = courrielDeConfirmation({
+      ...commande, demandeLibre: "1 crème solaire", lignes: [], lienPaiement: null,
+      totaux: { sousTotal: 0, majoration: 0, fraisService: 0, fraisLivraison: 0, pourboire: 0, total: 0 },
+    });
+    expect(seule.sujet).toBe("Votre demande n°42 est enregistrée — livraison demain, 20:00 – 21:00");
+    expect(seule.html).toContain("Demande enregistrée");
+    expect(seule.html).toContain("avant tout paiement");
+    expect(seule.html).not.toContain("Paiement à la commande");
+    expect(seule.texte).not.toContain("TOTAL À PAYER");
+  });
+  it("vouvoie le client", () => {
+    for (const c of [courrielDeConfirmation(commande), courrielDeConnexion({ site: "Courses Express", lien: "https://exemple.test/x", minutes: 30 })]) {
+      expect(`${c.sujet}\n${c.texte}`).not.toMatch(/\b(tu|ta|ton|tes|toi|te)\b/i);
+    }
+  });
   it("sans espace client ni WhatsApp : pas de bloc ni de lien correspondants", () => {
-    const c = courrielDeConfirmation({ ...commande, lienEspace: null, lienWhatsapp: null });
+    const c = courrielDeConfirmation({ ...commande, lienEspace: null, lienWhatsapp: null, lienPaiement: null });
     expect(c.html).not.toContain("Ouvrir mon espace");
     expect(c.html).not.toContain("wa.me");
   });

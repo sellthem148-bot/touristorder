@@ -10,12 +10,13 @@ export const LIBELLE_STATUT: Record<StatutCommande, string> = {
   ANNULEE: "Annulée",
 };
 
-// Ce que le client lit sur sa page de suivi.
+// Ce que le client lit sur sa page de suivi. À l'étape « Reçue », la phrase dépend du paiement :
+// la commande n'est préparée qu'une fois réglée.
 export const EXPLICATION_STATUT: Record<StatutCommande, string> = {
-  RECUE: "On a bien reçu ta commande. On te contacte sur WhatsApp pour confirmer.",
-  COMMANDEE: "On prépare ta commande.",
-  EN_LIVRAISON: "Ta commande est en route !",
-  LIVREE: "Ta commande a été livrée. Bon séjour !",
+  RECUE: "Nous avons bien reçu votre commande.",
+  COMMANDEE: "Nous préparons votre commande.",
+  EN_LIVRAISON: "Votre commande est en route.",
+  LIVREE: "Votre commande a été livrée. Bon séjour !",
   ANNULEE: "Cette commande a été annulée.",
 };
 

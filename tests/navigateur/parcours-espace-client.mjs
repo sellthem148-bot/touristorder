@@ -46,9 +46,9 @@ async function remplirEtCommander(p, { nom, tel, email, adresse }) {
   await p.getByText("Pack d'eau").first().waitFor();
   await p.getByText("Demain", { exact: true }).click();
   await p.getByText("19:00 – 20:00", { exact: true }).click();
-  if (nom) await p.getByLabel("Ton nom").fill(nom);
-  if (tel) await p.getByLabel("Ton numéro WhatsApp").fill(tel);
-  if (email) await p.getByLabel("Ton adresse e-mail").fill(email);
+  if (nom) await p.getByLabel("Votre nom").fill(nom);
+  if (tel) await p.getByLabel("Votre numéro WhatsApp").fill(tel);
+  if (email) await p.getByLabel("Votre adresse e-mail").fill(email);
   await p.getByLabel("Ville").selectOption("Netanya");
   if (adresse) await p.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill(adresse);
   await p.getByText("Bit", { exact: true }).click();
@@ -69,19 +69,19 @@ try {
   await fiche.waitFor({ state: "hidden" });
   await sarah.goto(BASE + "/panier");
   await sarah.getByText("Pack d'eau").first().waitFor();
-  await sarah.getByLabel("Ton nom").fill("Sarah Cohen");
-  await sarah.getByLabel("Ton numéro WhatsApp").fill("+33 6 12 34 56 78");
+  await sarah.getByLabel("Votre nom").fill("Sarah Cohen");
+  await sarah.getByLabel("Votre numéro WhatsApp").fill("+33 6 12 34 56 78");
   await sarah.getByLabel("Ville").selectOption("Netanya");
   await sarah.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Résidence Sea View, appartement 12");
   await sarah.getByRole("button", { name: /^Commander/ }).click();
-  await sarah.getByText("Ton adresse e-mail est requise.").waitFor();
+  await sarah.getByText("Votre adresse e-mail est requise.").waitFor();
   ok("commande sans adresse e-mail : refusée, le champ le dit");
   const numero1 = await remplirEtCommander(sarah, {
     nom: "Sarah Cohen", tel: "+33 6 12 34 56 78", email: `  ${SARAH.toUpperCase()} `, adresse: "Résidence Sea View, appartement 12",
   });
 
   // 2. Les deux e-mails sont partis
-  const [confirmation] = await courriels(SARAH, `Ta commande n°${numero1} est enregistrée`);
+  const [confirmation] = await courriels(SARAH, `Votre commande n°${numero1} est enregistrée`);
   verifier(!!confirmation, "e-mail de confirmation envoyé à l'adresse nettoyée (minuscules, sans espaces)");
   const texteConfirmation = espaces(confirmation.html.replace(/<[^>]+>/g, " "));
   verifier(texteConfirmation.includes("Merci Sarah !") && texteConfirmation.includes("Couches Huggies") && texteConfirmation.includes("Taille : 4"), "confirmation : prénom, articles et option");
@@ -104,8 +104,8 @@ try {
   let page = espaces(await sarah.locator("main").innerText());
   verifier(page.includes("Bonjour Sarah") && page.includes(SARAH), "tableau de bord : « Bonjour Sarah » et son adresse");
   verifier(page.includes("Commandes 1 En cours 1"), "tableau de bord : 1 commande, 1 en cours");
-  verifier(page.includes(`Commande n°${numero1}`) && page.includes("On a bien reçu ta commande"), "commande en cours avec son avancement");
-  verifier(page.includes("Tes articles préférés"), "articles préférés");
+  verifier(page.includes(`Commande n°${numero1}`) && page.includes("Nous avons bien reçu votre commande"), "commande en cours avec son avancement");
+  verifier(page.includes("Vos articles préférés"), "articles préférés");
   verifier(!/Super-Pharm|Wolt Market/.test(await sarah.content()), "espace client : aucune boutique affichée");
   await sarah.screenshot({ path: `${OUT}/v7-2-espace-client.png`, fullPage: true });
 
@@ -123,8 +123,8 @@ try {
   await sarah.waitForURL(BASE + "/panier");
   await sarah.getByText("Taille : 4").waitFor();
   verifier(await sarah.getByRole("link", { name: "Panier, 2 articles" }).isVisible(), "commander à nouveau : les 2 articles sont dans le panier");
-  verifier((await sarah.getByLabel("Ton nom").inputValue()) === "Sarah Cohen" && (await sarah.getByLabel("Adresse ou hôtel (avec n° de chambre)").inputValue()).endsWith("appartement 14"), "commande pré-remplie avec le profil");
-  verifier((await sarah.getByLabel("Ton adresse e-mail").inputValue()) === SARAH && (await sarah.getByLabel("Ton adresse e-mail").getAttribute("readonly")) !== null, "adresse e-mail du compte, non modifiable");
+  verifier((await sarah.getByLabel("Votre nom").inputValue()) === "Sarah Cohen" && (await sarah.getByLabel("Adresse ou hôtel (avec n° de chambre)").inputValue()).endsWith("appartement 14"), "commande pré-remplie avec le profil");
+  verifier((await sarah.getByLabel("Votre adresse e-mail").inputValue()) === SARAH && (await sarah.getByLabel("Votre adresse e-mail").getAttribute("readonly")) !== null, "adresse e-mail du compte, non modifiable");
   const numero2 = await remplirEtCommander(sarah, {});
   await sarah.goto(BASE + "/compte");
   page = espaces(await sarah.locator("main").innerText());
@@ -138,9 +138,9 @@ try {
   await inconnu.goto(lien.slice(0, -3) + "abc");
   await inconnu.waitForURL(/\/compte\/connexion\?erreur=lien/);
   verifier(await inconnu.getByText("Ce lien n'est plus valable.").isVisible(), "lien falsifié : refusé");
-  await inconnu.getByLabel("Ton adresse e-mail").fill("personne@exemple.test");
+  await inconnu.getByLabel("Votre adresse e-mail").fill("personne@exemple.test");
   await inconnu.getByRole("button", { name: "Recevoir mon lien" }).click();
-  await inconnu.getByText("Regarde ta boîte mail").waitFor();
+  await inconnu.getByText("Consultez votre boîte mail").waitFor();
   verifier((await courriels("personne@exemple.test", "", false)).length === 0, "adresse sans compte : même message, aucun e-mail envoyé");
 
   // 7. David a son propre espace : il ne voit pas les commandes de Sarah
@@ -148,7 +148,7 @@ try {
   await david.goto(BASE + "/");
   await david.getByRole("button", { name: "Ajouter Pack d'eau 6 × 1,5 L au panier" }).first().click();
   const numero3 = await remplirEtCommander(david, { nom: "David Lévy", tel: "+33 6 99 88 77 66", email: DAVID, adresse: "Hôtel Carmel, chambre 7" });
-  const [confirmationDavid] = await courriels(DAVID, `Ta commande n°${numero3}`);
+  const [confirmationDavid] = await courriels(DAVID, `Votre commande n°${numero3}`);
   await david.goto(lienDAcces(confirmationDavid.html));
   await david.waitForURL(BASE + "/compte");
   page = espaces(await david.locator("main").innerText());
@@ -180,10 +180,10 @@ try {
   await sarah.waitForURL(BASE + "/");
   await sarah.goto(BASE + "/compte");
   await sarah.waitForURL(BASE + "/compte/connexion");
-  await sarah.getByLabel("Ton adresse e-mail").fill(SARAH);
+  await sarah.getByLabel("Votre adresse e-mail").fill(SARAH);
   await sarah.getByRole("button", { name: "Recevoir mon lien" }).click();
-  await sarah.getByText("Regarde ta boîte mail").waitFor();
-  const [connexion] = await courriels(SARAH, "Ton lien de connexion");
+  await sarah.getByText("Consultez votre boîte mail").waitFor();
+  const [connexion] = await courriels(SARAH, "Votre lien de connexion");
   verifier(!!connexion, "e-mail « lien de connexion » envoyé");
   await sarah.goto(lienDAcces(connexion.html));
   await sarah.waitForURL(BASE + "/compte");

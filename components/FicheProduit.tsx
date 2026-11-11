@@ -132,7 +132,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
               </button>
             </div>
             <button type="button" onClick={ajouter} disabled={!choix.ok} className="bouton flex-1 py-3.5">
-              {choix.ok ? `Ajouter · ${formatPrix(prixUnitaire * quantite)}` : `Choisis : ${manquants.join(", ")}`}
+              {choix.ok ? `Ajouter · ${formatPrix(prixUnitaire * quantite)}` : `Choisissez : ${manquants.join(", ")}`}
             </button>
           </div>
         )}

@@ -94,10 +94,42 @@ describe("whatsapp", () => {
     expect(lienWhatsapp("+972501234567", "Bonjour & merci")).toBe("https://wa.me/972501234567?text=Bonjour%20%26%20merci");
     expect(lienWhatsapp("", "x")).toBeNull();
   });
-  it("le message « en livraison » annonce le montant à régler", () => {
-    const m = messagePourLeClient("EN_LIVRAISON", { prenom: "Sarah", numero: 12, total: 8970, lienSuivi: "https://x/suivi/a", site: "Site" });
-    expect(nbsp(m)).toContain("89,70 ₪");
-    expect(m).toContain("n°12");
+  const infos = { prenom: "Sarah", numero: 12, total: 8970, lienSuivi: "https://x/suivi/a", site: "Site", mode: "Bit", coordonnees: "Bit : 050 000 0000" };
+  it("commande reçue, pas encore payée : le montant, le mode et les coordonnées de paiement", () => {
+    const m = nbsp(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "A_PAYER", montant: 8970 } }));
+    expect(m).toContain("votre commande n°12");
+    expect(m).toContain("Montant à régler : 89,70 ₪ par Bit.");
+    expect(m).toContain("Bit : 050 000 0000");
+    expect(m).toContain("Dès réception de votre paiement, nous lançons vos achats.");
+    expect(m).toContain("https://x/suivi/a");
+  });
+  it("sans coordonnées enregistrées : le message part quand même, sans ligne vide", () => {
+    const m = messagePourLeClient("RECUE", { ...infos, coordonnees: "  ", paiement: { etat: "A_PAYER", montant: 8970 } });
+    expect(m).not.toMatch(/\n\s*\n/);
+  });
+  it("commande payée : ni montant ni coordonnées de paiement dans les messages", () => {
+    for (const statut of ["RECUE", "COMMANDEE", "EN_LIVRAISON", "LIVREE"] as const) {
+      const m = messagePourLeClient(statut, { ...infos, paiement: { etat: "PAYEE", montant: 0 } });
+      expect(m, statut).not.toContain("050 000 0000");
+      expect(m, statut).not.toContain("₪");
+      expect(m, statut).toContain("n°12");
+    }
+    expect(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "PAYEE", montant: 0 } })).toContain("votre paiement");
+  });
+  it("un complément reste dû en cours de route : il est rappelé avec les coordonnées", () => {
+    const m = nbsp(messagePourLeClient("COMMANDEE", { ...infos, paiement: { etat: "COMPLEMENT", montant: 2000 } }));
+    expect(m).toContain("Montant à régler : 20,00 ₪ par Bit.");
+    expect(m).toContain("Bit : 050 000 0000");
+  });
+  it("commande annulée après paiement : le remboursement est annoncé", () => {
+    const m = nbsp(messagePourLeClient("ANNULEE", { ...infos, paiement: { etat: "A_REMBOURSER", montant: 8970 } }));
+    expect(m).toContain("Nous vous remboursons 89,70 ₪.");
+  });
+  it("les messages vouvoient le client", () => {
+    for (const statut of ["RECUE", "COMMANDEE", "EN_LIVRAISON", "LIVREE", "ANNULEE"] as const) {
+      const m = messagePourLeClient(statut, { ...infos, paiement: { etat: "A_PAYER", montant: 8970 } });
+      expect(m, statut).not.toMatch(/\b(tu|ta|ton|tes|toi|te)\b/i);
+    }
   });
 });
 
@@ -180,7 +212,10 @@ describe("formulaires admin", () => {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "Espèces",
       creneaux: "Dès que possible\n\n 09:00 – 12:00 \nDès que possible",
       whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["0", "5"], delaiPreparation: "45", heureLimite: "16:30",
+      coordonneesPaiement: "  Bit : 050 000 0000  ", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: " Contact@Exemple.FR ",
     });
+    expect(r.coordonneesPaiement).toBe("Bit : 050 000 0000");
+    expect(r.emailContact).toBe("contact@exemple.fr");
     expect(r.creneaux).toEqual(["Dès que possible", "09:00 – 12:00"]);
     expect(r.joursLivres).toEqual([0, 5]);
     expect(r.delaiPreparation).toBe(45);

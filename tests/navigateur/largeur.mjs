@@ -11,10 +11,11 @@ await p.getByRole("button", { name: /^Choisir les options de Maillot/ }).first()
 await p.getByRole("button", { name: "Fermer" }).click();
 await p.goto(B + "/");
 await p.getByRole("button", { name: /^Ajouter Pack d'eau/ }).first().click();
-for (const u of ["/panier", "/categorie/plage-soleil", "/recherche?q=couches", "/commandes", "/compte/connexion"]) { await p.goto(B + u); await p.waitForTimeout(600); await mesure(u); }
+for (const u of ["/panier", "/categorie/plage-soleil", "/recherche?q=couches", "/recherche?q=introuvable", "/commandes", "/compte/connexion", "/conditions", "/confidentialite", "/mentions-legales", "/contact"]) { await p.goto(B + u); await p.waitForTimeout(600); await mesure(u); }
 await p.goto(B + "/admin/connexion"); await p.getByLabel("Mot de passe").fill(process.env.ADMIN_PASSWORD || "admin123"); await p.getByRole("button", { name: "Se connecter" }).click(); await p.waitForURL(B + "/admin");
 await mesure("/admin");
 await p.locator('a[href^="/admin/commandes/"]').first().click(); await p.waitForURL(/commandes\//); await mesure("admin commande");
 await p.screenshot({ path: process.argv[2] + "/v2-11-admin-se.png" });
+await p.getByRole("link", { name: "Reçu à imprimer ou à envoyer" }).click(); await p.getByRole("heading", { name: /^Reçu n°/ }).waitFor(); await mesure("admin reçu");
 for (const u of ["/admin/statistiques", "/admin/produits", "/admin/produits?etat=a-completer", "/admin/produits/nouveau", "/admin/produits/prix", "/admin/tarifs", "/admin/villes", "/admin/clients", "/admin/journee", "/admin/journee?jour=2026-11-11", "/admin/categories", "/admin/reglages"]) { await p.goto(B + u); await mesure(u); }
 console.log(res.join("\n")); await b.close();

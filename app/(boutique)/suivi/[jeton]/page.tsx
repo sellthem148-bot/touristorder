@@ -9,7 +9,8 @@ import { lireReglages } from "@/lib/reglages";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { Actualiser } from "@/components/Actualiser";
-import { Bike, Check, CircleCheck, House, ReceiptText, ShoppingBag, Zap } from "lucide-react";
+import { Bike, Check, CircleCheck, Clock, House, ReceiptText, ShoppingBag, Zap } from "lucide-react";
+import { etatDuPaiement, messageDeReglement, paiementPourLeClient } from "@/lib/paiement";
 import { IconeWhatsapp } from "@/components/Icones";
 import { ViderPanier } from "./ViderPanier";
 import { RecapMontants } from "@/components/RecapMontants";
@@ -29,7 +30,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
     where: { jeton },
     select: {
       numero: true, statut: true, nomClient: true, ville: true, adresse: true,
-      dateLivraison: true, creneau: true, notes: true, express: true, remplacement: true, paiement: true,
+      dateLivraison: true, creneau: true, notes: true, demandeLibre: true, express: true, remplacement: true, paiement: true,
+      montantPaye: true, payeLe: true,
       sousTotal: true, majoration: true, majorationPct: true, tarifNom: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
       lignes: {
         select: { id: true, nom: true, options: true, prixUnitaire: true, quantite: true, indisponible: true },
@@ -45,6 +47,28 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
     reglages.whatsapp,
     `Bonjour ! J'ai passé la commande n°${commande.numero} sur ${NOM_DU_SITE} (${commande.nomClient}, ${commande.ville}).`,
   );
+  // Le paiement se fait avant la préparation : les coordonnées ne sont données que sur WhatsApp.
+  const etat = etatDuPaiement(commande);
+  const paiement = paiementPourLeClient(etat, commande.paiement);
+  const resteARegler = etat.etat === "A_PAYER" || etat.etat === "COMPLEMENT";
+  const lienReglement = resteARegler
+    ? lienWhatsapp(reglages.whatsapp, messageDeReglement({ numero: commande.numero, montant: etat.montant, mode: commande.paiement, site: NOM_DU_SITE }))
+    : null;
+  // Une demande d'article hors catalogue, pas encore chiffrée par le gérant.
+  const demandeEnCours = commande.demandeLibre !== "" && etat.etat === "RIEN" && commande.statut === "RECUE";
+  const explication =
+    commande.statut === "RECUE"
+      ? demandeEnCours
+        ? "Nous avons bien reçu votre demande. Nous recherchons l'article et vous confirmons son prix sur WhatsApp."
+        : resteARegler
+          ? "Nous avons bien reçu votre commande. Elle est préparée dès réception de votre paiement."
+          : "Nous avons bien reçu votre commande et votre paiement. Nous nous occupons de vos achats."
+      : EXPLICATION_STATUT[commande.statut];
+  const TONS = {
+    attente: "border-amber-200 bg-amber-50 text-amber-950",
+    recu: "border-emerald-200 bg-emerald-50 text-emerald-950",
+    info: "border-slate-200 bg-slate-50 text-slate-900",
+  } as const;
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
@@ -55,9 +79,9 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
         <section className="flex gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
           <CircleCheck className="mt-0.5 h-7 w-7 shrink-0 text-emerald-700" strokeWidth={1.6} aria-hidden="true" />
           <div>
-            <h1 className="text-xl font-bold text-emerald-950 sm:text-2xl">Merci, ta commande est envoyée !</h1>
+            <h1 className="text-xl font-bold text-emerald-950 sm:text-2xl">{demandeEnCours ? "Merci, votre demande est envoyée." : "Merci, votre commande est enregistrée."}</h1>
             <p className="mt-1 text-sm text-emerald-900 sm:text-base">
-              Cette page se met à jour toute seule, et tu la retrouves dans « Mes commandes ». Pour aller plus vite, envoie-nous un WhatsApp.
+              Cette page se met à jour toute seule, et vous la retrouvez dans « Mes commandes ».
             </p>
           </div>
         </section>
@@ -75,7 +99,31 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
             </span>
           )}
         </div>
-        <p className="text-slate-700">{EXPLICATION_STATUT[commande.statut]}</p>
+        <p className="text-slate-700">{explication}</p>
+
+        {paiement && commande.statut !== "ANNULEE" && (
+          <div className={`space-y-3 rounded-2xl border p-4 ${TONS[paiement.ton]}`} role={paiement.ton === "attente" ? "status" : undefined}>
+            <div className="flex gap-3">
+              {paiement.ton === "recu" ? (
+                <CircleCheck className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.7} aria-hidden="true" />
+              ) : (
+                <Clock className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.7} aria-hidden="true" />
+              )}
+              <div className="min-w-0 space-y-1">
+                <p className="font-bold">{paiement.titre}</p>
+                <p className="text-sm">{paiement.texte}</p>
+              </div>
+            </div>
+            {lienReglement && (
+              <a href={lienReglement} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full text-sm">
+                <IconeWhatsapp /> Recevoir les coordonnées de paiement
+              </a>
+            )}
+          </div>
+        )}
+        {paiement && commande.statut === "ANNULEE" && etat.etat === "A_REMBOURSER" && (
+          <p className={`rounded-2xl border p-4 text-sm ${TONS.info}`}><strong>{paiement.titre}.</strong> {paiement.texte}</p>
+        )}
 
         {commande.statut === "ANNULEE" ? (
           <p className={`rounded-2xl px-4 py-3 font-semibold ${COULEUR_STATUT.ANNULEE}`}>Commande annulée</p>
@@ -121,8 +169,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           <p>{libelleDuJour(commande.dateLivraison)} · {commande.creneau}</p>
         </div>
         <div className="space-y-1">
-          <h2 className="mb-1 text-base font-extrabold">Tes préférences</h2>
-          {commande.paiement && <p>Paiement : <strong>{commande.paiement}</strong></p>}
+          <h2 className="mb-1 text-base font-extrabold">Vos préférences</h2>
+          {commande.paiement && <p>Mode de paiement : <strong>{commande.paiement}</strong></p>}
           {estRemplacement(commande.remplacement) && <p>Si un article manque : <strong>{REMPLACEMENTS[commande.remplacement].libelle.toLowerCase()}</strong></p>}
           {commande.notes && <p className="whitespace-pre-line text-slate-600">Note : {commande.notes}</p>}
         </div>
@@ -130,13 +178,19 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
 
       <section className="carte p-5 text-sm sm:p-6">
         <h2 className="mb-2 text-base font-extrabold">Articles</h2>
+        {commande.demandeLibre && (
+          <p className="mb-3 whitespace-pre-line rounded-2xl border border-slate-200 bg-slate-50 p-3 text-slate-700">
+            <strong>Votre demande hors catalogue :</strong> {commande.demandeLibre}
+            <span className="mt-1 block text-xs text-slate-500">Nous vous confirmons son prix sur WhatsApp avant de l&apos;ajouter à votre commande.</span>
+          </p>
+        )}
         <ul className="divide-y divide-slate-100">
           {commande.lignes.map((l) => (
             <li key={l.id} className={`flex justify-between gap-3 py-2.5 ${l.indisponible ? "text-slate-400" : ""}`}>
               <span>
                 <span className={l.indisponible ? "line-through" : ""}>{l.quantite} × {l.nom}</span>
                 {l.options && <span className="block text-xs text-slate-500">{l.options}</span>}
-                {l.indisponible && <span className="mt-0.5 block text-xs font-semibold text-amber-700">Indisponible, non facturé</span>}
+                {l.indisponible && <span className="mt-0.5 block text-xs font-semibold text-amber-700">{commande.montantPaye > 0 ? "Indisponible, remboursé" : "Indisponible, non facturé"}</span>}
               </span>
               <span className={`shrink-0 font-semibold ${l.indisponible ? "line-through" : ""}`}>{formatPrix(l.prixUnitaire * l.quantite)}</span>
             </li>
@@ -149,7 +203,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           express={commande.express}
           tarifNom={commande.tarifNom}
           majorationPct={commande.majorationPct}
-          libelleTotal="Total à payer"
+          libelleTotal={resteARegler || etat.etat === "RIEN" ? "Total à payer" : "Total"}
           ville={commande.ville}
         />
       </section>

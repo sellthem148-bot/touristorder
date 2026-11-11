@@ -15,7 +15,9 @@ import { BoutonCopier } from "@/components/admin/BoutonCopier";
 import { RecapMontants } from "@/components/RecapMontants";
 import { IconeEclair, IconeWhatsapp } from "@/components/Icones";
 import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
-import { changerStatut, enregistrerNoteInterne, modifierLigne } from "../../actions";
+import { COULEUR_PAIEMENT, etatDuPaiement, libelleDuSolde, libellePaiement } from "@/lib/paiement";
+import { lireReglages } from "@/lib/reglages";
+import { ajouterLigneLibre, annulerPaiement, changerStatut, enregistrerNoteInterne, modifierLigne, solderCommande } from "../../actions";
 
 export const metadata = { title: "Commande" };
 
@@ -33,19 +35,30 @@ async function adresseDuSite() {
   return `${proto}://${hote}`;
 }
 
-export default async function PageCommande({ params }: PageProps<"/admin/commandes/[id]">) {
+export default async function PageCommande({ params, searchParams }: PageProps<"/admin/commandes/[id]">) {
   await exigerAdmin();
   const { id } = await params;
-  const c = await prisma.commande.findUnique({
-    where: { id },
-    include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }] } },
-  });
+  const { ok, erreur } = await searchParams;
+  const [c, reglages] = await Promise.all([
+    prisma.commande.findUnique({
+      where: { id },
+      include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }] } },
+    }),
+    lireReglages(),
+  ]);
   if (!c) notFound();
 
   const lienSuivi = `${await adresseDuSite()}/suivi/${c.jeton}`;
+  const paiement = etatDuPaiement(c);
+  const solde = libelleDuSolde(paiement);
+  const resteAPayer = paiement.etat === "A_PAYER" || paiement.etat === "COMPLEMENT";
+  // Le message porte le montant, le mode et les coordonnées de paiement tant qu'il reste à régler.
   const whatsappClient = lienWhatsapp(
     c.telephone,
-    messagePourLeClient(c.statut, { prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi, site: NOM_DU_SITE }),
+    messagePourLeClient(c.statut, {
+      prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi, site: NOM_DU_SITE,
+      paiement, mode: c.paiement, coordonnees: reglages.coordonneesPaiement,
+    }),
   );
   const marge = margeEstimee(c.lignes, c);
   const suivant = SUIVANT[c.statut];
@@ -72,8 +85,12 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
             <IconeEclair className="h-4 w-4" /> Express
           </span>
         )}
+        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${COULEUR_PAIEMENT[paiement.etat]}`}>{libellePaiement(paiement)}</span>
         <span className="text-sm text-slate-500">passée le {formatDateHeure(c.createdAt)}</span>
       </div>
+
+      {typeof ok === "string" && <p role="status" className="rounded-2xl bg-emerald-50 p-3 text-sm font-medium text-emerald-900">{ok}</p>}
+      {typeof erreur === "string" && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm font-medium text-red-800">{erreur}</p>}
 
       {(estRemplacement(c.remplacement) || c.paiement || c.pourboire > 0) && (
         <ul className="flex flex-wrap gap-2 text-sm">
@@ -94,7 +111,7 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
             </div>
             {[...parBoutique].map(([boutique, lignes]) => (
               <div key={boutique} className="space-y-2">
-                <h3 className="font-semibold text-marque-fonce">🏪 {boutique}</h3>
+                <h3 className="font-semibold text-marque-fonce">{boutique}</h3>
                 <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
                   {lignes.map((l) => (
                     <li key={l.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-3">
@@ -124,8 +141,49 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
                 </ul>
               </div>
             ))}
+            {c.lignes.length === 0 && <p className="text-sm text-slate-600">Aucun article pour l&apos;instant.</p>}
             <p className="text-xs text-slate-500">
               Un article indisponible n&apos;est plus facturé ; le total et la page de suivi du client se mettent à jour.
+            </p>
+          </section>
+
+          <section className="carte space-y-3 p-4" aria-labelledby="t-hors-catalogue">
+            <h2 id="t-hors-catalogue" className="text-lg font-bold">Article hors catalogue</h2>
+            {c.demandeLibre ? (
+              <p className="whitespace-pre-line rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+                <strong>Le client demande :</strong> {c.demandeLibre}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">Le client n&apos;a rien demandé hors catalogue. Tu peux quand même ajouter un article.</p>
+            )}
+            <form action={ajouterLigneLibre} className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-[minmax(0,2fr)_70px_minmax(0,1fr)_minmax(0,1fr)]">
+              <input type="hidden" name="id" value={c.id} />
+              <div className="col-span-2 sm:col-span-1">
+                <label htmlFor="libre-nom" className="etiquette">Article</label>
+                <input id="libre-nom" name="nom" required maxLength={120} className="champ" placeholder="Crème solaire enfant SPF 50" />
+              </div>
+              <div>
+                <label htmlFor="libre-quantite" className="etiquette">Qté</label>
+                <input id="libre-quantite" name="quantite" type="number" min={1} max={50} defaultValue={1} required className="champ px-2" />
+              </div>
+              <div>
+                <label htmlFor="libre-prix" className="etiquette">Prix de vente</label>
+                <input id="libre-prix" name="prix" inputMode="decimal" required className="champ" placeholder="59,90" />
+              </div>
+              <div>
+                <label htmlFor="libre-achat" className="etiquette">Prix Wolt</label>
+                <input id="libre-achat" name="prixAchat" inputMode="decimal" className="champ" placeholder="59,90" />
+              </div>
+              <div className="col-span-2 sm:col-span-3">
+                <label htmlFor="libre-boutique" className="etiquette">Boutique (facultatif)</label>
+                <input id="libre-boutique" name="boutique" maxLength={80} className="champ" placeholder="Wolt Market Netanya Center" />
+              </div>
+              <div className="col-span-2 flex items-end sm:col-span-1">
+                <button type="submit" className="bouton-secondaire w-full">Ajouter</button>
+              </div>
+            </form>
+            <p className="text-xs text-slate-500">
+              Le total est recalculé (frais compris). Si la commande était déjà payée, un complément apparaît ; envoie le nouveau montant au client sur WhatsApp.
             </p>
           </section>
 
@@ -138,7 +196,7 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
               express={c.express}
               tarifNom={c.tarifNom}
               majorationPct={c.majorationPct}
-              libelleTotal="À encaisser"
+              libelleTotal="Total de la commande"
               ville={c.ville}
             />
             <dl className="mt-2 space-y-1">
@@ -160,8 +218,46 @@ export default async function PageCommande({ params }: PageProps<"/admin/command
         </div>
 
         <aside className="space-y-5">
+          <section className="carte space-y-3 p-4" aria-labelledby="t-paiement">
+            <h2 id="t-paiement" className="text-lg font-bold">Paiement</h2>
+            <p className="text-sm">
+              <span className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${COULEUR_PAIEMENT[paiement.etat]}`}>{libellePaiement(paiement)}</span>
+              {c.paiement && <span className="ml-2 text-slate-600">par {c.paiement}</span>}
+            </p>
+            {c.payeLe && <p className="text-xs text-slate-500">Reçu : {formatPrix(c.montantPaye)}, le {formatDateHeure(c.payeLe)}.</p>}
+            <Link href={`/admin/commandes/${c.id}/recu`} className="block text-sm font-semibold text-marque hover:underline">Reçu à imprimer ou à envoyer</Link>
+            {resteAPayer && whatsappClient && (
+              <a href={whatsappClient} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full">
+                <IconeWhatsapp /> Envoyer le montant et les coordonnées
+              </a>
+            )}
+            {resteAPayer && !reglages.coordonneesPaiement && (
+              <p className="text-xs text-amber-800">
+                Tes coordonnées de paiement ne sont pas enregistrées : <Link href="/admin/reglages" className="underline">ajoute-les dans Réglages</Link> pour qu&apos;elles partent dans le message.
+              </p>
+            )}
+            {solde && (
+              <form action={solderCommande}>
+                <input type="hidden" name="id" value={c.id} />
+                <button type="submit" className="bouton w-full">{solde}</button>
+              </form>
+            )}
+            {c.payeLe && (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-slate-600">Erreur ? Annuler ce paiement</summary>
+                <form action={annulerPaiement} className="mt-2">
+                  <input type="hidden" name="id" value={c.id} />
+                  <button type="submit" className="bouton-secondaire w-full py-2 text-sm">Remettre « à payer »</button>
+                </form>
+              </details>
+            )}
+          </section>
+
           <section className="carte space-y-3 p-4">
             <h2 className="text-lg font-bold">Étape</h2>
+            {resteAPayer && c.statut === "RECUE" && (
+              <p className="rounded-xl bg-amber-50 p-2.5 text-sm text-amber-900">Pas encore payée : ne commande sur Wolt qu&apos;après le paiement.</p>
+            )}
             {suivant && (
               <form action={changerStatut}>
                 <input type="hidden" name="id" value={c.id} />

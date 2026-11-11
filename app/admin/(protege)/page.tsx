@@ -5,12 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { formatPrix } from "@/lib/argent";
 import { formatDateHeure, libelleDuJour } from "@/lib/dates";
 import { COULEUR_STATUT, LIBELLE_STATUT, STATUTS_EN_COURS } from "@/lib/statuts";
+import { COULEUR_PAIEMENT, etatDuPaiement, libellePaiement } from "@/lib/paiement";
 import { Actualiser } from "@/components/Actualiser";
 
 export const metadata = { title: "Commandes" };
 
 const FILTRES = {
   "en-cours": { libelle: "En cours", where: { statut: { in: STATUTS_EN_COURS } } },
+  // Le paiement passe avant les achats : ce qu'il reste à recevoir (jamais payé, ou complément).
+  "a-payer": { libelle: "À payer", where: { statut: { in: STATUTS_EN_COURS }, montantPaye: { lt: prisma.commande.fields.total } } },
   livrees: { libelle: "Livrées", where: { statut: "LIVREE" } },
   annulees: { libelle: "Annulées", where: { statut: "ANNULEE" } },
   toutes: { libelle: "Toutes", where: {} },
@@ -26,11 +29,12 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
   const [commandes, compteurs] = await Promise.all([
     prisma.commande.findMany({
       where: FILTRES[filtre].where,
-      orderBy: filtre === "en-cours" ? [{ dateLivraison: "asc" }, { createdAt: "asc" }] : [{ createdAt: "desc" }],
+      orderBy: filtre === "en-cours" || filtre === "a-payer" ? [{ dateLivraison: "asc" }, { createdAt: "asc" }] : [{ createdAt: "desc" }],
       take: 100,
       select: {
         id: true, numero: true, statut: true, nomClient: true, ville: true,
         dateLivraison: true, creneau: true, total: true, createdAt: true, express: true,
+        montantPaye: true, payeLe: true, demandeLibre: true,
         _count: { select: { lignes: true } },
       },
     }),
@@ -73,7 +77,11 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${COULEUR_STATUT[c.statut]}`}>
                   {LIBELLE_STATUT[c.statut]}
                 </span>
-                {c.express && <span className="rounded-full bg-soleil px-2.5 py-0.5 text-xs font-bold text-slate-900">⚡ Express</span>}
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${COULEUR_PAIEMENT[etatDuPaiement(c).etat]}`}>
+                  {libellePaiement(etatDuPaiement(c))}
+                </span>
+                {c.express && <span className="rounded-full bg-soleil px-2.5 py-0.5 text-xs font-bold text-slate-900">Express</span>}
+                {c.demandeLibre && <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-inset ring-amber-200">Demande hors catalogue</span>}
                 <span className="font-medium">{c.nomClient}</span>
                 <span className="text-slate-600">{c.ville}</span>
                 <span className="text-slate-600">

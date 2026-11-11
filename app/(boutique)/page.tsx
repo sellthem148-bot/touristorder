@@ -8,13 +8,39 @@ import { formatPrixCourt } from "@/lib/argent";
 import { momentPresent, NOM_TARIF_DE_BASE, tarifDeBase, tarifPour } from "@/lib/tarifs";
 import { livraisonLaMoinsChere } from "@/lib/villes";
 import { amplitudeDesCreneaux, joursDeLivraison } from "@/lib/creneaux";
+import { ADRESSE_DU_SITE, DESCRIPTION_DU_SITE, NOM_DU_SITE } from "@/lib/marque";
 
 export const dynamic = "force-dynamic";
+export const metadata = { alternates: { canonical: "/" } };
+
+// Ce que les moteurs de recherche lisent du site : son nom, son logo, sa recherche.
+const DONNEES_STRUCTUREES = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${ADRESSE_DU_SITE}/#organisation`,
+      name: NOM_DU_SITE,
+      url: ADRESSE_DU_SITE,
+      logo: `${ADRESSE_DU_SITE}/logo/tourist-order-sigle.png`,
+      description: DESCRIPTION_DU_SITE,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${ADRESSE_DU_SITE}/#site`,
+      name: NOM_DU_SITE,
+      url: ADRESSE_DU_SITE,
+      inLanguage: "fr",
+      publisher: { "@id": `${ADRESSE_DU_SITE}/#organisation` },
+      potentialAction: { "@type": "SearchAction", target: `${ADRESSE_DU_SITE}/recherche?q={search_term_string}`, "query-input": "required name=search_term_string" },
+    },
+  ],
+}).replace(/</g, "\\u003c");
 
 const ETAPES = [
-  { titre: "Tu choisis", texte: "Courses, produits pour bébé, chargeur oublié, pharmacie : tout se commande ici, en français." },
-  { titre: "On s'occupe de tout", texte: "On fait les achats pour toi dans la journée et on prépare ta commande." },
-  { titre: "On te livre", texte: "Le soir, à ton logement ou à ton hôtel. Tu paies à la livraison." },
+  { titre: "Vous choisissez", texte: "Courses, produits pour bébé, chargeur oublié, pharmacie : tout se commande ici, en français." },
+  { titre: "Vous réglez", texte: "À la commande, par Bit, PayBox ou virement : nous vous envoyons les coordonnées de paiement sur WhatsApp." },
+  { titre: "Nous vous livrons", texte: "Nous faisons vos achats dans la journée et vous livrons le soir, à votre logement ou à votre hôtel." },
 ];
 
 type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string };
@@ -42,7 +68,7 @@ export default async function Accueil() {
       icone: CalendarClock,
       titre: "Prochaine livraison",
       valeur: `${prochaine.libelle === "Aujourd'hui" ? "Ce soir" : prochaine.libelle} dès ${prochaine.creneaux[0].split(/\s*[–-]\s*/)[0]}`,
-      precision: reglages.heureLimite ? `Commande avant ${reglages.heureLimite.replace(":", "h").replace("h00", "h")}, livré ce soir` : undefined,
+      precision: reglages.heureLimite ? `Commandez avant ${reglages.heureLimite.replace(":", "h").replace("h00", "h")} pour être livré ce soir` : undefined,
     });
   }
   faits.push({
@@ -54,22 +80,23 @@ export default async function Accueil() {
   faits.push({
     icone: Wallet,
     titre: "Paiement",
-    valeur: "À la livraison",
+    valeur: "À la commande",
     precision: reglages.paiements.length > 0 ? reglages.paiements.join(", ") : undefined,
   });
 
   return (
     <div className="space-y-12 sm:space-y-16">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: DONNEES_STRUCTUREES }} />
       <section className="grid gap-8 pt-2 sm:pt-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-12">
         <div className="space-y-5">
           <p className="surtitre">Livraison à domicile · Service en français</p>
           <h1 className="text-balance text-[2rem] font-bold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
-            Tes courses livrées à ton logement, le soir même.
+            Vos courses livrées à votre logement, le soir même.
           </h1>
           {reglages.messageAccueil && <p className="max-w-xl text-pretty text-slate-600 sm:text-lg">{reglages.messageAccueil}</p>}
           {!reglages.ouvert && (
             <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-              Les commandes sont fermées pour le moment — tu peux quand même préparer ton panier.
+              Les commandes sont fermées pour le moment — vous pouvez quand même préparer votre panier.
             </p>
           )}
           {rayons.length > 0 && (
@@ -128,6 +155,11 @@ export default async function Accueil() {
                 </li>
               ))}
             </ul>
+            <p className="text-sm text-slate-600">
+              Un article introuvable dans le catalogue ?{" "}
+              <Link href="/panier?demande=" className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">Demandez-le nous</Link>
+              {" "}: nous le recherchons et vous confirmons son prix.
+            </p>
           </section>
 
           {populaires.length > 0 && (

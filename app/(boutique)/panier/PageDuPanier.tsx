@@ -20,6 +20,8 @@ type Props = {
   jours: JourDeLivraison[];
   limitePassee: boolean; // l'heure limite pour être livré ce soir est passée
   client: { email: string; nom: string; telephone: string; ville: string; adresse: string } | null; // connecté à son espace
+  /** « Je ne trouve pas mon article » : la page s'ouvre sur la demande libre, pré-remplie (recherche sans résultat). */
+  demande: string | null;
 };
 
 type Valeurs = {
@@ -31,6 +33,7 @@ type Valeurs = {
   dateLivraison: string;
   creneau: string;
   notes: string;
+  demandeLibre: string;
   express: boolean;
   remplacement: Remplacement;
   paiement: string;
@@ -49,7 +52,7 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
   );
 }
 
-export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
+export function PageDuPanier({ reglages, jours, limitePassee, client, demande }: Props) {
   const panier = usePanier();
   const [etat, envoyer, enCours] = useActionState<EtatCommande, FormData>(passerCommande, {});
   const [v, setV] = useState<Valeurs>({
@@ -62,12 +65,15 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
     dateLivraison: jours[0]?.valeur ?? "",
     creneau: jours[0]?.creneaux[0] ?? "",
     notes: "",
+    demandeLibre: demande ?? "",
     express: false,
     remplacement: "CONTACTER",
     paiement: reglages.paiements[0] ?? "",
     pourboire: 0,
   });
   const [avis, setAvis] = useState("");
+  // Une demande sans article du catalogue : le formulaire s'affiche même avec un panier vide.
+  const [demandeSeule, setDemandeSeule] = useState(demande !== null);
   const dejaSynchronise = useRef(false);
 
   // Un champ corrigé après un refus ne garde pas son message d'erreur.
@@ -129,7 +135,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
   );
   const sousLeMinimum = totaux.sousTotal < minimum;
 
-  const texte = (nom: "nomClient" | "telephone" | "email" | "adresse" | "notes") => ({
+  const texte = (nom: "nomClient" | "telephone" | "email" | "adresse" | "notes" | "demandeLibre") => ({
     id: nom,
     name: nom,
     value: v[nom],
@@ -145,25 +151,33 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
     return <p className="py-16 text-center text-slate-500">Chargement du panier…</p>;
   }
 
-  if (panier.articles.length === 0) {
+  const panierVide = panier.articles.length === 0;
+  if (panierVide && !demandeSeule) {
     return (
       <div className="carte mx-auto max-w-md space-y-4 p-10 text-center">
         <ShoppingCart className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
-        <h1 className="text-xl font-bold">Ton panier est vide</h1>
+        <h1 className="text-xl font-bold">Votre panier est vide</h1>
         {avis && <p className="text-sm text-amber-800">{avis}</p>}
         <Link href="/" className="bouton">Voir le catalogue</Link>
+        <p className="text-sm text-slate-600">
+          Un article introuvable dans le catalogue ?{" "}
+          <button type="button" onClick={() => setDemandeSeule(true)} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">
+            Demandez-le nous
+          </button>
+        </p>
       </div>
     );
   }
+  const demandeRemplie = v.demandeLibre.trim().length > 0;
 
   return (
     <form action={envoyer} noValidate className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 space-y-5">
-        <h1 className="text-2xl font-bold sm:text-3xl">Finaliser ma commande</h1>
+        <h1 className="text-2xl font-bold sm:text-3xl">{panierVide ? "Demander un article" : "Finaliser ma commande"}</h1>
         {avis && <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{avis}</p>}
 
-        <Section titre="Ton panier" numero={1}>
-          <ul className="divide-y divide-slate-100">
+        <Section titre={panierVide ? "Votre demande" : "Votre panier"} numero={1}>
+          {!panierVide && <ul className="divide-y divide-slate-100">
             {panier.articles.map((a) => (
               <li key={a.cle} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                 {a.photoUrl && <img src={a.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />}
@@ -193,29 +207,43 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
                 </div>
               </li>
             ))}
-          </ul>
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre"><Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Ajouter d&apos;autres articles</Link>
+          </ul>}
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre"><Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> {panierVide ? "Voir le catalogue" : "Ajouter d'autres articles"}</Link>
+          <div className={panierVide ? "" : "border-t border-slate-100 pt-4"}>
+            <label htmlFor="demandeLibre" className="etiquette">{panierVide ? "Que vous faut-il ?" : "Un article introuvable ? (facultatif)"}</label>
+            <textarea
+              {...texte("demandeLibre")}
+              rows={panierVide ? 4 : 2}
+              maxLength={600}
+              placeholder="Ex. : 1 crème solaire enfant indice 50, 2 paquets de couches taille 5"
+              required={panierVide}
+            />
+            {messageErreur("demandeLibre")}
+            <p className="mt-1 text-xs text-slate-500">
+              Écrivez ce que vous cherchez (marque, taille, quantité). Nous le recherchons pour vous et vous confirmons son prix sur WhatsApp avant de l&apos;ajouter à votre commande.
+            </p>
+          </div>
         </Section>
 
         <Section titre="Livraison" numero={2}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="nomClient" className="etiquette">Ton nom</label>
+              <label htmlFor="nomClient" className="etiquette">Votre nom</label>
               <input {...texte("nomClient")} autoComplete="name" required />
               {messageErreur("nomClient")}
             </div>
             <div>
-              <label htmlFor="telephone" className="etiquette">Ton numéro WhatsApp</label>
+              <label htmlFor="telephone" className="etiquette">Votre numéro WhatsApp</label>
               <input {...texte("telephone")} type="tel" autoComplete="tel" placeholder="+33 6 12 34 56 78" required />
               {messageErreur("telephone")}
             </div>
           </div>
           <div>
-            <label htmlFor="email" className="etiquette">Ton adresse e-mail</label>
+            <label htmlFor="email" className="etiquette">Votre adresse e-mail</label>
             <input {...texte("email")} type="email" autoComplete="email" inputMode="email" placeholder="prenom@exemple.fr" required readOnly={!!client} />
             {messageErreur("email")}
             <p className="mt-1 text-xs text-slate-500">
-              {client ? "Tu es connecté à ton espace client : la commande y sera ajoutée." : "Pour recevoir la confirmation et retrouver tes commandes dans ton espace client."}
+              {client ? "Vous êtes connecté à votre espace client : la commande y sera ajoutée." : "Pour recevoir la confirmation et retrouver vos commandes dans votre espace client."}
             </p>
           </div>
           <div>
@@ -312,7 +340,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
                   <input type="radio" name="express" value="1" checked={express} onChange={() => changer("express", true)} className="mt-1 accent-encre" />
                   <span>
                     <span className="flex items-center gap-1.5 font-bold"><Zap className="h-4 w-4 text-slate-600" strokeWidth={1.8} aria-hidden="true" /> Express · +{formatPrixCourt(tarif.fraisExpress)}</span>
-                    <span className="text-sm text-slate-600">Ta commande passe en priorité</span>
+                    <span className="text-sm text-slate-600">Votre commande passe en priorité</span>
                   </span>
                 </label>
               </div>
@@ -336,7 +364,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
 
           {reglages.paiements.length > 0 && (
             <fieldset>
-              <legend className="etiquette">Paiement à la livraison</legend>
+              <legend className="etiquette">Mode de paiement</legend>
               <div className="flex flex-wrap gap-2">
                 {reglages.paiements.map((p) => (
                   <label key={p} className="pastille">
@@ -346,6 +374,9 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
                 ))}
               </div>
               {messageErreur("paiement")}
+              <p className="mt-2 text-xs text-slate-500">
+                Le paiement se fait à la commande : nous vous envoyons les coordonnées de paiement sur WhatsApp, et nous lançons vos achats dès réception.
+              </p>
             </fieldset>
           )}
 
@@ -366,7 +397,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
 
           <div>
             <label htmlFor="notes" className="etiquette">Note (facultatif)</label>
-            <textarea {...texte("notes")} rows={2} placeholder="Marque préférée, un produit introuvable dans le catalogue, code de l'immeuble…" />
+            <textarea {...texte("notes")} rows={2} placeholder="Code de l'immeuble, étage, marque préférée…" />
             {messageErreur("notes")}
           </div>
         </Section>
@@ -374,18 +405,22 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
 
       <aside className="lg:pt-[3.25rem]">
         <div className="carte space-y-4 p-5 lg:sticky lg:top-20">
-          <h2 className="text-lg font-bold">Récapitulatif</h2>
-          <RecapMontants
-            totaux={totaux}
-            regroupes={reglages.fraisRegroupes}
-            express={express}
-            tarifNom={tarif.nom}
-            majorationPct={tarif.majorationPct}
-            nombreArticles={panier.nombre}
-            ville={ville?.nom}
-          />
+          <h2 className="text-lg font-bold">{panierVide ? "Votre demande" : "Récapitulatif"}</h2>
+          {!panierVide && (
+            <RecapMontants
+              totaux={totaux}
+              regroupes={reglages.fraisRegroupes}
+              express={express}
+              tarifNom={tarif.nom}
+              majorationPct={tarif.majorationPct}
+              nombreArticles={panier.nombre}
+              ville={ville?.nom}
+            />
+          )}
           <p className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-[13px] text-slate-600">
-            Tu paies à la livraison. Un article qui manque n&apos;est pas facturé.
+            {panierVide
+              ? "Rien à régler pour l'instant : nous vous confirmons le prix sur WhatsApp, frais de service et de livraison compris."
+              : `Paiement à la commande${reglages.paiements.length > 0 ? ` (${reglages.paiements.join(", ")})` : ""} : les coordonnées vous sont envoyées sur WhatsApp. Un article qui manque vous est remboursé.`}
           </p>
 
           {/* Piège à robots : invisible pour les humains. */}
@@ -401,20 +436,27 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
           {!expressPossible && <input type="hidden" name="express" value="0" />}
 
           {etat.erreur && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm font-medium text-red-800">{etat.erreur}</p>}
-          {sousLeMinimum && (
+          {!panierVide && sousLeMinimum && (
             <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
               Minimum de commande{ville && ville.minimumCommande > reglages.minimumCommande ? ` pour ${ville.nom}` : ""} : {formatPrix(minimum)} d&apos;articles.
             </p>
           )}
           {!reglages.ouvert && (
-            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Les commandes sont fermées pour le moment. Réessaie un peu plus tard.</p>
+            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Les commandes sont fermées pour le moment. Réessayez un peu plus tard.</p>
           )}
           {jours.length === 0 && (
-            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Aucun créneau de livraison disponible pour le moment. Réessaie plus tard.</p>
+            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">Aucun créneau de livraison disponible pour le moment. Réessayez plus tard.</p>
           )}
-          <button type="submit" className="bouton w-full py-4 text-base" disabled={enCours || sousLeMinimum || !reglages.ouvert || jours.length === 0}>
-            {enCours ? "Envoi…" : `Commander · ${formatPrix(totaux.total)}`}
+          <button
+            type="submit"
+            className="bouton w-full py-4 text-base"
+            disabled={enCours || (!panierVide && sousLeMinimum) || (panierVide && !demandeRemplie) || !reglages.ouvert || jours.length === 0}
+          >
+            {enCours ? "Envoi…" : panierVide ? "Envoyer ma demande" : `Commander · ${formatPrix(totaux.total)}`}
           </button>
+          <p className="text-center text-xs text-slate-500">
+            En validant, vous acceptez nos <Link href="/conditions" className="underline underline-offset-2 hover:text-encre">conditions générales de vente</Link>.
+          </p>
         </div>
       </aside>
     </form>

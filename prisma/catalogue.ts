@@ -102,7 +102,7 @@ export const CATALOGUE: ArticleCatalogue[] = [
   { categorie: "Bébé & enfants", nom: "Couches Huggies", description: "Grand paquet", boutique: PHARMA, options: "Taille : 1 | 2 | 3 | 4 | 5 | 6", badge: "populaire" },
   { categorie: "Bébé & enfants", nom: "Couches-culottes de piscine", description: "Paquet", boutique: PHARMA, options: "Taille : S | M | L" },
   { categorie: "Bébé & enfants", nom: "Lingettes bébé", description: "Paquet de 72", boutique: PHARMA },
-  { categorie: "Bébé & enfants", nom: "Lait infantile en poudre", description: "Précise la marque en note si besoin", boutique: PHARMA, options: "Âge : 1er âge | 2e âge | 3e âge" },
+  { categorie: "Bébé & enfants", nom: "Lait infantile en poudre", description: "Précisez la marque en note si besoin", boutique: PHARMA, options: "Âge : 1er âge | 2e âge | 3e âge" },
   { categorie: "Bébé & enfants", nom: "Petits pots × 4", description: "Dès 6 mois", boutique: PHARMA, options: "Goût : Légumes | Fruits" },
   { categorie: "Bébé & enfants", nom: "Biberon 250 ml", description: "", boutique: PHARMA },
   { categorie: "Bébé & enfants", nom: "Tétine", description: "", boutique: PHARMA, options: "Âge : 0-6 mois | 6-18 mois" },
@@ -130,7 +130,7 @@ export const CATALOGUE: ArticleCatalogue[] = [
   // Chargeurs & électronique
   { categorie: "Chargeurs & électronique", nom: "Chargeur téléphone 20 W", description: "Avec câble", boutique: ELEC, options: "Modèle : iPhone (Lightning) | iPhone 15 et + (USB-C) | Android (USB-C)", badge: "populaire" },
   { categorie: "Chargeurs & électronique", nom: "Câble de recharge 1 m", description: "", boutique: ELEC, options: "Type : USB-C | Lightning | Micro-USB" },
-  { categorie: "Chargeurs & électronique", nom: "Adaptateur prise Israël (type H)", description: "Pour brancher tes appareils français", boutique: ELEC, badge: "populaire" },
+  { categorie: "Chargeurs & électronique", nom: "Adaptateur prise Israël (type H)", description: "Pour brancher vos appareils français", boutique: ELEC, badge: "populaire" },
   { categorie: "Chargeurs & électronique", nom: "Batterie externe 10 000 mAh", description: "Recharge 2 téléphones", boutique: ELEC },
   { categorie: "Chargeurs & électronique", nom: "Écouteurs filaires", description: "", boutique: ELEC, options: "Prise : USB-C | Lightning | Jack" },
   { categorie: "Chargeurs & électronique", nom: "Multiprise 3 prises", description: "Prises israéliennes", boutique: ELEC },
@@ -190,7 +190,7 @@ export const CATALOGUE: ArticleCatalogue[] = [
   // Cadeaux & fleurs
   { categorie: "Cadeaux & fleurs", nom: "Bouquet de fleurs", description: "Composé le jour même", boutique: "Fleuriste", options: "Taille : Moyen | Grand" },
   { categorie: "Cadeaux & fleurs", nom: "Boîte de chocolats", description: "À offrir", boutique: MARKET },
-  { categorie: "Cadeaux & fleurs", nom: "Ballon à l'hélium", description: "Pour un anniversaire — précise le message en note", boutique: "Boutique de fête", options: "Forme : Cœur | Étoile | Chiffre" },
+  { categorie: "Cadeaux & fleurs", nom: "Ballon à l'hélium", description: "Pour un anniversaire — précisez le message en note", boutique: "Boutique de fête", options: "Forme : Cœur | Étoile | Chiffre" },
   { categorie: "Cadeaux & fleurs", nom: "Gâteau d'anniversaire", description: "Commande la veille si possible", boutique: "Pâtisserie", options: "Taille : 6 parts | 10 parts\nParfum : Chocolat | Fruits" },
   { categorie: "Cadeaux & fleurs", nom: "Bougies d'anniversaire", description: "Avec chiffres", boutique: MARKET },
   { categorie: "Cadeaux & fleurs", nom: "Carte de vœux", description: "", boutique: MARKET },

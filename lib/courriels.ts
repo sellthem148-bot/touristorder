@@ -91,12 +91,14 @@ export type CommandePourCourriel = {
   creneau: string;
   paiement: string;
   notes: string;
+  demandeLibre: string; // « Je ne trouve pas mon article » : ce que le client demande hors catalogue
   lignes: { nom: string; options: string; quantite: number; prixUnitaire: number }[];
   totaux: Totaux;
   presentation: PresentationMontants;
   lienSuivi: string;
   lienEspace: string | null; // connexion directe à l'espace client
   lienWhatsapp: string | null; // écrire au gérant
+  lienPaiement: string | null; // demander au gérant, sur WhatsApp, les coordonnées de paiement
 };
 
 function tableauDesArticles(c: CommandePourCourriel): string {
@@ -133,55 +135,78 @@ function texteDesArticles(c: CommandePourCourriel): string {
 /** L'e-mail que reçoit le client quand sa commande est enregistrée. */
 export function courrielDeConfirmation(c: CommandePourCourriel): CourrielPret {
   const quand = `${c.jour}, ${c.creneau}`;
-  const paiement = c.paiement ? `Paiement à la livraison : ${c.paiement}.` : "Paiement à la livraison.";
+  // Une demande d'article hors catalogue, sans article du catalogue : rien à régler pour l'instant.
+  const demandeSeule = c.lignes.length === 0;
+  const objet = demandeSeule ? "demande" : "commande";
+  const par = c.paiement ? ` par ${c.paiement}` : "";
+  const reglement = `Paiement à la commande : ${formatPrix(c.totaux.total)}${par}. Nous vous envoyons les coordonnées de paiement sur WhatsApp et nous lançons vos achats dès réception.`;
+  const suite = demandeSeule
+    ? "Nous recherchons l'article et vous confirmons son prix sur WhatsApp avant tout paiement."
+    : "Elle est préparée dès réception de votre paiement, puis livrée à votre logement.";
   const corps = `
-  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Merci ${echapper(c.prenom)} ! Ta commande <strong>n°${c.numero}</strong> est bien enregistrée. On s'occupe de tout et on te livre à ton logement.</p>
-
+  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Merci ${echapper(c.prenom)} ! Votre ${objet} <strong>n°${c.numero}</strong> est bien enregistrée. ${suite}</p>
+  ${
+    demandeSeule
+      ? ""
+      : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${TRAIT};border-radius:10px;margin:0 0 16px;">
+  <tr><td style="padding:16px 18px;font-size:15px;line-height:1.55;">
+    <strong style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:${DOUX};">Paiement</strong><br>
+    ${echapper(reglement)}
+    ${c.lienPaiement ? `<p style="margin:12px 0 0;">${bouton(c.lienPaiement, "Recevoir les coordonnées de paiement", false)}</p>` : ""}
+  </td></tr>
+  </table>`
+  }
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SABLE};border-radius:10px;margin:0 0 22px;">
   <tr><td style="padding:16px 18px;font-size:15px;line-height:1.55;">
     <strong style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:${DOUX};">Livraison</strong><br>
     <strong>${echapper(quand)}</strong><br>
-    ${multiligne(c.adresse)}, ${echapper(c.ville)}<br>
-    <span style="color:${DOUX};">${echapper(paiement)}</span>
+    ${multiligne(c.adresse)}, ${echapper(c.ville)}
   </td></tr>
   </table>
 
-  <p style="margin:0 0 22px;">${bouton(c.lienSuivi, "Suivre ma commande")}</p>
+  <p style="margin:0 0 22px;">${bouton(c.lienSuivi, demandeSeule ? "Suivre ma demande" : "Suivre ma commande")}</p>
 
-  <h2 style="margin:0 0 6px;font-size:17px;font-weight:800;">Ta commande</h2>
-  ${tableauDesArticles(c)}
-  ${c.notes ? `<p style="margin:18px 0 0;font-size:14px;color:${DOUX};">Ta note : ${multiligne(c.notes)}</p>` : ""}
+  ${demandeSeule ? "" : `<h2 style="margin:0 0 6px;font-size:17px;font-weight:800;">Votre commande</h2>
+  ${tableauDesArticles(c)}`}
+  ${c.demandeLibre ? `<p style="margin:18px 0 0;font-size:14px;line-height:1.55;"><strong>Votre demande hors catalogue :</strong> ${multiligne(c.demandeLibre)}<br><span style="color:${DOUX};">Nous vous confirmons son prix sur WhatsApp avant de l'ajouter à votre commande.</span></p>` : ""}
+  ${c.notes ? `<p style="margin:18px 0 0;font-size:14px;color:${DOUX};">Votre note : ${multiligne(c.notes)}</p>` : ""}
 
-  <p style="margin:22px 0 0;font-size:14px;line-height:1.55;color:${DOUX};">Si un article manque, on te prévient sur WhatsApp et il n'est pas facturé.</p>
+  ${demandeSeule ? "" : `<p style="margin:22px 0 0;font-size:14px;line-height:1.55;color:${DOUX};">Si un article manque, nous vous prévenons sur WhatsApp et il vous est remboursé.</p>`}
   ${
     c.lienEspace
       ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 0;border:1px solid ${TRAIT};border-radius:10px;">
   <tr><td style="padding:16px 18px;">
-    <strong style="font-size:15px;">Ton espace client</strong>
-    <p style="margin:4px 0 12px;font-size:14px;line-height:1.5;color:${DOUX};">Retrouve tes commandes, recommande en un geste et enregistre ton adresse.</p>
+    <strong style="font-size:15px;">Votre espace client</strong>
+    <p style="margin:4px 0 12px;font-size:14px;line-height:1.5;color:${DOUX};">Retrouvez vos commandes, recommandez en un geste et enregistrez votre adresse.</p>
     ${bouton(c.lienEspace, "Ouvrir mon espace", false)}
   </td></tr>
   </table>`
       : ""
   }`;
-  const pied = `${c.lienWhatsapp ? `Une question ? <a href="${echapper(c.lienWhatsapp)}" style="color:${BLEU};font-weight:700;">Écris-nous sur WhatsApp</a>.<br>` : ""}Tu reçois cet e-mail parce qu'une commande a été passée sur ${echapper(c.site)} avec cette adresse.`;
+  const pied = `${c.lienWhatsapp ? `Une question ? <a href="${echapper(c.lienWhatsapp)}" style="color:${BLEU};font-weight:700;">Écrivez-nous sur WhatsApp</a>.<br>` : ""}Vous recevez cet e-mail parce qu'une commande a été passée sur ${echapper(c.site)} avec cette adresse.`;
   const texte = [
-    `Merci ${c.prenom} ! Ta commande n°${c.numero} est bien enregistrée.`,
+    `Merci ${c.prenom} ! Votre ${objet} n°${c.numero} est bien enregistrée. ${suite}`,
     "",
+    ...(demandeSeule ? [] : [reglement, ...(c.lienPaiement ? [`Recevoir les coordonnées de paiement : ${c.lienPaiement}`] : []), ""]),
     `Livraison : ${quand}`,
     `${c.adresse.replace(/\s+/g, " ")}, ${c.ville}`,
-    paiement,
     "",
-    texteDesArticles(c),
-    "",
-    `Suivre ma commande : ${c.lienSuivi}`,
+    ...(demandeSeule ? [] : [texteDesArticles(c), ""]),
+    ...(c.demandeLibre ? [`Votre demande hors catalogue : ${c.demandeLibre.replace(/\s+/g, " ")}`, ""] : []),
+    `Suivre ma ${objet} : ${c.lienSuivi}`,
     ...(c.lienEspace ? [`Mon espace client : ${c.lienEspace}`] : []),
-    "",
-    "Si un article manque, on te prévient sur WhatsApp et il n'est pas facturé.",
+    ...(demandeSeule ? [] : ["", "Si un article manque, nous vous prévenons sur WhatsApp et il vous est remboursé."]),
   ].join("\n");
   return {
-    sujet: `Ta commande n°${c.numero} est enregistrée — livraison ${c.jour.toLowerCase()}, ${c.creneau}`,
-    html: gabarit({ site: c.site, logo: c.logo, apercu: `Livraison ${quand} · total ${formatPrix(c.totaux.total)}`, titre: "Commande enregistrée", corps, pied }),
+    sujet: `Votre ${objet} n°${c.numero} est enregistrée — livraison ${c.jour.toLowerCase()}, ${c.creneau}`,
+    html: gabarit({
+      site: c.site,
+      logo: c.logo,
+      apercu: demandeSeule ? `Livraison ${quand}` : `Livraison ${quand} · total ${formatPrix(c.totaux.total)}`,
+      titre: demandeSeule ? "Demande enregistrée" : "Commande enregistrée",
+      corps,
+      pied,
+    }),
     texte,
   };
 }
@@ -189,8 +214,9 @@ export function courrielDeConfirmation(c: CommandePourCourriel): CourrielPret {
 /** L'e-mail que reçoit le gérant à chaque nouvelle commande. */
 export function courrielNouvelleCommande(c: CommandePourCourriel & { lienAdmin: string }): CourrielPret {
   const quand = `${c.jour}, ${c.creneau}`;
+  const demande = c.demandeLibre.replace(/\s+/g, " ");
   const corps = `
-  <p style="margin:0 0 18px;font-size:16px;line-height:1.5;"><strong>${echapper(c.nomClient)}</strong> · ${echapper(c.ville)} · <strong>${formatPrix(c.totaux.total)}</strong>${c.paiement ? ` (${echapper(c.paiement)})` : ""}</p>
+  <p style="margin:0 0 18px;font-size:16px;line-height:1.5;"><strong>${echapper(c.nomClient)}</strong> · ${echapper(c.ville)} · <strong>${formatPrix(c.totaux.total)}</strong> à recevoir${c.paiement ? ` (${echapper(c.paiement)})` : ""}</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SABLE};border-radius:10px;margin:0 0 20px;">
   <tr><td style="padding:16px 18px;font-size:15px;line-height:1.55;">
     <strong>${echapper(quand)}</strong><br>
@@ -199,25 +225,35 @@ export function courrielNouvelleCommande(c: CommandePourCourriel & { lienAdmin: 
   </td></tr>
   </table>
   <p style="margin:0 0 22px;">${bouton(c.lienAdmin, "Ouvrir la commande")}</p>
-  ${tableauDesArticles(c)}
+  ${c.demandeLibre ? `<p style="margin:0 0 18px;padding:12px 14px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:15px;line-height:1.5;"><strong>Demande hors catalogue :</strong> ${multiligne(c.demandeLibre)}</p>` : ""}
+  ${c.lignes.length > 0 ? tableauDesArticles(c) : ""}
   ${c.notes ? `<p style="margin:18px 0 0;font-size:14px;color:${DOUX};">Note du client : ${multiligne(c.notes)}</p>` : ""}`;
   return {
     sujet: `Nouvelle commande n°${c.numero} — ${c.ville}, ${c.jour.toLowerCase()} ${c.creneau} — ${formatPrix(c.totaux.total)}`,
     html: gabarit({ site: c.site, logo: c.logo, apercu: `${c.nomClient}, ${c.ville}, ${quand}`, titre: `Nouvelle commande n°${c.numero}`, corps, pied: "E-mail envoyé au gérant à chaque nouvelle commande." }),
-    texte: [`Nouvelle commande n°${c.numero}`, `${c.nomClient} · ${c.telephone}`, `${quand}`, `${c.adresse.replace(/\s+/g, " ")}, ${c.ville}`, "", texteDesArticles(c), "", `Ouvrir : ${c.lienAdmin}`].join("\n"),
+    texte: [
+      `Nouvelle commande n°${c.numero}`,
+      `${c.nomClient} · ${c.telephone}`,
+      `${quand}`,
+      `${c.adresse.replace(/\s+/g, " ")}, ${c.ville}`,
+      "",
+      ...(demande ? [`Demande hors catalogue : ${demande}`, ""] : []),
+      ...(c.lignes.length > 0 ? [texteDesArticles(c), ""] : []),
+      `Ouvrir : ${c.lienAdmin}`,
+    ].join("\n"),
   };
 }
 
 /** Le lien de connexion à l'espace client, demandé depuis la page de connexion. */
 export function courrielDeConnexion(o: { site: string; logo?: string | null; lien: string; minutes: number }): CourrielPret {
   const corps = `
-  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Voici ton lien pour ouvrir ton espace client. Il est valable ${o.minutes} minutes.</p>
+  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Voici votre lien pour ouvrir votre espace client. Il est valable ${o.minutes} minutes.</p>
   <p style="margin:0 0 20px;">${bouton(o.lien, "Ouvrir mon espace")}</p>
-  <p style="margin:0;font-size:14px;line-height:1.5;color:${DOUX};">Si tu n'as rien demandé, ignore cet e-mail : personne n'entre sans ce lien.</p>`;
+  <p style="margin:0;font-size:14px;line-height:1.5;color:${DOUX};">Si vous n'avez rien demandé, ignorez cet e-mail : personne n'entre sans ce lien.</p>`;
   return {
-    sujet: `Ton lien de connexion à ${o.site}`,
-    html: gabarit({ site: o.site, logo: o.logo, apercu: `Lien valable ${o.minutes} minutes`, titre: "Ton espace client", corps, pied: `Tu reçois cet e-mail parce qu'une connexion à ${echapper(o.site)} a été demandée avec cette adresse.` }),
-    texte: `Ton lien pour ouvrir ton espace client (valable ${o.minutes} minutes) :\n${o.lien}\n\nSi tu n'as rien demandé, ignore cet e-mail.`,
+    sujet: `Votre lien de connexion à ${o.site}`,
+    html: gabarit({ site: o.site, logo: o.logo, apercu: `Lien valable ${o.minutes} minutes`, titre: "Votre espace client", corps, pied: `Vous recevez cet e-mail parce qu'une connexion à ${echapper(o.site)} a été demandée avec cette adresse.` }),
+    texte: `Votre lien pour ouvrir votre espace client (valable ${o.minutes} minutes) :\n${o.lien}\n\nSi vous n'avez rien demandé, ignorez cet e-mail.`,
   };
 }
 

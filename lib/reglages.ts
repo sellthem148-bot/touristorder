@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "./prisma";
 import type { PlageTarifaire } from "./tarifs";
 import type { VilleLivree } from "./villes";
+import { MESSAGE_ACCUEIL_PAR_DEFAUT } from "./marque";
 
 // Livraison le soir seulement : de 19h à minuit.
 export const CRENEAUX_PAR_DEFAUT = ["19:00 – 20:00", "20:00 – 21:00", "21:00 – 22:00", "22:00 – 23:00", "23:00 – 00:00"];
@@ -16,7 +17,7 @@ export async function lireReglages() {
     create: {
       id: 1,
       creneaux: CRENEAUX_PAR_DEFAUT,
-      messageAccueil: "Commande quand tu veux, on te livre le soir à ton hôtel : chargeur oublié, couches, maillot, courses…",
+      messageAccueil: MESSAGE_ACCUEIL_PAR_DEFAUT,
     },
   });
 }
@@ -45,6 +46,22 @@ export async function reglagesPublics() {
 }
 
 export type ReglagesPublics = Awaited<ReturnType<typeof reglagesPublics>>;
+
+/** Ce que les pages légales et la page de contact affichent : l'entreprise et la façon de la joindre. */
+export async function infosLegales() {
+  const [r, villes] = await Promise.all([lireReglages(), villesActives()]);
+  return {
+    nom: r.entrepriseNom,
+    numero: r.entrepriseNumero,
+    adresse: r.entrepriseAdresse,
+    email: r.emailContact,
+    whatsapp: r.whatsapp,
+    paiements: r.paiements,
+    creneaux: r.creneaux,
+    heureLimite: r.heureLimite,
+    villes: villes.map((v) => v.nom),
+  };
+}
 
 /** Les plages tarifaires actives, dans l'ordre où elles s'appliquent. */
 export async function plagesActives(): Promise<PlageTarifaire[]> {

@@ -74,11 +74,15 @@ describe("tarifs d'exemple pour le soir", () => {
 });
 
 describe("tournée du soir", () => {
-  it("message « j'arrive » avec le montant et le paiement", async () => {
+  it("message « j'arrive » : le montant n'est rappelé que s'il reste à régler", async () => {
     const { messageJArrive, lienWaze } = await import("@/lib/messages-client");
-    const m = messageJArrive({ prenom: "Sarah", numero: 12, total: 8990, paiement: "Bit", site: "Courses Express" }).replace(/[  ]/g, " ");
-    expect(m).toContain("commande n°12");
-    expect(m).toContain("89,90 ₪ (Bit)");
+    const reste = messageJArrive({ prenom: "Sarah", numero: 12, reste: 8990, mode: "Bit", site: "Courses Express" }).replace(/[  ]/g, " ");
+    expect(reste).toContain("votre commande n°12");
+    expect(reste).toContain("Il reste 89,90 ₪ à régler (Bit).");
+    // Payée (le cas normal : le paiement se fait avant les achats) : aucun montant.
+    const payee = messageJArrive({ prenom: "Sarah", numero: 12, reste: 0, mode: "Bit", site: "Courses Express" });
+    expect(payee).not.toContain("₪");
+    expect(payee).not.toContain("régler");
     expect(lienWaze("Hôtel Dan,\n chambre 512", "Tel Aviv")).toBe(
       "https://waze.com/ul?q=H%C3%B4tel%20Dan%2C%20chambre%20512%2C%20Tel%20Aviv&navigate=yes",
     );
@@ -88,6 +92,7 @@ describe("tournée du soir", () => {
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
       creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60",
+      coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, heureLimite: "17:00" }).heureLimite).toBe("17:00");
     expect(reglagesSchema.parse({ ...base, heureLimite: "" }).heureLimite).toBe("");

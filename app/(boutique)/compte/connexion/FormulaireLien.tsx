@@ -10,7 +10,7 @@ export function FormulaireLien() {
   if (etat.envoye) {
     return (
       <div role="status" className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
-        <p className="font-bold">Regarde ta boîte mail</p>
+        <p className="font-bold">Consultez votre boîte mail</p>
         <p className="text-sm">
           Si un espace client existe pour <strong>{email}</strong>, un lien vient de partir. Il est valable 30 minutes
           (pense aux courriers indésirables).
@@ -22,7 +22,7 @@ export function FormulaireLien() {
   return (
     <form action={envoyer} className="space-y-3" noValidate>
       <div>
-        <label htmlFor="email-connexion" className="etiquette">Ton adresse e-mail</label>
+        <label htmlFor="email-connexion" className="etiquette">Votre adresse e-mail</label>
         <input
           id="email-connexion"
           name="email"

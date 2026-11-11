@@ -14,14 +14,14 @@ export const telephoneSchema = z
   .refine((t) => {
     const n = t.replace(/\D/g, "").length;
     return n >= 8 && n <= 15;
-  }, { error: "Numéro invalide : indique-le avec l'indicatif (ex. +33 6 12 34 56 78)." });
+  }, { error: "Numéro invalide : indiquez-le avec l'indicatif (ex. +33 6 12 34 56 78)." });
 
 /** Une adresse e-mail : nettoyée (espaces, majuscules) AVANT d'être vérifiée, comparée et enregistrée. */
 export const emailSchema = z
-  .string({ error: "Ton adresse e-mail est requise." })
+  .string({ error: "Votre adresse e-mail est requise." })
   .trim()
   .toLowerCase()
-  .min(1, { error: "Ton adresse e-mail est requise." })
+  .min(1, { error: "Votre adresse e-mail est requise." })
   .pipe(z.email({ error: "Adresse e-mail invalide." }).max(254, { error: "Adresse e-mail trop longue." }));
 
 export const ligneSchema = z.object({
@@ -31,21 +31,28 @@ export const ligneSchema = z.object({
 });
 
 export const commandeSchema = z.object({
-  nomClient: texte(2, 80, "Ton nom est requis."),
+  nomClient: texte(2, 80, "Votre nom est requis."),
   telephone: telephoneSchema,
   email: emailSchema,
-  ville: texte(1, 80, "Choisis une ville."),
-  adresse: texte(5, 300, "Indique l'adresse ou le nom de l'hôtel (et le numéro de chambre)."),
-  dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Choisis un jour." }),
-  creneau: texte(1, 60, "Choisis un créneau."),
+  ville: texte(1, 80, "Choisissez une ville."),
+  adresse: texte(5, 300, "Indiquez l'adresse ou le nom de l'hôtel (et le numéro de chambre)."),
+  dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Choisissez un jour." }),
+  creneau: texte(1, 60, "Choisissez un créneau."),
   notes: z.string().trim().max(1000, { error: "1000 caractères maximum." }).default(""),
+  // « Je ne trouve pas mon article » : ce que le client demande hors catalogue.
+  demandeLibre: z.string().trim().max(600, { error: "600 caractères maximum." }).default(""),
   express: z.boolean().default(false),
   remplacement: z.enum(Object.keys(REMPLACEMENTS) as [keyof typeof REMPLACEMENTS, ...(keyof typeof REMPLACEMENTS)[]], {
-    error: "Choisis quoi faire si un article manque.",
+    error: "Choisissez quoi faire si un article manque.",
   }),
   paiement: z.string().trim().max(40).default(""),
   pourboire: z.number().int().min(0).max(1_000_000).default(0),
-  lignes: z.array(ligneSchema).min(1, { error: "Ton panier est vide." }).max(LIGNES_MAX, { error: "Trop d'articles différents." }),
+  lignes: z.array(ligneSchema).max(LIGNES_MAX, { error: "Trop d'articles différents." }),
+}).superRefine((c, ctx) => {
+  // Un panier vide n'est une commande que s'il porte une demande d'article hors catalogue.
+  if (c.lignes.length === 0 && c.demandeLibre === "") {
+    ctx.addIssue({ code: "custom", path: ["lignes"], message: "Votre panier est vide." });
+  }
 });
 
 export type CommandeSaisie = z.infer<typeof commandeSchema>;

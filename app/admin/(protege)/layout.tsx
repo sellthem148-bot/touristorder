@@ -14,7 +14,7 @@ export default async function LayoutAdmin({ children }: LayoutProps<"/admin">) {
 
   return (
     <>
-      <header className="bg-slate-900 text-white">
+      <header className="bg-slate-900 text-white print:hidden">
         <div className="mx-auto max-w-6xl space-y-3 px-4 py-3">
           <div className="flex items-center gap-3">
             <Logo clair compactSurMobile />

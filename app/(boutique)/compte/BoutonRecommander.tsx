@@ -25,7 +25,7 @@ export function BoutonRecommander({ commandeId }: { commandeId: string }) {
       }
       router.push("/panier");
     } catch {
-      setEtat({ enCours: false, message: "Impossible pour le moment. Vérifie ta connexion et réessaie." });
+      setEtat({ enCours: false, message: "Impossible pour le moment. Vérifiez votre connexion et réessayez." });
     }
   }
 

@@ -4,13 +4,19 @@ import type { Metadata } from "next";
 import { GrilleProduits } from "@/components/CarteProduit";
 import { IconeRayon } from "@/components/IconeRayon";
 import { categoriesVisibles, produitsDeLaCategorie } from "@/lib/catalogue";
+import { NOM_DU_SITE } from "@/lib/marque";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/categorie/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const c = (await categoriesVisibles()).find((x) => x.slug === slug);
-  return { title: c?.nom ?? "Catégorie" };
+  if (!c) return { title: "Catégorie" };
+  return {
+    title: c.nom,
+    description: `${c.nom} : commandez en français, livraison le soir à votre logement ou à votre hôtel avec ${NOM_DU_SITE}.`,
+    alternates: { canonical: `/categorie/${c.slug}` },
+  };
 }
 
 export default async function PageCategorie({ params }: PageProps<"/categorie/[slug]">) {

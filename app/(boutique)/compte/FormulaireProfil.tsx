@@ -62,7 +62,7 @@ export function FormulaireProfil({ client, villes }: Props) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className="bouton" disabled={enCours}>{enCours ? "Enregistrement…" : "Enregistrer"}</button>
-        {etat.ok && !modifie && <span role="status" className="text-sm font-semibold text-emerald-700">Enregistré : ta prochaine commande sera pré-remplie.</span>}
+        {etat.ok && !modifie && <span role="status" className="text-sm font-semibold text-emerald-700">Enregistré : votre prochaine commande sera pré-remplie.</span>}
         {etat.erreur && <span role="alert" className="text-sm font-semibold text-red-700">{etat.erreur}</span>}
       </div>
     </form>

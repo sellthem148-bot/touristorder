@@ -8,9 +8,11 @@ import { lireReglages } from "./reglages";
 import { lienWhatsapp } from "./whatsapp";
 import { prenomDe } from "./messages-client";
 import { NOM_DU_SITE } from "./marque";
+import { messageDeReglement } from "./paiement";
+import { envoyerTelegram, texteDeLAlerte } from "./telegram";
 
 /**
- * Après une commande : la confirmation au client et l'avis au gérant (EMAIL_GERANT).
+ * Après une commande : la confirmation au client, l'avis au gérant (EMAIL_GERANT) et son alerte Telegram.
  * Au mieux : ne lève jamais — la commande est déjà enregistrée.
  */
 export async function envoyerCourrielsDeCommande(commandeId: string, site: string): Promise<void> {
@@ -20,7 +22,7 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
         where: { id: commandeId },
         select: {
           id: true, numero: true, jeton: true, email: true, clientId: true, nomClient: true, telephone: true, ville: true, adresse: true,
-          dateLivraison: true, creneau: true, paiement: true, notes: true, express: true, tarifNom: true, majorationPct: true,
+          dateLivraison: true, creneau: true, paiement: true, notes: true, demandeLibre: true, express: true, tarifNom: true, majorationPct: true,
           sousTotal: true, majoration: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
           // Jamais le prix d'achat, la boutique ni le lien Wolt dans un e-mail au client.
           lignes: { where: { indisponible: false }, orderBy: { nom: "asc" }, select: { nom: true, options: true, quantite: true, prixUnitaire: true } },
@@ -44,12 +46,15 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       creneau: c.creneau,
       paiement: c.paiement,
       notes: c.notes,
+      demandeLibre: c.demandeLibre,
       lignes: c.lignes,
       totaux: c,
       presentation: { regroupes: reglages.fraisRegroupes, express: c.express, tarifNom: c.tarifNom, majorationPct: c.majorationPct, ville: c.ville },
       lienSuivi: `${site}/suivi/${c.jeton}`,
       lienEspace: jetonEspace ? `${site}/compte/acces?jeton=${jetonEspace}` : null,
       lienWhatsapp: lienWhatsapp(reglages.whatsapp, `Bonjour ! J'ai une question sur ma commande n°${c.numero}.`),
+      // Les coordonnées de paiement ne sont jamais dans l'e-mail : le client les demande sur WhatsApp.
+      lienPaiement: c.total > 0 ? lienWhatsapp(reglages.whatsapp, messageDeReglement({ numero: c.numero, montant: c.total, mode: c.paiement, site: NOM_DU_SITE })) : null,
     };
 
     const envois: Promise<unknown>[] = [];
@@ -57,6 +62,19 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
     const gerant = (process.env.EMAIL_GERANT ?? "").trim();
     if (gerant) {
       envois.push(envoyerCourriel({ a: gerant, ...courrielNouvelleCommande({ ...donnees, presentation: { ...donnees.presentation, regroupes: false }, lienAdmin: `${site}/admin/commandes/${c.id}` }) }));
+    }
+    // L'alerte Telegram du gérant (si le robot est relié, Réglages) : immédiate, sur son téléphone.
+    if (reglages.telegramJeton && reglages.telegramDiscussion) {
+      envois.push(
+        envoyerTelegram(
+          reglages.telegramJeton,
+          reglages.telegramDiscussion,
+          texteDeLAlerte({
+            numero: c.numero, nomClient: c.nomClient, ville: c.ville, jour: donnees.jour, creneau: c.creneau, total: c.total, paiement: c.paiement,
+            nombreArticles: c.lignes.reduce((s, l) => s + l.quantite, 0), demandeLibre: c.demandeLibre, lienAdmin: `${site}/admin/commandes/${c.id}`,
+          }),
+        ),
+      );
     }
     await Promise.all(envois);
   } catch (e) {

@@ -33,9 +33,9 @@ async function commander({ nom, tel, ville, adresse, creneau }) {
   const valeurJour = await jour.getAttribute("value");
   await jour.check({ force: true });
   await p.getByText(creneau, { exact: true }).click();
-  await p.getByLabel("Ton nom").fill(nom);
-  await p.getByLabel("Ton numéro WhatsApp").fill(tel);
-  await p.getByLabel("Ton adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
+  await p.getByLabel("Votre nom").fill(nom);
+  await p.getByLabel("Votre numéro WhatsApp").fill(tel);
+  await p.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await p.getByLabel("Ville").selectOption(ville);
   await p.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill(adresse);
   await p.getByText("Bit", { exact: true }).click();
@@ -57,30 +57,52 @@ try {
   await admin.getByRole("button", { name: "Se connecter" }).click();
   await admin.waitForURL(BASE + "/admin");
 
-  // 2. Ma journée (ce soir-là) : la liste Wolt additionnée
+  // 2. Les coordonnées de paiement du gérant (privées) : elles ne partent que dans le message WhatsApp
+  await admin.goto(BASE + "/admin/reglages");
+  await admin.getByLabel("Tes coordonnées de paiement (privé)").fill("Bit ou PayBox : 050 111 2233");
+  await admin.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await admin.getByText("Réglages enregistrés.").waitFor();
+
+  // 3. Ma journée (ce soir-là) : d'abord les paiements, la liste Wolt reste vide tant que rien n'est payé
   await admin.goto(BASE + "/admin/journee");
   verifier(await admin.getByRole("link", { name: "Demain" }).isVisible(), "Ma journée : Aujourd'hui / Demain");
   await admin.goto(`${BASE}/admin/journee?jour=${t1.jour}`);
-  const wolt = admin.locator("section", { hasText: "1. À commander sur Wolt" });
+  const paiements = admin.locator("section", { hasText: "1. Paiements à recevoir" });
+  const wolt = admin.locator("section", { hasText: "2. À commander sur Wolt" });
+  verifier((await paiements.getByRole("button", { name: /Paiement reçu/ }).count()) === 2, "paiements à recevoir : les deux commandes");
+  verifier(espaces(await wolt.innerText()).includes("les commandes reçues attendent leur paiement"), "liste Wolt vide tant que rien n'est payé");
+  const montant = decodeURIComponent(await paiements.getByRole("link", { name: /Envoyer le montant/ }).first().getAttribute("href"));
+  verifier(/^https:\/\/wa\.me\/33\d+\?text=/.test(montant) && montant.includes("Montant à régler") && montant.includes("par Bit") && montant.includes("050 111 2233"),
+    "WhatsApp « envoyer le montant » : montant, mode et coordonnées de paiement");
+  verifier(/Paiement en attente\s*2\b/i.test(espaces(await admin.locator("section[aria-label=Résumé]").innerText())), "résumé : 2 paiements en attente");
+  await admin.screenshot({ path: `${OUT}/v6-0-journee-paiements.png`, fullPage: true });
+
+  // 4. Un paiement reçu : seule cette commande passe dans la liste Wolt
+  await paiements.getByRole("button", { name: /Paiement reçu/ }).first().click();
+  await wolt.getByText("1 × Couches Huggies (Taille : 4)").waitFor();
+  verifier((await paiements.getByRole("button", { name: /Paiement reçu/ }).count()) === 1, "après un paiement : une seule commande reste à payer");
+  await paiements.getByRole("button", { name: /Paiement reçu/ }).first().click();
+  await admin.getByText("Rien en attente").waitFor();
   const texteWolt = espaces(await wolt.innerText());
-  verifier(texteWolt.includes("2 × Couches Huggies (Taille : 4)"), "liste Wolt : les couches des deux commandes additionnées");
+  verifier(texteWolt.includes("2 × Couches Huggies (Taille : 4)"), "liste Wolt : les couches des deux commandes payées additionnées");
   verifier(texteWolt.includes("2 × Pack d'eau 6 × 1,5 L"), "liste Wolt : l'eau des deux commandes additionnée");
-  verifier(texteWolt.includes("🏪 Super-Pharm") && texteWolt.includes("🏪 Wolt Market"), "liste Wolt : regroupée par boutique");
+  verifier(texteWolt.includes("Super-Pharm") && texteWolt.includes("Wolt Market"), "liste Wolt : regroupée par boutique");
   await admin.screenshot({ path: `${OUT}/v6-1-journee-wolt.png`, fullPage: true });
 
-  // 3. Tout marquer « commandées sur Wolt »
+  // 5. Tout marquer « commandées sur Wolt »
   await wolt.getByRole("button", { name: "Marquer « commandées sur Wolt »" }).click();
   await admin.getByText("Rien à commander").waitFor();
   ok("les deux commandes passent à « En préparation »");
 
   // 4. La tournée : 19h avant 20h, liens Waze et WhatsApp, total à encaisser
-  const tournee = admin.locator("section", { hasText: "2. Ma tournée" });
+  const tournee = admin.locator("section", { hasText: "3. Ma tournée" });
   const ordre = await tournee.locator("h3").allInnerTexts();
   verifier(ordre[0].includes("19:00 – 20:00") && ordre[1].includes("20:00 – 21:00"), "tournée : par créneau, dans l'ordre des heures");
   const waze = await tournee.getByRole("link", { name: "Waze" }).first().getAttribute("href");
   verifier(waze.startsWith("https://waze.com/ul?q=") && decodeURIComponent(waze).includes("Leonardo Plaza, chambre 803, Netanya"), "lien Waze vers l'adresse du client");
   const jArrive = await tournee.getByRole("link", { name: /J'arrive/ }).first().getAttribute("href");
-  verifier(jArrive.startsWith("https://wa.me/33650607080?text=") && decodeURIComponent(jArrive).includes("(Bit)"), "WhatsApp « j'arrive » avec le total et le paiement");
+  verifier(jArrive.startsWith("https://wa.me/33650607080?text=") && !decodeURIComponent(jArrive).includes("₪"), "WhatsApp « j'arrive » : aucun montant, la commande est déjà payée");
+  verifier(espaces(await tournee.innerText()).includes("Payée"), "tournée : chaque commande porte son étiquette « Payée »");
   const resume = espaces(await admin.locator("section[aria-label=Résumé]").innerText());
   verifier(/À livrer\s*2\b/i.test(resume), "résumé : 2 livraisons");
   await admin.screenshot({ path: `${OUT}/v6-2-journee-tournee.png`, fullPage: true });
@@ -93,11 +115,11 @@ try {
   // 6. Heure limite passée : plus de livraison « ce soir »
   await admin.goto(BASE + "/admin/reglages");
   await admin.getByLabel("Commande avant… pour être livré le soir même").fill("00:01");
-  await admin.getByRole("button", { name: "Enregistrer" }).click();
+  await admin.getByRole("button", { name: "Enregistrer", exact: true }).click();
   await admin.getByText("Réglages enregistrés.").waitFor();
   const client = await (await navigateur.newContext({ ...devices["iPhone 13"] })).newPage();
   await client.goto(BASE + "/");
-  verifier(espaces(await client.locator("main").innerText()).includes("Commande avant 00h01, livré ce soir"), "accueil : « Commande avant 00h01, livré ce soir »");
+  verifier(espaces(await client.locator("main").innerText()).includes("Commandez avant 00h01 pour être livré ce soir"), "accueil : « Commandez avant 00h01 pour être livré ce soir »");
   await client.getByRole("button", { name: "Ajouter Pack d'eau 6 × 1,5 L au panier" }).first().click();
   await client.goto(BASE + "/panier");
   await client.getByText("Pack d'eau").first().waitFor();
@@ -107,7 +129,7 @@ try {
 
   await admin.goto(BASE + "/admin/reglages");
   await admin.getByLabel("Commande avant… pour être livré le soir même").fill("17:00");
-  await admin.getByRole("button", { name: "Enregistrer" }).click();
+  await admin.getByRole("button", { name: "Enregistrer", exact: true }).click();
   await admin.getByText("Réglages enregistrés.").waitFor();
   ok("heure limite remise à 17:00");
 } finally {

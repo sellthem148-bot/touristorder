@@ -129,14 +129,14 @@ try {
   // 5. Commande de nuit, puis article indisponible : la majoration suit
   await client.getByText("Demain", { exact: true }).click();
   await client.getByText("22:00 – 23:00", { exact: true }).click();
-  await client.getByLabel("Ton nom").fill("David Lévy");
-  await client.getByLabel("Ton numéro WhatsApp").fill("+33 6 11 22 33 44");
-  await client.getByLabel("Ton adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
+  await client.getByLabel("Votre nom").fill("David Lévy");
+  await client.getByLabel("Votre numéro WhatsApp").fill("+33 6 11 22 33 44");
+  await client.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await client.getByLabel("Ville").selectOption("Netanya");
   await client.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Carlton, chambre 210");
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);
-  await client.getByText("Merci, ta commande est envoyée !").waitFor();
+  await client.getByText("Merci, votre commande est enregistrée.").waitFor();
   const suivi = espaces(await client.locator("main").innerText());
   verifier(suivi.includes("Supplément fin de soirée (+10 %)") && suivi.includes("83,48"), "suivi : supplément de fin de soirée et total 83,48");
   const urlSuivi = client.url().replace("?nouvelle=1", "");
@@ -149,7 +149,7 @@ try {
   await lait.getByRole("checkbox").check();
   await lait.getByRole("button", { name: "OK" }).click();
   await admin.waitForTimeout(800);
-  const encaisser = espaces(await admin.locator("div", { hasText: /^À encaisser/ }).locator("dd").innerText());
+  const encaisser = espaces(await admin.locator("div", { hasText: /^Total de la commande/ }).locator("dd").innerText());
   verifier(encaisser.includes("72,59"), `lait indispo : 6,90 + 0,69 + 15 + 50 = 72,59 (lu : ${encaisser})`);
   await admin.screenshot({ path: `${OUT}/v3-4-admin-commande-nuit.png`, fullPage: true });
 
