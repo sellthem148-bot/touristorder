@@ -3,7 +3,8 @@
 // et n'écrit jamais le jeton du robot dans un journal.
 import { formatPrix } from "./argent";
 
-const API = "https://api.telegram.org";
+// L'adresse de l'API de Telegram. TELEGRAM_API ne sert qu'aux parcours de test (un faux Telegram local).
+const API = (process.env.TELEGRAM_API || "https://api.telegram.org").replace(/\/$/, "");
 const DELAI_MS = 6000;
 
 /** La forme d'un jeton de robot Telegram, tel que @BotFather le donne (« 123456789:AA… »). */
@@ -70,7 +71,8 @@ export async function robotTelegram(jeton: string): Promise<{ nom: string } | nu
 
 /** La discussion du dernier message reçu par le robot : celle du gérant, qui vient de lui écrire. */
 export async function derniereDiscussion(jeton: string): Promise<{ id: string; nom: string } | null> {
-  const r = await appeler(jeton, "getUpdates", { limit: 50, allowed_updates: ["message"] });
+  // offset négatif : les derniers messages reçus par le robot (sans lui, Telegram rend les plus anciens d'abord).
+  const r = await appeler(jeton, "getUpdates", { offset: -20, limit: 20, allowed_updates: ["message"] });
   if (!r.ok || !Array.isArray(r.resultat)) return null;
   for (const maj of [...r.resultat].reverse()) {
     const chat = (maj as { message?: { chat?: { id?: unknown; first_name?: unknown; title?: unknown; username?: unknown } } })?.message?.chat;

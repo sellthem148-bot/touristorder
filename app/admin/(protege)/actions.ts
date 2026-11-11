@@ -545,47 +545,58 @@ export async function marquerCommandees(form: FormData) {
 
 // ── Alerte Telegram ──────────────────────────────────────────────────────────
 
-/** Enregistre le jeton du robot (donné par @BotFather), après l'avoir vérifié auprès de Telegram. */
+/** Retour sur la partie Telegram des Réglages (ancre), avec le message à afficher à cet endroit. */
+const versTelegram = (cle: "ok" | "erreur", message: string) =>
+  `/admin/reglages?${new URLSearchParams({ [cle === "ok" ? "tgOk" : "tgErreur"]: message }).toString()}#telegram`;
+
+/** Étape 1 : enregistre le jeton du robot (donné par @BotFather), après l'avoir vérifié auprès de Telegram. */
 export async function enregistrerTelegram(form: FormData) {
   await exigerAdmin();
   const jeton = texte(form, "jeton").trim();
   if (!estJetonTelegram(jeton)) {
-    redirect(avecMessage("/admin/reglages", "erreur", "Ce jeton ne ressemble pas à celui d'un robot Telegram (ex. 123456789:AAxx…)."));
+    redirect(versTelegram("erreur", "Ce jeton ne ressemble pas à celui d'un robot Telegram (ex. 123456789:AAxx…). Copie-le en entier depuis @BotFather."));
   }
   const robot = await robotTelegram(jeton);
   if (!robot) {
-    redirect(avecMessage("/admin/reglages", "erreur", "Telegram ne reconnaît pas ce jeton : copie-le à nouveau depuis @BotFather."));
+    redirect(versTelegram("erreur", "Telegram ne reconnaît pas ce jeton : copie-le à nouveau depuis @BotFather."));
   }
   await lireReglages();
   await prisma.reglages.update({ where: { id: 1 }, data: { telegramJeton: jeton, telegramDiscussion: "", telegramNom: robot.nom } });
-  redirect(avecMessage("/admin/reglages", "ok", "Robot enregistré. Écris-lui un message dans Telegram, puis appuie sur « Relier »."));
+  redirect(versTelegram("ok", "Étape 1 faite : ton robot est enregistré. Passe à l'étape 2."));
 }
 
-/** Relie l'alerte à la discussion du dernier message reçu par le robot, et y envoie un essai. */
+/** Étape 3 : relie l'alerte à la discussion du dernier message reçu par le robot, et y envoie un essai. */
 export async function relierTelegram() {
   await exigerAdmin();
   const r = await lireReglages();
-  if (!r.telegramJeton) redirect(avecMessage("/admin/reglages", "erreur", "Enregistre d'abord le jeton du robot."));
+  if (!r.telegramJeton) redirect(versTelegram("erreur", "Commence par l'étape 1 : colle le jeton de ton robot."));
   const discussion = await derniereDiscussion(r.telegramJeton);
   if (!discussion) {
-    redirect(avecMessage("/admin/reglages", "erreur", "Le robot n'a reçu aucun message : ouvre-le dans Telegram, écris-lui « bonjour », puis réessaie."));
+    redirect(versTelegram("erreur", "Ton robot n'a encore reçu aucun message. Fais l'étape 2 : ouvre-le dans Telegram, appuie sur « Démarrer » (ou écris-lui « bonjour »), puis reviens appuyer sur « Relier »."));
   }
   const envoye = await envoyerTelegram(r.telegramJeton, discussion.id, "Alerte reliée. Tu recevras ici chaque nouvelle commande.");
-  if (!envoye) redirect(avecMessage("/admin/reglages", "erreur", "Telegram a refusé le message d'essai. Réessaie dans un instant."));
+  if (!envoye) redirect(versTelegram("erreur", "Telegram a refusé le message d'essai. Réessaie dans un instant."));
   await prisma.reglages.update({ where: { id: 1 }, data: { telegramDiscussion: discussion.id } });
-  redirect(avecMessage("/admin/reglages", "ok", `Alerte Telegram reliée${discussion.nom ? ` à ${discussion.nom}` : ""} : un message d'essai vient de partir.`));
+  redirect(versTelegram("ok", `C'est en place${discussion.nom ? `, ${discussion.nom}` : ""} : regarde Telegram, ton robot vient de t'écrire « Alerte reliée ».`));
 }
 
 export async function essayerTelegram() {
   await exigerAdmin();
   const r = await lireReglages();
   const envoye = await envoyerTelegram(r.telegramJeton, r.telegramDiscussion, "Message d'essai : l'alerte fonctionne.");
-  redirect(avecMessage("/admin/reglages", envoye ? "ok" : "erreur", envoye ? "Message d'essai envoyé sur Telegram." : "Le message d'essai n'est pas parti : relie à nouveau le robot."));
+  redirect(
+    versTelegram(
+      envoye ? "ok" : "erreur",
+      envoye
+        ? "Message d'essai envoyé : regarde Telegram, tu dois l'avoir reçu."
+        : "Le message d'essai n'est pas parti. Appuie sur « Recommencer » et refais les trois étapes.",
+    ),
+  );
 }
 
 export async function delierTelegram() {
   await exigerAdmin();
   await lireReglages();
   await prisma.reglages.update({ where: { id: 1 }, data: { telegramJeton: "", telegramDiscussion: "", telegramNom: "" } });
-  redirect(avecMessage("/admin/reglages", "ok", "Alerte Telegram retirée."));
+  redirect(versTelegram("ok", "Alerte Telegram retirée."));
 }

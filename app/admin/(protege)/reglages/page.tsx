@@ -4,10 +4,114 @@ import { lireReglages } from "@/lib/reglages";
 import { prixPourChamp } from "@/lib/argent";
 import { JOURS_COURTS } from "@/lib/tarifs";
 import { amplitudeDesCreneaux } from "@/lib/creneaux";
+import { Check } from "lucide-react";
 import { Messages } from "@/components/admin/Messages";
 import { delierTelegram, enregistrerReglages, enregistrerTelegram, essayerTelegram, relierTelegram } from "../actions";
 
 export const metadata = { title: "Réglages" };
+
+const un = (v: string | string[] | undefined) => ((Array.isArray(v) ? v[0] : v) ?? "").slice(0, 400);
+
+/** Une étape numérotée de l'installation : faite (cochée), en cours (mise en avant) ou à venir (grisée). */
+function Etape({ numero, titre, etat, children }: { numero: number; titre: string; etat: "faite" | "en-cours" | "a-venir"; children?: React.ReactNode }) {
+  return (
+    <li className={`flex gap-3 rounded-2xl border p-3 ${etat === "en-cours" ? "border-slate-900 bg-white" : "border-slate-200 bg-slate-50"} ${etat === "a-venir" ? "opacity-60" : ""}`}>
+      <span
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${etat === "faite" ? "bg-emerald-600 text-white" : etat === "en-cours" ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"}`}
+        aria-hidden="true"
+      >
+        {etat === "faite" ? <Check className="h-4 w-4" strokeWidth={2.5} /> : numero}
+      </span>
+      <div className="min-w-0 flex-1 space-y-2">
+        <p className="font-semibold">
+          <span className="sr-only">Étape {numero}{etat === "faite" ? " (faite)" : etat === "en-cours" ? " (à faire maintenant)" : ""} : </span>
+          {titre}
+        </p>
+        {children}
+      </div>
+    </li>
+  );
+}
+
+/**
+ * L'alerte Telegram, en trois étapes. L'état est écrit en clair en haut (pas installée, à terminer,
+ * active) et chaque geste ramène ici, avec son résultat : rien à chercher ailleurs dans la page.
+ */
+function AlerteTelegram({ jeton, reliee, robot, ok, erreur }: { jeton: boolean; reliee: boolean; robot: string; ok: string; erreur: string }) {
+  const etat = reliee ? { libelle: "Active", classes: "bg-emerald-50 text-emerald-900 ring-emerald-200" } : jeton ? { libelle: "À terminer", classes: "bg-amber-50 text-amber-900 ring-amber-200" } : { libelle: "Pas installée", classes: "bg-slate-100 text-slate-700 ring-slate-300" };
+  return (
+    <section id="telegram" className="carte scroll-mt-4 space-y-4 p-4 sm:p-5" aria-labelledby="t-telegram">
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 id="t-telegram" className="text-lg font-bold">Alerte Telegram</h2>
+        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ring-inset ${etat.classes}`}>{etat.libelle}</span>
+      </div>
+      <p className="text-sm text-slate-600">Un message sur ton téléphone à chaque nouvelle commande, en plus de l&apos;e-mail.</p>
+
+      {erreur && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm font-medium text-red-800">{erreur}</p>}
+      {!erreur && ok && <p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm font-medium text-emerald-900">{ok}</p>}
+
+      {reliee ? (
+        <>
+          <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+            <strong>C&apos;est en place.</strong> À chaque nouvelle commande, ton robot{robot ? ` @${robot}` : ""} t&apos;écrit dans Telegram : numéro, client, ville, créneau, montant et lien vers la commande.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <form action={essayerTelegram}><button type="submit" className="bouton">Envoyer un essai maintenant</button></form>
+            <form action={delierTelegram}><button type="submit" className="bouton-secondaire">Retirer l&apos;alerte</button></form>
+          </div>
+          <p className="text-xs text-slate-500">L&apos;essai arrive en quelques secondes dans Telegram. Rien reçu ? Vérifie que les notifications de Telegram sont autorisées sur ton téléphone.</p>
+        </>
+      ) : (
+        <ol className="space-y-2">
+          <Etape numero={1} titre="Créer ton robot et coller son jeton" etat={jeton ? "faite" : "en-cours"}>
+            {jeton ? (
+              <p className="break-words text-sm text-slate-600">Robot enregistré{robot ? <> : <strong>@{robot}</strong></> : null}.</p>
+            ) : (
+              <>
+                <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+                  <li>Dans Telegram, cherche <strong>@BotFather</strong> et envoie-lui <strong>/newbot</strong>.</li>
+                  <li>Donne un nom au robot (ex. « Tourist Order commandes »), puis un identifiant qui finit par « bot ».</li>
+                  <li>BotFather te répond avec un jeton : une longue suite de chiffres et de lettres. Copie-le et colle-le ici.</li>
+                </ul>
+                <form action={enregistrerTelegram} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="jeton" className="etiquette">Jeton du robot</label>
+                    <input id="jeton" name="jeton" type="password" autoComplete="off" required className="champ" placeholder="123456789:AA…" />
+                  </div>
+                  <button type="submit" className="bouton">Ajouter le robot</button>
+                </form>
+                <p className="text-xs text-slate-500">Le jeton reste sur le site et n&apos;est plus jamais affiché. Ne l&apos;envoie à personne.</p>
+              </>
+            )}
+          </Etape>
+          <Etape numero={2} titre="Dire bonjour à ton robot dans Telegram" etat={jeton ? "en-cours" : "a-venir"}>
+            {jeton && (
+              <>
+                <p className="text-sm text-slate-700">
+                  Ouvre ton robot dans Telegram et appuie sur <strong>Démarrer</strong> (ou écris-lui « bonjour »). Sans ce premier message, il n&apos;a pas le droit de t&apos;écrire.
+                </p>
+                {robot && (
+                  <a href={`https://t.me/${robot}`} target="_blank" rel="noopener noreferrer" className="bouton-secondaire w-full sm:w-auto">Ouvrir mon robot dans Telegram</a>
+                )}
+              </>
+            )}
+          </Etape>
+          <Etape numero={3} titre="Revenir ici et appuyer sur « Relier »" etat={jeton ? "en-cours" : "a-venir"}>
+            {jeton && (
+              <>
+                <p className="text-sm text-slate-700">Ton robot t&apos;envoie aussitôt « Alerte reliée » dans Telegram : c&apos;est la preuve que tout fonctionne.</p>
+                <div className="flex flex-wrap gap-2">
+                  <form action={relierTelegram}><button type="submit" className="bouton">Relier</button></form>
+                  <form action={delierTelegram}><button type="submit" className="bouton-secondaire">Recommencer</button></form>
+                </div>
+              </>
+            )}
+          </Etape>
+        </ol>
+      )}
+    </section>
+  );
+}
 
 export default async function PageReglages({ searchParams }: PageProps<"/admin/reglages">) {
   await exigerAdmin();
@@ -177,50 +281,13 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
         <button type="submit" className="bouton">Enregistrer</button>
       </form>
 
-      <section className="carte space-y-4 p-4 sm:p-5" aria-labelledby="t-telegram">
-        <div>
-          <h2 id="t-telegram" className="text-lg font-bold">Alerte Telegram</h2>
-          <p className="text-sm text-slate-600">Un message sur ton téléphone à chaque nouvelle commande, en plus de l&apos;e-mail.</p>
-        </div>
-        {r.telegramJeton && r.telegramDiscussion ? (
-          <>
-            <p className="rounded-2xl bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
-              Alerte active{r.telegramNom ? ` (robot @${r.telegramNom})` : ""} : chaque nouvelle commande t&apos;est envoyée sur Telegram.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <form action={essayerTelegram}><button type="submit" className="bouton-secondaire">Envoyer un essai</button></form>
-              <form action={delierTelegram}><button type="submit" className="bouton-danger">Retirer l&apos;alerte</button></form>
-            </div>
-          </>
-        ) : r.telegramJeton ? (
-          <>
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700">
-              <li>Dans Telegram, ouvre ton robot{r.telegramNom ? <> (<strong>@{r.telegramNom}</strong>)</> : null} et écris-lui « bonjour ».</li>
-              <li>Reviens ici et appuie sur « Relier ».</li>
-            </ol>
-            <div className="flex flex-wrap gap-2">
-              <form action={relierTelegram}><button type="submit" className="bouton">Relier</button></form>
-              <form action={delierTelegram}><button type="submit" className="bouton-secondaire">Changer de robot</button></form>
-            </div>
-          </>
-        ) : (
-          <>
-            <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700">
-              <li>Dans Telegram, cherche <strong>@BotFather</strong> et envoie-lui <strong>/newbot</strong>.</li>
-              <li>Donne un nom au robot (ex. « Tourist Order commandes ») puis un identifiant qui finit par « bot ».</li>
-              <li>BotFather te donne un jeton (une longue suite de chiffres et de lettres) : colle-le ici.</li>
-            </ol>
-            <form action={enregistrerTelegram} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-              <div className="min-w-0 flex-1">
-                <label htmlFor="jeton" className="etiquette">Jeton du robot</label>
-                <input id="jeton" name="jeton" type="password" autoComplete="off" required className="champ" placeholder="123456789:AA…" />
-              </div>
-              <button type="submit" className="bouton">Ajouter le robot</button>
-            </form>
-            <p className="text-xs text-slate-500">Le jeton reste sur le site et n&apos;est plus jamais affiché. Ne l&apos;envoie à personne.</p>
-          </>
-        )}
-      </section>
+      <AlerteTelegram
+        jeton={r.telegramJeton !== ""}
+        reliee={r.telegramJeton !== "" && r.telegramDiscussion !== ""}
+        robot={r.telegramNom}
+        ok={un(params.tgOk)}
+        erreur={un(params.tgErreur)}
+      />
     </div>
   );
 }
