@@ -128,6 +128,7 @@ export const reglagesSchema = z.object({
     .min(1, { error: "Coche au moins un jour de livraison." })
     .transform((j) => [...new Set(j)].sort((a, b) => a - b)),
   delaiPreparation: entier(0, 600),
+  commandesParCreneau: entier(0, 200),
   heureLimite: z
     .string()
     .trim()

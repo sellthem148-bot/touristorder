@@ -1,7 +1,8 @@
 // Paiement avant les achats, demande d'article hors catalogue, reçu, export comptable,
-// pages d'information et référencement. À lancer après les autres parcours.
+// pages d'information, référencement, limite par créneau et photos rapides. À lancer après les autres parcours.
 import { chromium, devices } from "playwright";
 import { writeFileSync } from "node:fs";
+import sharp from "sharp";
 
 const BASE = process.env.BASE_URL || "http://localhost:3100";
 const OUT = process.argv[2];
@@ -183,7 +184,67 @@ try {
   await client.goto(BASE + "/panier");
   verifier((await client.locator('meta[name="robots"]').getAttribute("content")).includes("noindex"), "panier : hors des moteurs de recherche");
 
-  // 11. Le site vouvoie le client
+  // 11. Limite de commandes par créneau : un créneau plein est « complet », et le serveur le refuse
+  await admin.goto(BASE + "/admin/reglages");
+  await admin.getByLabel("Commandes par créneau (au plus)").fill("1");
+  await admin.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await admin.getByText("Réglages enregistrés.").waitFor();
+  const ctxAutre = await navigateur.newContext({ ...devices["iPhone 13"] });
+  const autre = await ctxAutre.newPage();
+  autre.on("pageerror", (e) => erreurs.push(String(e)));
+  await autre.goto(BASE + "/");
+  await autre.getByRole("button", { name: "Ajouter Pack d'eau 6 × 1,5 L au panier" }).first().click();
+  await autre.goto(BASE + "/panier");
+  await autre.getByText("Pack d'eau").first().waitFor();
+  // Le jour de la commande de ce parcours : son créneau a déjà une commande.
+  await autre.locator('input[name="dateLivraison"]').nth(3).check({ force: true });
+  const pleins = autre.locator("label", { hasText: "· complet" });
+  verifier((await pleins.count()) >= 1 && (await pleins.first().locator("input").isDisabled()), "panier : le créneau qui a atteint la limite est affiché « complet », non choisissable");
+  verifier(!(await autre.locator('input[name="creneau"]:checked').evaluate((i) => i.disabled)), "panier : le créneau choisi par défaut n'est pas un créneau complet");
+  verifier(!(await deborde(autre)), "panier avec un créneau complet : pas de défilement horizontal");
+  await autre.screenshot({ path: `${OUT}/v7-5-creneau-complet.png`, fullPage: true });
+  // Une commande forcée sur ce créneau (page restée ouverte, formulaire modifié) : le serveur refuse.
+  await autre.getByLabel("Votre nom").fill("Client Tardif");
+  await autre.getByLabel("Votre numéro WhatsApp").fill("+33 6 01 02 03 04");
+  await autre.getByLabel("Votre adresse e-mail").fill(`tardif${Date.now() % 100000}@exemple.test`);
+  await autre.getByLabel("Ville").selectOption("Netanya");
+  await autre.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Blue Bay, chambre 3");
+  await pleins.first().locator("input").evaluate((i) => { i.disabled = false; });
+  await pleins.first().locator("input").check({ force: true });
+  await autre.getByRole("button", { name: /^Commander/ }).click();
+  await autre.getByText("Ce créneau est complet : choisissez-en un autre.").waitFor();
+  verifier(!autre.url().includes("/suivi/"), "commande forcée sur un créneau complet : refusée par le serveur");
+  await admin.goto(BASE + "/admin/reglages");
+  await admin.getByLabel("Commandes par créneau (au plus)").fill("0");
+  await admin.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await admin.getByText("Réglages enregistrés.").waitFor();
+  await autre.reload();
+  await autre.locator('input[name="dateLivraison"]').nth(3).check({ force: true });
+  verifier((await autre.locator("label", { hasText: "· complet" }).count()) === 0, "limite remise à 0 : plus aucun créneau complet");
+  await ctxAutre.close();
+
+  // 12. Photos rapides : une photo ajoutée d'un geste, visible aussitôt côté client
+  await admin.goto(BASE + "/admin/produits/photos");
+  await admin.getByRole("heading", { name: "Photos rapides" }).waitFor();
+  const sansPhoto = Number((await admin.getByRole("link", { name: /^Sans photo \(\d+\)$/ }).innerText()).match(/\d+/)[0]);
+  verifier(sansPhoto > 0 && !(await deborde(admin)), `Photos rapides : ${sansPhoto} articles en ligne sans photo, pas de défilement horizontal`);
+  const ligne1 = admin.locator("li", { hasText: "Pack d'eau 6 × 1,5 L" }).first();
+  const image = await sharp({ create: { width: 900, height: 700, channels: 3, background: { r: 40, g: 120, b: 200 } } }).jpeg().toBuffer();
+  await ligne1.locator('input[type="file"]').setInputFiles({ name: "eau.jpg", mimeType: "image/jpeg", buffer: image });
+  await ligne1.getByText("Photo enregistrée.").waitFor();
+  verifier((await ligne1.locator("img").count()) === 1 && (await ligne1.getByRole("button", { name: "Changer" }).isVisible()), "Photos rapides : la photo est enregistrée sans quitter la page");
+  // Un fichier qui n'est pas une image est refusé, avec son message.
+  const ligne2 = admin.locator("li", { hasText: "Couches Huggies" }).first();
+  await ligne2.locator('input[type="file"]').setInputFiles({ name: "faux.jpg", mimeType: "image/jpeg", buffer: Buffer.from("ceci n'est pas une image") });
+  await ligne2.getByText("Format non accepté : JPEG, PNG ou WebP.").waitFor();
+  ok("Photos rapides : un fichier qui n'est pas une image est refusé");
+  await admin.goto(BASE + "/admin/produits/photos");
+  verifier(Number((await admin.getByRole("link", { name: /^Sans photo \(\d+\)$/ }).innerText()).match(/\d+/)[0]) === sansPhoto - 1, "Photos rapides : l'article a quitté la liste « sans photo »");
+  await admin.screenshot({ path: `${OUT}/v7-6-photos-rapides.png` });
+  await client.goto(BASE + "/recherche?q=pack%20d%27eau");
+  verifier((await client.locator("main img").count()) >= 1, "côté client : la photo de l'article s'affiche");
+
+  // 13. Le site vouvoie le client
   for (const chemin of ["/", "/panier?demande=", "/compte/connexion", "/commandes", "/conditions", "/contact", urlSuivi.replace(BASE, "")]) {
     await client.goto(BASE + chemin);
     const page = (await client.locator("body").innerText()).replace(/\s+/g, " ");

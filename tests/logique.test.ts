@@ -211,7 +211,7 @@ describe("formulaires admin", () => {
     const r = reglagesSchema.parse({
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "Espèces",
       creneaux: "Dès que possible\n\n 09:00 – 12:00 \nDès que possible",
-      whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["0", "5"], delaiPreparation: "45", heureLimite: "16:30",
+      whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["0", "5"], delaiPreparation: "45", commandesParCreneau: "", heureLimite: "16:30",
       coordonneesPaiement: "  Bit : 050 000 0000  ", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: " Contact@Exemple.FR ",
     });
     expect(r.coordonneesPaiement).toBe("Bit : 050 000 0000");

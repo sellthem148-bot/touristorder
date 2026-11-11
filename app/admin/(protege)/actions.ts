@@ -263,6 +263,24 @@ export async function dupliquerProduit(form: FormData) {
 }
 
 /** Une photo partagée par une copie de produit ne quitte le stockage qu'avec le dernier produit qui l'utilise. */
+/**
+ * « Photos rapides » : enregistre la photo d'un produit dès qu'elle est choisie, sans passer par sa fiche.
+ * Rend l'adresse de la photo, ou l'erreur à afficher sur la ligne.
+ */
+export async function enregistrerPhotoRapide(form: FormData): Promise<{ url?: string; erreur?: string }> {
+  await exigerAdmin();
+  const produitId = id(form);
+  const fichier = form.get("photo");
+  if (!produitId || !(fichier instanceof File) || fichier.size === 0) return { erreur: "Aucune photo reçue." };
+  const produit = await prisma.produit.findUnique({ where: { id: produitId }, select: { photoUrl: true } });
+  if (!produit) return { erreur: "Ce produit n'existe plus." };
+  const envoi = await enregistrerPhoto(fichier);
+  if (!envoi.ok) return { erreur: envoi.erreur };
+  await prisma.produit.update({ where: { id: produitId }, data: { photoUrl: envoi.url } });
+  if (produit.photoUrl && produit.photoUrl !== envoi.url) await supprimerPhotoSiOrpheline(produit.photoUrl);
+  return { url: envoi.url };
+}
+
 async function supprimerPhotoSiOrpheline(url: string) {
   const encore = await prisma.produit.count({ where: { photoUrl: url } });
   if (encore === 0) await supprimerPhoto(url);
@@ -340,6 +358,7 @@ export async function enregistrerReglages(form: FormData) {
     fraisRegroupes: form.get("fraisRegroupes") === "on",
     joursLivres: form.getAll("joursLivres").map(String),
     delaiPreparation: texte(form, "delaiPreparation"),
+    commandesParCreneau: texte(form, "commandesParCreneau"),
     heureLimite: texte(form, "heureLimite"),
     coordonneesPaiement: texte(form, "coordonneesPaiement"),
     entrepriseNom: texte(form, "entrepriseNom"),

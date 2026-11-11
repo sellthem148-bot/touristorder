@@ -101,6 +101,10 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
   return `Articles Wolt — ${bilans.join(" ; ")}.`;
 }
 
+// Le numéro WhatsApp du site (celui des boutons « Nous écrire sur WhatsApp »), donné par le gérant.
+// Il se change dans Réglages ; la mise en ligne ne le pose que si le champ est vide.
+const WHATSAPP_DU_GERANT = "+33 1 76 39 00 78";
+
 // Les descriptions du catalogue de départ qui tutoyaient le client, et leur nouveau texte.
 const ANCIENNES_DESCRIPTIONS: [string, string][] = [
   ["Précise la marque en note si besoin", "Précisez la marque en note si besoin"],
@@ -115,9 +119,11 @@ const ANCIENNES_DESCRIPTIONS: [string, string][] = [
  * gérant a modifiée. Sans effet la deuxième fois.
  */
 export async function mettreLesReglagesANiveau(prisma: PrismaClient): Promise<string> {
-  const r = await prisma.reglages.findUnique({ where: { id: 1 }, select: { paiements: true, messageAccueil: true } });
+  const r = await prisma.reglages.findUnique({ where: { id: 1 }, select: { paiements: true, messageAccueil: true, whatsapp: true } });
   if (!r) return "Réglages : pas encore créés.";
-  const data: { paiements?: string[]; messageAccueil?: string } = {};
+  const data: { paiements?: string[]; messageAccueil?: string; whatsapp?: string } = {};
+  // Le numéro WhatsApp donné par le gérant : seulement si le champ est encore vide.
+  if (r.whatsapp.trim() === "") data.whatsapp = WHATSAPP_DU_GERANT;
   if (r.paiements.length === ANCIENS_PAIEMENTS.length && r.paiements.every((p, i) => p === ANCIENS_PAIEMENTS[i])) data.paiements = PAIEMENTS_PAR_DEFAUT;
   if (r.messageAccueil === ANCIEN_MESSAGE_ACCUEIL) data.messageAccueil = MESSAGE_ACCUEIL_PAR_DEFAUT;
   const changes = Object.keys(data);

@@ -114,7 +114,10 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
     // eslint-disable-next-line react-hooks/exhaustive-deps -- une fois au chargement, puis sur panier périmé
   }, [pret, etat]);
 
-  const creneauxDuJour = jours.find((j) => j.valeur === v.dateLivraison)?.creneaux ?? [];
+  // Les créneaux du jour choisi, dans l'ordre des réglages ; ceux qui sont complets restent affichés, grisés.
+  const jourChoisi = jours.find((j) => j.valeur === v.dateLivraison);
+  const creneauxDuJour = jourChoisi ? reglages.creneaux.filter((c) => jourChoisi.creneaux.includes(c) || jourChoisi.complets.includes(c)) : [];
+  const complet = (c: string) => jourChoisi?.complets.includes(c) ?? false;
 
   // Le tarif du moment choisi (journée, nuit, week-end…) : recalculé à chaque changement de jour ou de créneau.
   const tarif = tarifDeLaLivraison(v.dateLivraison, v.creneau, reglages.plages, reglages);
@@ -306,9 +309,10 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
             <legend className="etiquette">Créneau</legend>
             <div className="flex flex-wrap gap-2">
               {creneauxDuJour.map((c) => (
-                <label key={c} className="pastille">
-                  <input type="radio" name="creneau" value={c} checked={v.creneau === c} onChange={() => changer("creneau", c)} className="sr-only" />
+                <label key={c} className={`pastille ${complet(c) ? "cursor-not-allowed opacity-50" : ""}`}>
+                  <input type="radio" name="creneau" value={c} checked={v.creneau === c} disabled={complet(c)} onChange={() => changer("creneau", c)} className="sr-only" />
                   {c}
+                  {complet(c) && <span className="ml-1.5 text-xs font-semibold">· complet</span>}
                 </label>
               ))}
             </div>

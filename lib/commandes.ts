@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { prisma } from "./prisma";
 import { calculerTotaux } from "./calcul";
 import { commandeSchema, erreursParChamp, regrouperLignes } from "./validation";
-import { joursDeLivraison } from "./creneaux";
+import { joursOuverts } from "./livraisons";
 import { lireReglages, plagesActives } from "./reglages";
 import { tarifDeLaLivraison } from "./tarifs";
 import { fraisDeLivraison, minimumPour } from "./villes";
@@ -40,9 +40,13 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
   }
   // Le jour doit être un jour livré, et le créneau encore possible ce jour-là
   // (le soir même : au moins le délai de préparation avant son début).
-  const jour = joursDeLivraison(reglages).find((j) => j.valeur === saisie.dateLivraison);
+  const jour = (await joursOuverts(reglages)).find((j) => j.valeur === saisie.dateLivraison);
   if (!jour) {
     return { ok: false, erreur: CHAMPS, champs: { dateLivraison: "Ce jour n'est plus disponible : choisissez-en un autre." } };
+  }
+  // La limite de commandes par créneau : le gérant livre seul.
+  if (jour.complets.includes(saisie.creneau)) {
+    return { ok: false, erreur: "Ce créneau vient d'être complet : choisissez-en un autre.", champs: { creneau: "Ce créneau est complet : choisissez-en un autre." } };
   }
   if (!jour.creneaux.includes(saisie.creneau)) {
     return { ok: false, erreur: CHAMPS, champs: { creneau: "Ce créneau n'est plus disponible : choisissez-en un autre." } };

@@ -94,6 +94,13 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
             </p>
           </div>
           <div>
+            <label htmlFor="commandesParCreneau" className="etiquette">Commandes par créneau (au plus)</label>
+            <input id="commandesParCreneau" name="commandesParCreneau" defaultValue={r.commandesParCreneau} inputMode="numeric" className="champ" />
+            <p className="mt-1 text-xs text-slate-500">
+              Quand un créneau a ce nombre de commandes (annulées non comptées), il est affiché « complet » et ne peut plus être choisi. 0 = pas de limite.
+            </p>
+          </div>
+          <div>
             <label htmlFor="delaiPreparation" className="etiquette">Délai de préparation (minutes)</label>
             <input id="delaiPreparation" name="delaiPreparation" defaultValue={r.delaiPreparation} inputMode="numeric" className="champ" />
             <p className="mt-1 text-xs text-slate-500">

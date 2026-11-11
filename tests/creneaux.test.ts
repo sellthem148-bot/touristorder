@@ -11,7 +11,7 @@ const israel = (iso: string) => new Date(iso);
 describe("créneaux du soir", () => {
   it("à 17h, tous les créneaux de ce soir sont possibles (délai 60 min)", () => {
     const j = joursDeLivraison({ creneaux: SOIR, joursLivres: TOUS, delaiPreparation: 60, heureLimite: "" }, israel("2026-11-10T15:00:00Z"));
-    expect(j[0]).toEqual({ valeur: "2026-11-10", libelle: "Aujourd'hui", creneaux: SOIR });
+    expect(j[0]).toEqual({ valeur: "2026-11-10", libelle: "Aujourd'hui", creneaux: SOIR, complets: [] });
     expect(j).toHaveLength(8);
   });
   it("à 19h30, ce soir : seulement les créneaux qui commencent dans au moins 60 min", () => {
@@ -73,6 +73,44 @@ describe("tarifs d'exemple pour le soir", () => {
   });
 });
 
+describe("limite de commandes par créneau", () => {
+  // Un mercredi à 10h en Israël : le soir même est encore possible.
+  const maintenant = new Date("2026-11-11T08:00:00Z");
+  const regles = { creneaux: ["19:00 – 20:00", "20:00 – 21:00"], joursLivres: [0, 1, 2, 3, 4, 5, 6], delaiPreparation: 60, heureLimite: "17:00" };
+
+  it("sans limite, ou sans commande : rien n'est complet", async () => {
+    const { joursDeLivraison } = await import("@/lib/creneaux");
+    expect(joursDeLivraison(regles, maintenant, 2).every((j) => j.complets.length === 0 && j.creneaux.length === 2)).toBe(true);
+    const occupe = { "2026-11-11|19:00 – 20:00": 9 };
+    expect(joursDeLivraison(regles, maintenant, 2, occupe)[0].complets).toEqual([]);
+    expect(joursDeLivraison({ ...regles, commandesParCreneau: 0 }, maintenant, 2, occupe)[0].complets).toEqual([]);
+  });
+  it("un créneau qui a atteint la limite est complet : affiché, plus choisissable", async () => {
+    const { joursDeLivraison, cleDuCreneau } = await import("@/lib/creneaux");
+    const occupe = { [cleDuCreneau("2026-11-11", "19:00 – 20:00")]: 3, [cleDuCreneau("2026-11-11", "20:00 – 21:00")]: 2, [cleDuCreneau("2026-11-12", "20:00 – 21:00")]: 4 };
+    const [ce_soir, demain] = joursDeLivraison({ ...regles, commandesParCreneau: 3 }, maintenant, 2, occupe);
+    expect(ce_soir).toMatchObject({ valeur: "2026-11-11", creneaux: ["20:00 – 21:00"], complets: ["19:00 – 20:00"] });
+    expect(demain).toMatchObject({ valeur: "2026-11-12", creneaux: ["19:00 – 20:00"], complets: ["20:00 – 21:00"] });
+  });
+  it("un jour dont tous les créneaux sont complets disparaît : la prochaine livraison est le jour suivant", async () => {
+    const { joursDeLivraison } = await import("@/lib/creneaux");
+    const occupe = { "2026-11-11|19:00 – 20:00": 1, "2026-11-11|20:00 – 21:00": 1 };
+    const jours = joursDeLivraison({ ...regles, commandesParCreneau: 1 }, maintenant, 3, occupe);
+    expect(jours.map((j) => j.valeur)).toEqual(["2026-11-12", "2026-11-13"]);
+  });
+  it("le réglage : un nombre entier, 0 ou vide = pas de limite", async () => {
+    const { reglagesSchema } = await import("@/lib/admin-schemas");
+    const base = {
+      fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
+      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", heureLimite: "",
+      coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
+    };
+    expect(reglagesSchema.parse({ ...base, commandesParCreneau: "4" }).commandesParCreneau).toBe(4);
+    expect(reglagesSchema.parse({ ...base, commandesParCreneau: "" }).commandesParCreneau).toBe(0);
+    for (const mauvais of ["-1", "2,5", "abc", "999"]) expect(reglagesSchema.safeParse({ ...base, commandesParCreneau: mauvais }).success, mauvais).toBe(false);
+  });
+});
+
 describe("tournée du soir", () => {
   it("message « j'arrive » : le montant n'est rappelé que s'il reste à régler", async () => {
     const { messageJArrive, lienWaze } = await import("@/lib/messages-client");
@@ -91,7 +129,7 @@ describe("tournée du soir", () => {
     const { reglagesSchema } = await import("@/lib/admin-schemas");
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
-      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60",
+      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "",
       coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, heureLimite: "17:00" }).heureLimite).toBe("17:00");

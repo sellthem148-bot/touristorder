@@ -7,7 +7,8 @@ import { reglagesPublics } from "@/lib/reglages";
 import { formatPrixCourt } from "@/lib/argent";
 import { momentPresent, NOM_TARIF_DE_BASE, tarifDeBase, tarifPour } from "@/lib/tarifs";
 import { livraisonLaMoinsChere } from "@/lib/villes";
-import { amplitudeDesCreneaux, joursDeLivraison } from "@/lib/creneaux";
+import { amplitudeDesCreneaux } from "@/lib/creneaux";
+import { joursOuverts } from "@/lib/livraisons";
 import { ADRESSE_DU_SITE, DESCRIPTION_DU_SITE, NOM_DU_SITE } from "@/lib/marque";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +51,8 @@ export default async function Accueil() {
   // Le tarif qui s'appliquerait à une livraison maintenant.
   const tarif = tarifPour(momentPresent(), reglages.plages, tarifDeBase(reglages));
   const amplitude = amplitudeDesCreneaux(reglages.creneaux);
-  const prochaine = joursDeLivraison(reglages)[0];
+  // La prochaine livraison possible : le premier créneau qui n'est ni passé ni complet.
+  const prochaine = (await joursOuverts(reglages))[0];
   const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
   const villes = reglages.villes.map((v) => v.nom);
 

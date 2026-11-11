@@ -32,6 +32,7 @@ export default async function LayoutAdmin({ children }: LayoutProps<"/admin">) {
               { href: "/admin", libelle: "Commandes", pastille: aTraiter },
               { href: "/admin/produits", libelle: "Produits" },
               { href: "/admin/produits/prix", libelle: "Prix rapides" },
+              { href: "/admin/produits/photos", libelle: "Photos rapides" },
               { href: "/admin/tarifs", libelle: "Tarifs" },
               { href: "/admin/villes", libelle: "Villes" },
               { href: "/admin/clients", libelle: "Clients" },

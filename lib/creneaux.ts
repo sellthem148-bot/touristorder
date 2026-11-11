@@ -3,7 +3,12 @@
 import { ajouterJours, jourEnIsrael, libelleDuJour } from "./dates";
 import { debutDuCreneau, enMinutes, heureValide, jourDeLaSemaine, momentPresent } from "./tarifs";
 
-export type JourDeLivraison = { valeur: string; libelle: string; creneaux: string[] };
+/** `creneaux` : ceux qu'on peut choisir ; `complets` : ceux qui ont atteint la limite de commandes (affichés, non choisissables). */
+export type JourDeLivraison = { valeur: string; libelle: string; creneaux: string[]; complets: string[] };
+
+/** Combien de commandes (non annulées) un créneau porte déjà : clé `cleDuCreneau(jour, créneau)`. */
+export type Occupation = Record<string, number>;
+export const cleDuCreneau = (jour: string, creneau: string) => `${jour}|${creneau}`;
 
 export const NOMBRE_DE_JOURS = 8;
 
@@ -13,6 +18,7 @@ export type ReglesDeLivraison = {
   joursLivres: number[];
   delaiPreparation: number; // minutes
   heureLimite: string; // « HH:MM » : commande avant cette heure pour le soir même ; vide = pas de limite
+  commandesParCreneau?: number; // commandes acceptées par créneau ; 0 ou absent = pas de limite
 };
 
 /** L'heure de fin d'un créneau (« 19:00 – 20:00 » → 1200 ; « 23:00 – 00:00 » → 1440). null s'il n'y en a pas. */
@@ -33,12 +39,14 @@ export function heureLimitePassee(heureLimite: string, maintenant: Date = new Da
  * encore possibles. Aujourd'hui : seulement avant l'heure limite (le temps que Wolt
  * livre les articles dans la journée), et seulement les créneaux qui commencent au
  * moins `delaiPreparation` après maintenant. Un créneau sans heure (« Dès que possible »)
- * reste proposé. Un jour sans créneau disparaît.
+ * reste proposé. Un créneau qui a atteint `commandesParCreneau` (d'après `occupation`) est
+ * « complet » : montré, mais plus choisissable. Un jour sans créneau à choisir disparaît.
  */
 export function joursDeLivraison(
   regles: ReglesDeLivraison,
   maintenant: Date = new Date(),
   nombre: number = NOMBRE_DE_JOURS,
+  occupation: Occupation = {},
 ): JourDeLivraison[] {
   const { creneaux, joursLivres, delaiPreparation } = regles;
   const aujourdhui = jourEnIsrael(maintenant);
@@ -56,7 +64,10 @@ export function joursDeLivraison(
             return debut == null || debut >= limite;
           })
         : creneaux;
-    if (possibles.length > 0) jours.push({ valeur: jour, libelle: libelleDuJour(jour, maintenant), creneaux: possibles });
+    const plafond = regles.commandesParCreneau ?? 0;
+    const complets = plafond > 0 ? possibles.filter((c) => (occupation[cleDuCreneau(jour, c)] ?? 0) >= plafond) : [];
+    const libres = possibles.filter((c) => !complets.includes(c));
+    if (libres.length > 0) jours.push({ valeur: jour, libelle: libelleDuJour(jour, maintenant), creneaux: libres, complets });
   }
   return jours;
 }

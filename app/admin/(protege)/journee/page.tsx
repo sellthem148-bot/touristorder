@@ -226,7 +226,13 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
         {aLivrer.length === 0 && <p className="carte p-5 text-sm text-slate-600">Aucune livraison prévue pour ce jour.</p>}
         {creneaux.map((creneau) => (
           <div key={creneau} className="space-y-2">
-            <h3 className="font-bold">{creneau}</h3>
+            <h3 className="font-bold">
+              {creneau}
+              <span className="ml-2 text-sm font-normal text-slate-500">
+                {commandes.filter((c) => c.creneau === creneau).length} commande{commandes.filter((c) => c.creneau === creneau).length > 1 ? "s" : ""}
+                {reglages.commandesParCreneau > 0 && ` sur ${reglages.commandesParCreneau}`}
+              </span>
+            </h3>
             <ul className="space-y-2">
               {aLivrer
                 .filter((c) => c.creneau === creneau)

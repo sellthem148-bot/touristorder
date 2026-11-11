@@ -169,6 +169,8 @@ model Reglages {
   // Le gérant reçoit les articles par Wolt dans la journée, puis livre le soir.
   heureLimite     String   @default("17:00")
   delaiPreparation Int     @default(60) // minutes entre la commande et le début du créneau (commande sur Wolt + reconditionnement)
+  // Nombre de commandes qu'un créneau accepte (le gérant livre seul) ; 0 = pas de limite.
+  commandesParCreneau Int  @default(0)
   whatsapp        String   @default("") // ton numéro, format international sans + (ex. 972501234567)
   messageAccueil  String   @default("")
   ouvert          Boolean  @default(true)

@@ -1,5 +1,6 @@
 import { reglagesPublics } from "@/lib/reglages";
-import { heureLimitePassee, joursDeLivraison } from "@/lib/creneaux";
+import { heureLimitePassee } from "@/lib/creneaux";
+import { joursOuverts } from "@/lib/livraisons";
 import { clientConnecte } from "@/lib/client";
 import { PageDuPanier } from "./PageDuPanier";
 
@@ -13,7 +14,7 @@ export default async function Panier({ searchParams }: PageProps<"/panier">) {
   const demande = typeof texte === "string" ? texte.slice(0, 200) : null;
   const reglages = await reglagesPublics();
   // Les jours livrés et leurs créneaux encore possibles, calculés à l'heure de la demande.
-  const jours = joursDeLivraison(reglages);
+  const jours = await joursOuverts(reglages);
   const limitePassee = heureLimitePassee(reglages.heureLimite);
   const c = await clientConnecte();
   // Seulement ce que le formulaire affiche : jamais l'identifiant du compte.
