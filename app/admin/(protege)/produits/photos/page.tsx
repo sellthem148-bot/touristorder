@@ -27,7 +27,7 @@ export default async function PagePhotos({ searchParams }: PageProps<"/admin/pro
     prisma.produit.findMany({
       where: { ...enLigne, ...VUES[vue].where },
       orderBy: [{ categorie: { ordre: "asc" } }, { ordre: "asc" }, { nom: "asc" }],
-      select: { id: true, nom: true, description: true, prix: true, photoUrl: true, categorie: { select: { nom: true } } },
+      select: { id: true, nom: true, description: true, prix: true, photoUrl: true, nomWolt: true, categorie: { select: { nom: true } } },
     }),
     prisma.produit.count({ where: { ...enLigne, photoUrl: "" } }),
     prisma.produit.count({ where: { ...enLigne, photoUrl: { not: "" } } }),
@@ -44,7 +44,7 @@ export default async function PagePhotos({ searchParams }: PageProps<"/admin/pro
         <h1 className="text-2xl font-extrabold">Photos rapides</h1>
         <p className="text-sm text-slate-600">
           Les articles en ligne, rayon par rayon. Appuie sur « Ajouter », prends la photo ou choisis-la : elle est allégée et enregistrée aussitôt.
-          Une photo nette, de face, sur fond clair.
+          Une photo nette, de face, sur fond clair. « Chercher une image » lance une recherche avec le nom exact de l&apos;article sur Wolt.
         </p>
       </div>
       <nav aria-label="Filtrer les articles" className="flex gap-2">
@@ -70,7 +70,7 @@ export default async function PagePhotos({ searchParams }: PageProps<"/admin/pro
             <h2 className="font-bold">{rayon} <span className="text-sm font-normal text-slate-500">({articles.length})</span></h2>
             <ul className="carte divide-y divide-slate-100">
               {articles.map((p) => (
-                <LignePhoto key={p.id} id={p.id} nom={p.nom} detail={[p.description, formatPrix(p.prix)].filter(Boolean).join(" · ")} photoUrl={p.photoUrl} />
+                <LignePhoto key={p.id} id={p.id} nom={p.nom} nomWolt={p.nomWolt} detail={[p.description, formatPrix(p.prix)].filter(Boolean).join(" · ")} photoUrl={p.photoUrl} />
               ))}
             </ul>
           </section>

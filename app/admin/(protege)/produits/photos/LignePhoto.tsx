@@ -2,14 +2,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Check, ImageOff } from "lucide-react";
+import { Camera, Check, ImageOff, Search } from "lucide-react";
 import { reduirePhoto } from "@/lib/reduire-photo";
 import { enregistrerPhotoRapide } from "../../actions";
 
-type Props = { id: string; nom: string; detail: string; photoUrl: string };
+type Props = { id: string; nom: string; nomWolt: string; detail: string; photoUrl: string };
+
+/** Une recherche d'images sur le nom exact de l'article (celui de Wolt, en hébreu, quand on l'a). */
+export const rechercheDImage = (nom: string, nomWolt: string) => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nomWolt.trim() || nom)}`;
 
 /** Un article et son bouton photo : la photo choisie est allégée puis enregistrée aussitôt. */
-export function LignePhoto({ id, nom, detail, photoUrl }: Props) {
+export function LignePhoto({ id, nom, nomWolt, detail, photoUrl }: Props) {
   const champ = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState(photoUrl);
   const [etat, setEtat] = useState<{ enCours: boolean; message: string; erreur: boolean }>({ enCours: false, message: "", erreur: false });
@@ -46,6 +49,16 @@ export function LignePhoto({ id, nom, detail, photoUrl }: Props) {
       <div className="min-w-0 flex-1">
         <p className="font-medium leading-snug">{nom}</p>
         <p className="truncate text-xs text-slate-500">{detail}</p>
+        {nomWolt && <p dir="auto" lang="he" className="truncate text-xs text-slate-500">{nomWolt}</p>}
+        <a
+          href={rechercheDImage(nom, nomWolt)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Chercher une image de ${nom}`}
+          className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold text-marque hover:underline"
+        >
+          <Search className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" /> Chercher une image
+        </a>
         {etat.message && (
           <p role={etat.erreur ? "alert" : "status"} className={`mt-0.5 flex items-center gap-1 text-xs font-semibold ${etat.erreur ? "text-red-700" : "text-emerald-700"}`}>
             {!etat.erreur && !etat.enCours && <Check className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden="true" />}
