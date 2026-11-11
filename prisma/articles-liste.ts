@@ -34,6 +34,8 @@ export type ArticleDeListe = {
   alcool?: boolean;
   /** Reste masqué même après la mise en vente de la liste (la raison est écrite à côté de l'article). */
   masque?: boolean;
+  /** Garantie ou importateur annoncés par la liste : invérifiable, donc montré à personne. */
+  garantie?: string;
 };
 
 const CREMERIE = "Crèmerie & œufs";

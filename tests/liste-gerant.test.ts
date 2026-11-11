@@ -7,6 +7,14 @@ import { CATEGORIES_WOLT, enAgorot } from "../prisma/articles-wolt";
 import { CATALOGUE, CATEGORIES } from "../prisma/catalogue";
 
 const lire = (fichier: string) => readFileSync(path.join(__dirname, "..", fichier), "utf8");
+/** Le texte d'une fonction exportée de prisma/remplissage.ts, jusqu'à l'export suivant (ses fonctions d'aide comprises). */
+const corpsDe = (nom: string) => {
+  const source = lire("prisma/remplissage.ts");
+  const debut = source.indexOf(`export async function ${nom}`);
+  if (debut < 0) throw new Error(`Fonction absente : ${nom}`);
+  const fin = source.indexOf("\nexport ", debut + 1);
+  return source.slice(debut, fin < 0 ? undefined : fin);
+};
 
 describe("liste de produits dressée par le gérant", () => {
   it("395 articles : un nom français unique, un rayon qui existe, une description, un prix indicatif", () => {
@@ -39,8 +47,7 @@ describe("liste de produits dressée par le gérant", () => {
   });
 
   it("à l'installation, le prix de la liste n'est pas un prix de vente : l'article arrive sans prix, masqué", () => {
-    const installation = lire("prisma/remplissage.ts");
-    const corps = installation.slice(installation.indexOf("export async function installerLaListeDuGerant"), installation.indexOf("export async function installerLesPhotosFrais"));
+    const corps = corpsDe("installerLaListeDuGerant");
     expect(corps).toMatch(/prix: 0,/);
     expect(corps).toMatch(/actif: false,/);
     expect(corps).toMatch(/prixIndicatif: enAgorot\(a\.prixIndicatif\)/);
@@ -75,8 +82,7 @@ describe("liste de produits dressée par le gérant", () => {
     // Aucun nom d'alcool n'a échappé au repérage.
     expect(ARTICLES_MIS_EN_VENTE.filter((a) => /bi[èe]re|\bvin\b|vodka|whisk|rhum|gin\b|tequila|liqueur|cidre|prosecco|arak|bourbon|aperol|campari|baileys|breezer|sauvignon|chardonnay|chianti|cabernet|marselan/i.test(a.nom)).map((a) => a.nom)).toEqual([]);
 
-    const source = lire("prisma/remplissage.ts");
-    const corps = source.slice(source.indexOf("export async function mettreEnVenteLaListe"), source.indexOf("export async function installerLesPhotosFrais"));
+    const corps = corpsDe("mettreEnVenteLaListe");
     // Une seule fois : le repère est lu d'abord, et posé dans la même transaction que la mise en vente.
     expect(corps).toMatch(/if \(r\.listeEnVenteLe\) return/);
     expect(corps).toMatch(/\$transaction\(\[/);
@@ -98,6 +104,7 @@ describe("liste de produits dressée par le gérant", () => {
     expect(prixNonVerifie({ prix: 0, prixIndicatif: 1490, prixAchat: null })).toBe(false); // à compléter : pas en vente
     expect(prixNonVerifie({ prix: 735, prixIndicatif: null, prixAchat: 735 })).toBe(false); // un article relevé sur Wolt
     expect(prixNonVerifie({ prix: 735, prixIndicatif: null, prixAchat: null })).toBe(false); // un article du gérant, sans liste
+    expect(prixNonVerifie({ prix: 1490, prixIndicatif: 1490, prixAchat: null, actif: false })).toBe(false); // masqué : pas en vente
   });
 
   it("les prix sont ceux de la liste, sans arrondi", () => {

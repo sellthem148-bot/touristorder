@@ -160,6 +160,9 @@ model Reglages {
   // Le jour où les articles de la liste du gérant ont été mis en vente au prix de sa liste (sa décision) :
   // l'opération ne se refait jamais, un article qu'il remasque ensuite reste masqué.
   listeEnVenteLe  DateTime?
+  // Les opérations sur les données qui ne se font qu'une fois (prisma/remplissage.ts) : la clé de chacune,
+  // posée quand elle est faite. Ce que le gérant change ensuite n'est jamais refait par une mise en ligne.
+  operationsFaites String[] @default([])
   fraisService    Int      @default(1500)
   fraisLivraison  Int      @default(3000)
   fraisExpress    Int      @default(0) // supplément livraison express ; 0 = pas d'express

@@ -10,7 +10,9 @@ import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalog
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
-import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "./articles-liste";
+import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from "./articles-liste";
+import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
+import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-viande";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -54,6 +56,36 @@ export const LOTS_WOLT: LotWolt[] = [
 ];
 
 /**
+ * Les rayons dont une installation a besoin : retrouvés par leur nom ou par leur adresse (un rayon que
+ * le gérant renomme change de nom, parfois d'adresse), créés seulement s'ils manquent. Appelé au moment
+ * d'installer, jamais à chaque mise en ligne : sinon un rayon renommé reviendrait en double, vide.
+ */
+async function rayonsDe(prisma: PrismaClient, noms: Iterable<string>): Promise<Map<string, string>> {
+  const connus = new Map([...CATEGORIES, ...CATEGORIES_WOLT].map((c, i) => [c.nom as string, { emoji: c.emoji, ordre: "ordre" in c ? c.ordre : (i + 1) * 10 }]));
+  const ids = new Map<string, string>();
+  for (const nom of new Set(noms)) {
+    const rayon = connus.get(nom);
+    if (!rayon) throw new Error(`Rayon inconnu : ${nom}`);
+    const c =
+      (await prisma.categorie.findFirst({ where: { OR: [{ nom }, { slug: slugDe(nom) }] }, select: { id: true } })) ??
+      (await prisma.categorie.create({ data: { nom, emoji: rayon.emoji, slug: slugDe(nom), ordre: rayon.ordre }, select: { id: true } }));
+    ids.set(nom, c.id);
+  }
+  return ids;
+}
+
+/** Une opération sur les données qui ne se fait qu'une fois : déjà faite ? (`null` : pas encore de réglages) */
+async function operationFaite(prisma: PrismaClient, cle: string): Promise<boolean | null> {
+  const r = await prisma.reglages.findUnique({ where: { id: 1 }, select: { operationsFaites: true } });
+  return r ? r.operationsFaites.includes(cle) : null;
+}
+
+/** À mettre dans la même transaction que l'opération : elle ne se refera pas. */
+function noterOperation(prisma: PrismaClient, cle: string) {
+  return prisma.reglages.update({ where: { id: 1 }, data: { operationsFaites: { push: cle } } });
+}
+
+/**
  * Installe les articles réels de Wolt, avec leur prix, lot par lot (prisma/articles-*.ts).
  * Chaque lot UNE SEULE FOIS : dès qu'un de ses articles existe (reconnu à son nom sur Wolt), on ne
  * touche plus à ce lot — les prix se gèrent ensuite dans l'admin, et un article supprimé par le
@@ -61,15 +93,6 @@ export const LOTS_WOLT: LotWolt[] = [
  * Un article « à compléter » du même nom (sans prix) est complété ; un article qui a déjà un prix n'est jamais modifié.
  */
 export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<string> {
-  for (const c of CATEGORIES_WOLT) {
-    await prisma.categorie.upsert({
-      where: { nom: c.nom },
-      update: {},
-      create: { nom: c.nom, emoji: c.emoji, slug: slugDe(c.nom), ordre: c.ordre },
-    });
-  }
-  const categories = new Map((await prisma.categorie.findMany({ select: { id: true, nom: true } })).map((c) => [c.nom, c.id]));
-
   const bilans: string[] = [];
   for (const lot of LOTS_WOLT) {
     const dejaLa = await prisma.produit.count({ where: { nomWolt: { in: lot.articles.map((a) => a.nomWolt) } } });
@@ -77,6 +100,8 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
       bilans.push(`${lot.nom} : déjà installé (${dejaLa}), rien de changé`);
       continue;
     }
+    // Les rayons du lot (les quatre rayons propres à Wolt compris), au moment de l'installer seulement.
+    const categories = await rayonsDe(prisma, lot.articles.map((a) => a.categorie));
     const existants = new Map((await prisma.produit.findMany({ select: { id: true, nom: true, prix: true } })).map((p) => [p.nom, p]));
     let crees = 0;
     let completes = 0;
@@ -112,6 +137,7 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
 
 /** Le rang du premier article de la liste du gérant dans son rayon : après tous les articles de Wolt. */
 const ORDRE_DE_LA_LISTE = 1000;
+const ORDRE_DE_LA_LISTE_DYNAMICA = 2000;
 
 /**
  * Installe la liste de produits dressée par le gérant (prisma/articles-liste.ts) : des articles
@@ -127,32 +153,76 @@ export async function installerLaListeDuGerant(prisma: PrismaClient): Promise<st
   const dejaLa = await prisma.produit.count({ where: { OR: [{ prixIndicatif: { not: null } }, { nom: { in: noms } }] } });
   if (dejaLa > 0) return `Liste du gérant : déjà installée (${dejaLa}), rien de changé.`;
 
-  // Les rayons de la liste : créés s'ils manquent (le gérant a pu supprimer un rayon resté vide).
-  const rayons = new Map([...CATEGORIES, ...CATEGORIES_WOLT].map((c, i) => [c.nom as string, { emoji: c.emoji, ordre: "ordre" in c ? c.ordre : (i + 1) * 10 }]));
-  const categories = new Map<string, string>();
-  for (const nom of new Set(ARTICLES_DE_LA_LISTE.map((a) => a.categorie))) {
-    const rayon = rayons.get(nom);
-    if (!rayon) throw new Error(`Rayon inconnu dans la liste du gérant : ${nom}`);
-    // Retrouvé par son nom ou par son adresse (un rayon renommé garde son adresse), créé seulement s'il manque.
-    const c =
-      (await prisma.categorie.findFirst({ where: { OR: [{ nom }, { slug: slugDe(nom) }] }, select: { id: true } })) ??
-      (await prisma.categorie.create({ data: { nom, emoji: rayon.emoji, slug: slugDe(nom), ordre: rayon.ordre }, select: { id: true } }));
-    categories.set(nom, c.id);
-  }
-
-  await prisma.produit.createMany({
-    data: ARTICLES_DE_LA_LISTE.map((a, i) => ({
-      nom: a.nom,
-      description: a.description,
-      prix: 0, // à définir : le prix de la liste n'est pas un prix de vente
-      prixIndicatif: enAgorot(a.prixIndicatif),
-      actif: false,
-      boutique: BOUTIQUE_WOLT,
-      categorieId: categories.get(a.categorie)!,
-      ordre: ORDRE_DE_LA_LISTE + i,
-    })),
-  });
+  await prisma.produit.createMany({ data: await articlesACompleter(prisma, ARTICLES_DE_LA_LISTE, BOUTIQUE_WOLT, ORDRE_DE_LA_LISTE) });
   return `Liste du gérant : ${ARTICLES_DE_LA_LISTE.length} articles ajoutés « à compléter », masqués, avec leur prix indicatif.`;
+}
+
+/**
+ * Les articles d'une liste du gérant, tels qu'ils s'installent : « à compléter » — sans prix de vente,
+ * masqués — avec le prix de la liste gardé à part. Les rayons sont créés s'ils manquent.
+ */
+async function articlesACompleter(prisma: PrismaClient, articles: ArticleDeListe[], boutique: string, ordre: number) {
+  const categories = await rayonsDe(prisma, articles.map((a) => a.categorie));
+  return articles.map((a, i) => ({
+    nom: a.nom,
+    description: a.description,
+    prix: 0, // à définir : le prix de la liste n'est pas un prix de vente
+    prixIndicatif: enAgorot(a.prixIndicatif),
+    actif: false,
+    boutique,
+    categorieId: categories.get(a.categorie)!,
+    ordre: ordre + i,
+  }));
+}
+
+export const CLE_LISTE_DYNAMICA = "liste-dynamica-2026-11-11";
+
+/**
+ * Installe la liste « Dynamica Store » du gérant (prisma/articles-liste-dynamica.ts) : « à compléter »,
+ * sans prix de vente, masquée. Et elle le reste : ses modèles datent, ses prix et ses garanties sont
+ * invérifiables, ses montants se comptent en milliers de shekels — rien ici ne la met en vente.
+ * Une seule fois (`Reglages.operationsFaites`) ; rien si un de ses noms existe déjà.
+ */
+export async function installerLaListeDynamica(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_LISTE_DYNAMICA);
+  if (faite === null) return "Liste Dynamica : réglages pas encore créés, rien installé.";
+  if (faite) return "Liste Dynamica : déjà installée, rien de changé.";
+  const noms = ARTICLES_DE_LA_LISTE_DYNAMICA.map((a) => a.nom);
+  const pris = await prisma.produit.count({ where: { nom: { in: noms } } });
+  if (pris > 0) {
+    await noterOperation(prisma, CLE_LISTE_DYNAMICA);
+    return `Liste Dynamica : ${pris} nom(s) déjà au catalogue, rien installé.`;
+  }
+  const data = await articlesACompleter(prisma, ARTICLES_DE_LA_LISTE_DYNAMICA, BOUTIQUE_DYNAMICA, ORDRE_DE_LA_LISTE_DYNAMICA);
+  await prisma.$transaction([prisma.produit.createMany({ data }), noterOperation(prisma, CLE_LISTE_DYNAMICA)]);
+  return `Liste Dynamica : ${data.length} articles ajoutés « à compléter », masqués, avec leur prix indicatif. Aucun n'est mis en vente.`;
+}
+
+export const CLE_RETRAIT_VIANDE = "retrait-viande-2026-11-11";
+
+/**
+ * Retire la viande et la volaille de la vente : décision du gérant (prisma/retrait-viande.ts).
+ * Les articles sont MASQUÉS, jamais supprimés. Une seule fois (`Reglages.operationsFaites`) : un
+ * article qu'il remet en ligne ensuite y reste. Un article de Wolt est retrouvé par son nom sur Wolt
+ * (le gérant a pu le renommer), un article de sa liste par son nom.
+ * Le rayon « Boucherie & poisson », qui ne contient plus que du poisson, devient « Poisson » — s'il
+ * porte encore son nom de départ.
+ */
+export async function retirerLaViande(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RETRAIT_VIANDE);
+  if (faite === null) return "Viande et volaille : réglages pas encore créés, rien retiré.";
+  if (faite) return "Viande et volaille : déjà retirées, rien de changé.";
+  const viande = new Set(VIANDE_ET_VOLAILLE);
+  const nomsWolt = LOTS_WOLT.flatMap((l) => l.articles).filter((a) => viande.has(a.nom)).map((a) => a.nomWolt);
+  const [retires] = await prisma.$transaction([
+    prisma.produit.updateMany({ where: { actif: true, OR: [{ nom: { in: VIANDE_ET_VOLAILLE } }, { nomWolt: { in: nomsWolt } }] }, data: { actif: false } }),
+    noterOperation(prisma, CLE_RETRAIT_VIANDE),
+  ]);
+  const rayon = await prisma.categorie.findUnique({ where: { nom: RAYON_BOUCHERIE }, select: { id: true } });
+  const pris = await prisma.categorie.count({ where: { OR: [{ nom: RAYON_POISSON.nom }, { slug: RAYON_POISSON.slug }] } });
+  const renomme = rayon != null && pris === 0;
+  if (renomme) await prisma.categorie.update({ where: { id: rayon.id }, data: RAYON_POISSON });
+  return `Viande et volaille : ${retires.count} article(s) retiré(s) de la vente (masqués)${renomme ? ` ; rayon renommé « ${RAYON_POISSON.nom} »` : ""}.`;
 }
 
 /**

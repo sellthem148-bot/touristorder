@@ -1,5 +1,5 @@
 import {
-  Apple, Baby, Beef, Cookie, Croissant, CupSoda, Flame, Gift, Milk, Package, Pill, Plug, Shirt, ShoppingBasket, Snowflake, SprayCan, Sun,
+  Apple, Baby, Beef, Cookie, Croissant, CupSoda, Fish, Flame, Gift, Milk, Package, Pill, Plug, Shirt, ShoppingBasket, Snowflake, SprayCan, Sun,
   type LucideIcon,
 } from "lucide-react";
 
@@ -11,6 +11,7 @@ const PAR_RAYON: Record<string, LucideIcon> = {
   "boissons": CupSoda,
   "fruits-legumes": Apple,
   "boucherie-poisson": Beef,
+  "poisson": Fish,
   "surgeles-glaces": Snowflake,
   "apero-snacks": Cookie,
   "bebe-enfants": Baby,

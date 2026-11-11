@@ -55,7 +55,7 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
         )}
         {deLaListe > 0 && (
           <p className="mt-1 text-sm text-slate-600">
-            {deLaListe > 1 ? `${deLaListe} articles de ta liste restent masqués, sans prix` : "1 article de ta liste reste masqué, sans prix"} (l&apos;alcool en fait partie) : le prix de ta liste est rappelé sous le nom, comme repère. Si tu décides de le vendre, tape le prix de Wolt et l&apos;article passe en ligne.
+            {deLaListe > 1 ? `${deLaListe} articles de tes listes restent masqués, sans prix` : "1 article de tes listes reste masqué, sans prix"} (l&apos;alcool et la liste Dynamica en font partie) : le prix de ta liste est rappelé sous le nom, comme repère. Si tu décides de vendre un article, tape le prix de Wolt et il passe en ligne.
           </p>
         )}
       </div>
