@@ -102,7 +102,7 @@ export const ARTICLES_WOLT: ArticleWolt[] = [
 
   // ── Pain & pâtisserie ────────────────────────────────────────────────────────
   { categorie: PAIN, nom: "Pain tranché Angel 900 g", description: "Pain blanc tranché, le pain de tous les jours", prix: 9.96, nomWolt: "לחם אחיד פרוס אנג׳ל 900 גרם - מחיר מפוקח", populaire: true },
-  { categorie: PAIN, nom: "Pain de mie américain Angel 500 g", description: "Pain de mie moelleux", prix: 19.5, nomWolt: "לחם בסגנון אמריקה אנג׳ל" },
+  { categorie: PAIN, nom: "Pain de mie américain Angel 500 g", description: "Pain de mie moelleux façon américaine. Casher. Produit frais : se conserve jusqu'à 4 jours.", prix: 19.5, nomWolt: "לחם בסגנון אמריקה אנג׳ל" },
   { categorie: PAIN, nom: "Pain de mie pour toasts Agmi 500 g", description: "Pain de mie tranché", prix: 14.9, nomWolt: "לחם טוסט אמריקה אגמי" },
   { categorie: PAIN, nom: "Pain épeautre et blé complet Angel 750 g", description: "Pain complet tranché", prix: 19.9, nomWolt: "לחם כוסמין וחיטה מלאה אנג׳ל" },
   { categorie: PAIN, nom: "Pain protéiné pauvre en glucides Agmi 400 g", description: "Pain tranché riche en protéines", prix: 24.9, nomWolt: "לחם פרו דל פחמימות אגמי" },
@@ -111,7 +111,7 @@ export const ARTICLES_WOLT: ArticleWolt[] = [
   { categorie: PAIN, nom: "Pitas protéinées Angel Pro × 8", description: "8 pitas, 500 g", prix: 22.9, nomWolt: "פיתות פרו אנג׳ל - 8 פיתות" },
   { categorie: PAIN, nom: "Mini pitas épeautre complet Agmi 450 g", description: "Petites pitas à garnir", prix: 18.9, nomWolt: "פיתה ביס כוסמין מלא אגמי" },
   { categorie: PAIN, nom: "Petits pains allongés Agmi × 10", description: "Pour sandwichs et hot-dogs, 750 g", prix: 16.9, nomWolt: "לחמניות אצבע 10 יחידות אגמי" },
-  { categorie: PAIN, nom: "Pains à hamburger × 6", description: "6 pains moelleux, 510 g", prix: 17.9, nomWolt: "לחמניות המבורגר אמריקה - 6 יח׳" },
+  { categorie: PAIN, nom: "Pains à hamburger × 6", description: "6 pains à hamburger façon américaine, au sésame, 510 g. Casher.", prix: 17.9, nomWolt: "לחמניות המבורגר אמריקה - 6 יח׳" },
   { categorie: PAIN, nom: "Cheesecake Lotus Daniel Amit 1 kg", description: "Gâteau au fromage et au spéculoos, du pâtissier Daniel Amit", prix: 169, nomWolt: "עוגת גבינה לוטוס של דניאל עמית" },
   { categorie: PAIN, nom: "Gâteau au chocolat Daniel Amit 950 g", description: "Du pâtissier Daniel Amit", prix: 139.9, nomWolt: "עוגת השוקולד של דניאל עמית" },
 
@@ -174,7 +174,7 @@ export const ARTICLES_WOLT: ArticleWolt[] = [
   { categorie: BOUCHERIE, nom: "Filet de saumon frais, environ 650 g", description: `En pavés. ${POIDS}`, prix: 98.98, nomWolt: "סלמון פילה נתחים טרי, ~650 g", environ: true },
   { categorie: BOUCHERIE, nom: "Pavé de saumon frais, environ 220 g", description: POIDS, prix: 40.91, nomWolt: "פילה סלמון נתחים טרי, ~220 g", environ: true },
   { categorie: BOUCHERIE, nom: "Saumon fumé norvégien 100 g", description: "En tranches", prix: 24.5, nomWolt: "סלמון נורווגי מעושן - 100 גרם" },
-  { categorie: BOUCHERIE, nom: "Saucisses de poulet Tirat Zvi 400 g", description: "Saucisses type hot-dog", prix: 16.5, nomWolt: "נקניקיות עוף טירת צבי - 400 גרם" },
+  { categorie: BOUCHERIE, nom: "Saucisses de poulet Tirat Zvi 400 g", description: "Saucisses de poulet type hot-dog. Sans gluten. Pour un enfant de moins de 5 ans, le fabricant demande de les couper en fines lamelles dans la longueur, pas en rondelles.", prix: 16.5, nomWolt: "נקניקיות עוף טירת צבי - 400 גרם" },
   { categorie: BOUCHERIE, nom: "Saucisses Kafri Tirat Zvi, lot de 2 (800 g)", description: "Saucisses façon campagnarde", prix: 34.9, nomWolt: "מארז צמד כפרי טירת צבי - 800 גרם" },
 
   // ── Surgelés & glaces ────────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ export const ARTICLES_WOLT: ArticleWolt[] = [
   { categorie: BOISSONS, nom: "Coca-Cola Zero 1 L", description: "La bouteille", prix: 8.9, nomWolt: "קוקה קולה זירו בקבוק - 1 ליטר" },
   { categorie: BOISSONS, nom: "Coca-Cola Zero canettes 6 × 33 cl", description: "Le pack de 6", prix: 26.9, nomWolt: "מארז שישיית פחיות קולה זירו - 330 מ״ל" },
   { categorie: BOISSONS, nom: "Sprite Zero canettes 6 × 33 cl", description: "Le pack de 6", prix: 26.9, nomWolt: "מארז שישיית פחיות ספרייט זירו - 330 מ״ל" },
-  { categorie: BOISSONS, nom: "Pepsi Zero canettes 6 × 33 cl", description: "Le pack de 6", prix: 21.9, nomWolt: "שישיית פחיות פפסי ZERO" },
+  { categorie: BOISSONS, nom: "Pepsi Zero canettes 6 × 33 cl", description: "Cola zéro, le pack de 6 canettes de 33 cl. Casher.", prix: 21.9, nomWolt: "שישיית פחיות פפסי ZERO" },
   { categorie: BOISSONS, nom: "Fuze Tea pêche 1,5 L", description: "Thé glacé", prix: 9.9, nomWolt: "פיוז טי אפרסק בקבוק - 1.5 ליטר" },
   { categorie: BOISSONS, nom: "Jus d'orange pressé Primor 1 L", description: "Jus pressé, la bouteille", prix: 22.9, nomWolt: "פרימור מיץ תפוזים סחוט בקבוק - 1 ליטר" },
   { categorie: BOISSONS, nom: "Jus d'orange pressé Prigat 2 L", description: "Jus pressé, la bouteille", prix: 36.9, nomWolt: "פריגת תפוזים סחוט טבעי בקבוק - 2 ליטר" },
@@ -246,7 +246,7 @@ export const ARTICLES_WOLT: ArticleWolt[] = [
   { categorie: MAISON, nom: "Essuie-tout Nicol × 6", description: "6 rouleaux", prix: 13.9, nomWolt: "מגבות נייר ניקול - 6 גלילים" },
   { categorie: MAISON, nom: "Essuie-tout Nicol Mega × 6", description: "6 grands rouleaux très absorbants", prix: 22.9, nomWolt: "מגבות נייר סופג מגה ניקול - 6 יחידות" },
   { categorie: MAISON, nom: "Essuie-tout Sano Sushi × 6", description: "6 rouleaux", prix: 15.9, nomWolt: "מגבות נייר סנו סושי - 6 גלילים" },
-  { categorie: MAISON, nom: "Sacs poubelle très grands Nicol × 20", description: "20 grands sacs", prix: 29.9, nomWolt: "ניקול שקיות אשפה גודל ענק 20 יח׳" },
+  { categorie: MAISON, nom: "Sacs poubelle très grands Nicol × 20", description: "20 sacs poubelle XXL, pour les très grandes poubelles.", prix: 29.9, nomWolt: "ניקול שקיות אשפה גודל ענק 20 יח׳" },
   { categorie: MAISON, nom: "Sacs poubelle XXL, lot de 2 rouleaux", description: "Très grands sacs", prix: 22.9, nomWolt: "שקיות אשפה גדולות XXL - מארז 2 יחידות" },
   { categorie: MAISON, nom: "Lessive liquide Persil 2,5 L", description: "Gel pour linge blanc et couleurs", prix: 35.9, nomWolt: "פרסיל - ג׳ל לכביסה רגילה וצבעונית 2.5 ליטר" },
   { categorie: MAISON, nom: "Lessive liquide spéciale bébé 2 L", description: "Lessive concentrée pour le linge de bébé", prix: 45.9, nomWolt: "נוזל כביסה כביסכל בייבי מועשר - 2 ליטר" },

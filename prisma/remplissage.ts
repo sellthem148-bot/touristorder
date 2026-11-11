@@ -9,6 +9,7 @@ import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
+import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -38,12 +39,17 @@ const DEMO: { nom: string; prix: number; prixAchat: number; prixBarre?: number; 
   { nom: "Bouquet de fleurs", prix: 18990, prixAchat: 14990, options: "Taille : Moyen | Grand +60" },
 ];
 
-/** Un relevé de prix d'une boutique de Wolt : installé en une fois, une seule fois. */
-export type LotWolt = { nom: string; boutique: string; articles: ArticleWolt[] };
+/**
+ * Un relevé de prix d'une boutique de Wolt : installé en une fois, une seule fois.
+ * `ordre` : le rang du premier article du lot dans son rayon (0 par défaut). Un lot ajouté plus tard
+ * à une boutique déjà installée prend un rang élevé : ses articles se rangent après ceux qui y sont déjà.
+ */
+export type LotWolt = { nom: string; boutique: string; articles: ArticleWolt[]; ordre?: number };
 
 export const LOTS_WOLT: LotWolt[] = [
   { nom: "Wolt Market", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT },
   { nom: "Dynamica", boutique: BOUTIQUE_DYNAMICA, articles: ARTICLES_DYNAMICA },
+  { nom: "Wolt Market, fiches du 11 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_FICHES, ordre: 500 },
 ];
 
 /**
@@ -93,7 +99,7 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
         await prisma.produit.update({ where: { id: existant.id }, data: donnees });
         completes += 1;
       } else {
-        await prisma.produit.create({ data: { nom: a.nom, ordre: i, ...donnees } });
+        await prisma.produit.create({ data: { nom: a.nom, ordre: (lot.ordre ?? 0) + i, ...donnees } });
         crees += 1;
       }
     }
@@ -136,8 +142,9 @@ const ANCIENNES_DESCRIPTIONS: [string, string][] = [
 /**
  * Met à niveau les réglages restés à leur ancienne valeur par défaut : modes de paiement
  * (le paiement se fait désormais à la commande : Bit, PayBox, virement) et message d'accueil
- * (vouvoiement), et les descriptions d'articles qui tutoyaient. Ne touche jamais une valeur que le
- * gérant a modifiée. Sans effet la deuxième fois.
+ * (vouvoiement), et les descriptions d'articles restées à leur texte de départ (celles qui
+ * tutoyaient, celles que les fiches de Wolt ont permis d'enrichir). Ne touche jamais une valeur que
+ * le gérant a modifiée. Sans effet la deuxième fois.
  */
 export async function mettreLesReglagesANiveau(prisma: PrismaClient): Promise<string> {
   const r = await prisma.reglages.findUnique({ where: { id: 1 }, select: { paiements: true, messageAccueil: true, whatsapp: true } });
@@ -154,6 +161,11 @@ export async function mettreLesReglagesANiveau(prisma: PrismaClient): Promise<st
   let descriptions = 0;
   for (const [ancienne, nouvelle] of ANCIENNES_DESCRIPTIONS) {
     descriptions += (await prisma.produit.updateMany({ where: { description: ancienne }, data: { description: nouvelle } })).count;
+  }
+  // Les descriptions enrichies d'après les fiches de Wolt : l'article est retrouvé par son nom sur Wolt
+  // (« Le pack de 6 » sert à plusieurs articles), et seulement si sa description est restée celle de départ.
+  for (const d of DESCRIPTIONS_ENRICHIES) {
+    descriptions += (await prisma.produit.updateMany({ where: { nomWolt: d.nomWolt, description: d.ancienne }, data: { description: d.nouvelle } })).count;
   }
   if (changes.length === 0 && descriptions === 0) return "Réglages et descriptions : rien à mettre à niveau.";
   return `Mis à niveau : ${[...changes, ...(descriptions > 0 ? [`${descriptions} description(s) d'article`] : [])].join(", ")}.`;
