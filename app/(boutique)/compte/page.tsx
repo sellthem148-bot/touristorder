@@ -1,3 +1,4 @@
+import { Receipt } from "lucide-react";
 import Link from "next/link";
 import { exigerClient } from "@/lib/client";
 import { prisma } from "@/lib/prisma";
@@ -45,28 +46,25 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
 
   return (
     <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[2rem] bg-marque px-6 py-7 text-white sm:px-9 sm:py-9">
-        <div aria-hidden="true" className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-soleil sm:h-48 sm:w-48" />
-        <div className="relative space-y-5">
-          <div>
-            <p className="text-sm font-semibold text-blue-100">Mon espace client</p>
-            <h1 className="text-2xl font-extrabold sm:text-4xl">Bonjour {prenomDe(client.nom) || "et bienvenue"} 👋</h1>
-            <p className="mt-1 text-sm text-blue-100">{client.email} · client depuis le {dateCourte.format(client.createdAt)}</p>
-          </div>
-          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              { libelle: "Commandes", valeur: String(resume.commandes) },
-              { libelle: "En cours", valeur: String(resume.enCours) },
-              { libelle: "Articles commandés", valeur: String(resume.articles) },
-              { libelle: "Total dépensé", valeur: formatPrix(resume.depense) },
-            ].map((t) => (
-              <div key={t.libelle} className="flex flex-col-reverse rounded-2xl bg-white/15 p-3">
-                <dt className="text-xs font-semibold text-blue-100">{t.libelle}</dt>
-                <dd className="text-xl font-extrabold tabular-nums sm:text-2xl">{t.valeur}</dd>
-              </div>
-            ))}
-          </dl>
+      <section className="space-y-5">
+        <div>
+          <p className="surtitre">Mon espace client</p>
+          <h1 className="mt-1 text-2xl font-bold sm:text-4xl">Bonjour {prenomDe(client.nom) || "et bienvenue"}</h1>
+          <p className="mt-1 text-sm text-slate-500">{client.email} · client depuis le {dateCourte.format(client.createdAt)}</p>
         </div>
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-4">
+          {[
+            { libelle: "Commandes", valeur: String(resume.commandes) },
+            { libelle: "En cours", valeur: String(resume.enCours) },
+            { libelle: "Articles commandés", valeur: String(resume.articles) },
+            { libelle: "Total dépensé", valeur: formatPrix(resume.depense) },
+          ].map((t) => (
+            <div key={t.libelle} className="flex flex-col-reverse bg-white p-4">
+              <dt className="text-[13px] text-slate-500">{t.libelle}</dt>
+              <dd className="text-xl font-bold tabular-nums sm:text-2xl">{t.valeur}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {enCours.length > 0 && (
@@ -79,14 +77,14 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-slate-500">Commande n°{c.numero} · {libelleDuJour(c.dateLivraison)}, {c.creneau}</p>
-                    <p className="text-lg font-extrabold">{EXPLICATION_STATUT[c.statut]}</p>
+                    <p className="font-semibold leading-snug">{EXPLICATION_STATUT[c.statut]}</p>
                   </div>
                   <span className="text-lg font-extrabold tabular-nums">{formatPrix(c.total)}</span>
                 </div>
                 <ol className="grid grid-cols-4 gap-2" aria-label="Avancement">
                   {ETAPES.map((e, i) => (
                     <li key={e} className="space-y-1 text-center text-xs" aria-current={i === etape ? "step" : undefined}>
-                      <div className={`h-2 rounded-full ${i <= etape ? "bg-marque" : "bg-slate-200"}`} />
+                      <div className={`h-1.5 rounded-full ${i <= etape ? "bg-encre" : "bg-slate-200"}`} />
                       <span className={i <= etape ? "font-bold text-slate-900" : "text-slate-500"}>{LIBELLE_STATUT[e]}</span>
                     </li>
                   ))}
@@ -109,7 +107,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
         <h2 id="t-historique" className="text-xl font-extrabold">Historique d&apos;achat</h2>
         {commandes.length === 0 ? (
           <div className="carte space-y-3 p-8 text-center">
-            <p className="text-5xl" aria-hidden="true">🧾</p>
+            <Receipt className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
             <p className="font-bold">Pas encore de commande.</p>
             <Link href="/" className="bouton">Voir le catalogue</Link>
           </div>
@@ -122,10 +120,10 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                   <details className="carte group">
                     <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 p-4">
                       <span className="font-extrabold">n°{c.numero}</span>
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${COULEUR_STATUT[c.statut]}`}>{LIBELLE_STATUT[c.statut]}</span>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${COULEUR_STATUT[c.statut]}`}>{LIBELLE_STATUT[c.statut]}</span>
                       <span className="text-sm text-slate-600">{dateCourte.format(c.createdAt)} · {nombre} article{nombre > 1 ? "s" : ""}</span>
                       <span className="ml-auto font-extrabold tabular-nums">{formatPrix(c.total)}</span>
-                      <span className="w-full text-sm font-bold text-marque group-open:hidden">Voir le détail</span>
+                      <span className="w-full text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 group-open:hidden">Voir le détail</span>
                     </summary>
                     <div className="space-y-4 border-t border-slate-100 p-4">
                       <p className="text-sm text-slate-600">

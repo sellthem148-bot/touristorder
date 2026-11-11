@@ -7,12 +7,13 @@ import { lignesDeMontants, type PresentationMontants } from "./montants";
 
 export type CourrielPret = { sujet: string; html: string; texte: string };
 
-const BLEU = "#1557ff";
-const ENCRE = "#0f172a";
-const DOUX = "#5b6478";
-const TRAIT = "#e3e7f0";
-const FOND = "#f5f6fa";
-const SABLE = "#fff6e5";
+// Les mêmes teintes que le site : encre, gris neutres, un bleu pour les liens.
+const BLEU = "#1d4fd8";
+const ENCRE = "#0d1321";
+const DOUX = "#52525b";
+const TRAIT = "#e4e4e7";
+const FOND = "#f7f7f6";
+const SABLE = "#f4f4f5";
 const POLICE = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
 /** Rend un texte inoffensif dans du HTML (nom, adresse, note, nom de produit…). */
@@ -29,9 +30,9 @@ const multiligne = (t: string) => echapper(t).replace(/\r?\n/g, "<br>");
 
 function bouton(lien: string, libelle: string, plein = true): string {
   const style = plein
-    ? `background:${BLEU};color:#ffffff;border:2px solid ${BLEU};`
-    : `background:#ffffff;color:${BLEU};border:2px solid ${BLEU};`;
-  return `<a href="${echapper(lien)}" style="display:inline-block;${style}padding:12px 22px;border-radius:14px;font-weight:700;font-size:15px;text-decoration:none;font-family:${POLICE};">${echapper(libelle)}</a>`;
+    ? `background:${ENCRE};color:#ffffff;border:1px solid ${ENCRE};`
+    : `background:#ffffff;color:${ENCRE};border:1px solid #d4d4d8;`;
+  return `<a href="${echapper(lien)}" style="display:inline-block;${style}padding:12px 22px;border-radius:10px;font-weight:600;font-size:15px;text-decoration:none;font-family:${POLICE};">${echapper(libelle)}</a>`;
 }
 
 /** La mise en page commune : bandeau à la marque, carte blanche, pied. */
@@ -44,10 +45,10 @@ function gabarit(o: { site: string; apercu: string; titre: string; corps: string
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${FOND};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
-<tr><td style="background:${BLEU};border-radius:24px 24px 0 0;padding:22px 28px;">
-  <span style="font-size:20px;font-weight:800;color:#ffffff;font-family:${POLICE};">${echapper(o.site)}</span>
+<tr><td style="background:${ENCRE};border-radius:14px 14px 0 0;padding:20px 28px;">
+  <span style="font-size:18px;font-weight:700;letter-spacing:-0.01em;color:#ffffff;font-family:${POLICE};">${echapper(o.site)}</span>
 </td></tr>
-<tr><td style="background:#ffffff;border-radius:0 0 24px 24px;padding:28px;border:1px solid ${TRAIT};border-top:0;">
+<tr><td style="background:#ffffff;border-radius:0 0 14px 14px;padding:28px;border:1px solid ${TRAIT};border-top:0;">
   <h1 style="margin:0 0 12px;font-size:24px;line-height:1.25;font-weight:800;color:${ENCRE};">${echapper(o.titre)}</h1>
   ${o.corps}
 </td></tr>
@@ -117,7 +118,7 @@ export function courrielDeConfirmation(c: CommandePourCourriel): CourrielPret {
   const corps = `
   <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">Merci ${echapper(c.prenom)} ! Ta commande <strong>n°${c.numero}</strong> est bien enregistrée. On s'occupe de tout et on te livre à ton logement.</p>
 
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SABLE};border-radius:16px;margin:0 0 22px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SABLE};border-radius:10px;margin:0 0 22px;">
   <tr><td style="padding:16px 18px;font-size:15px;line-height:1.55;">
     <strong style="font-size:13px;letter-spacing:0.06em;text-transform:uppercase;color:${DOUX};">Livraison</strong><br>
     <strong>${echapper(quand)}</strong><br>
@@ -135,7 +136,7 @@ export function courrielDeConfirmation(c: CommandePourCourriel): CourrielPret {
   <p style="margin:22px 0 0;font-size:14px;line-height:1.55;color:${DOUX};">Si un article manque, on te prévient sur WhatsApp et il n'est pas facturé.</p>
   ${
     c.lienEspace
-      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 0;border:1px solid ${TRAIT};border-radius:16px;">
+      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:22px 0 0;border:1px solid ${TRAIT};border-radius:10px;">
   <tr><td style="padding:16px 18px;">
     <strong style="font-size:15px;">Ton espace client</strong>
     <p style="margin:4px 0 12px;font-size:14px;line-height:1.5;color:${DOUX};">Retrouve tes commandes, recommande en un geste et enregistre ton adresse.</p>
@@ -171,7 +172,7 @@ export function courrielNouvelleCommande(c: CommandePourCourriel & { lienAdmin: 
   const quand = `${c.jour}, ${c.creneau}`;
   const corps = `
   <p style="margin:0 0 18px;font-size:16px;line-height:1.5;"><strong>${echapper(c.nomClient)}</strong> · ${echapper(c.ville)} · <strong>${formatPrix(c.totaux.total)}</strong>${c.paiement ? ` (${echapper(c.paiement)})` : ""}</p>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SABLE};border-radius:16px;margin:0 0 20px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SABLE};border-radius:10px;margin:0 0 20px;">
   <tr><td style="padding:16px 18px;font-size:15px;line-height:1.55;">
     <strong>${echapper(quand)}</strong><br>
     ${multiligne(c.adresse)}, ${echapper(c.ville)}<br>

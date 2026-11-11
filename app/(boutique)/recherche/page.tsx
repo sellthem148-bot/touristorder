@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft, SearchX } from "lucide-react";
 import { GrilleProduits } from "@/components/CarteProduit";
 import { rechercher } from "@/lib/catalogue";
 
@@ -11,21 +12,23 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
   const produits = await rechercher(q);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <Link href="/" className="text-sm font-bold text-marque hover:underline">← Tout le catalogue</Link>
-        <h1 className="mt-2 text-2xl font-extrabold">{q ? <>Résultats pour « {q} »</> : "Recherche"}</h1>
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre">
+          <ArrowLeft className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Tout le catalogue
+        </Link>
+        <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{q ? <>Résultats pour « {q} »</> : "Recherche"}</h1>
         {q.length >= 2 && produits.length > 0 && (
-          <p className="text-sm text-slate-600">{produits.length} article{produits.length > 1 ? "s" : ""}</p>
+          <p className="text-sm text-slate-500">{produits.length} article{produits.length > 1 ? "s" : ""}</p>
         )}
       </div>
       {q.length < 2 ? (
         <p className="text-slate-600">Tape au moins deux lettres dans la barre de recherche.</p>
       ) : produits.length === 0 ? (
         <div className="carte space-y-2 p-8 text-center">
-          <p className="text-4xl" aria-hidden="true">🔎</p>
-          <p className="font-bold">Aucun produit trouvé.</p>
-          <p className="text-sm text-slate-600">
+          <SearchX className="mx-auto h-8 w-8 text-slate-400" strokeWidth={1.5} aria-hidden="true" />
+          <p className="font-semibold">Aucun produit trouvé.</p>
+          <p className="mx-auto max-w-md text-sm text-slate-600">
             Tu ne trouves pas ce qu&apos;il te faut ? Ajoute-le dans la note de ta commande, on essaiera de le trouver pour toi.
           </p>
         </div>

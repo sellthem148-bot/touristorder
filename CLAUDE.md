@@ -20,6 +20,7 @@ npm run seed         # catégories + réglages ; seed:demo ajoute des produits d
 - Montants en **agorot** (Int). Calcul unique : `lib/calcul.ts`. Le serveur recalcule depuis la base (`lib/commandes.ts`).
 - `exigerAdmin()` en tête de chaque page et action de `app/admin/(protege)`.
 - Pages publiques : produits lus via `PRODUIT_PUBLIC` (`lib/catalogue.ts`) — jamais `prixAchat`, `boutique`, `lienWolt`.
+- Apparence (côté client) : sobre — encre (`bg-encre`), blanc, traits fins, gris neutres (les classes `slate-*` sont remappées dans `@theme`), un seul accent (`marque`, pour les liens et le focus). **Aucun emoji côté client** : icônes au trait de `lucide-react` (`IconeRayon` pour un rayon, d'après son adresse). Un article est une ligne de menu (`CarteProduit`) : nom, format, prix — la photo seulement s'il y en a une, jamais d'image de remplacement. Arrondis et graisses se règlent dans `@theme` (`--radius-*`, `--font-weight-*`), pas classe par classe. L'icône de l'onglet et la carte d'aperçu de lien sont générées (`app/icon.tsx`, `app/apple-icon.tsx`, `app/opengraph-image.tsx`).
 - Classes CSS maison = `@utility` dans `app/globals.css` (pas `@layer components` : sorti de sa couche par le chargeur Turbopack, il écrasait les utilitaires).
 - Formulaire non contrôlé + `useActionState` : React le vide après l'action et un `<select>` perd sa valeur → reconstruire le formulaire (`key`) avec les valeurs renvoyées (voir `FormulaireProduit.tsx`), ou utiliser des champs contrôlés (`PageDuPanier.tsx`).
 - Jours = jours israéliens (`lib/dates.ts`), stockés `AAAA-MM-JJ`.

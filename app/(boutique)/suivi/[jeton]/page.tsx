@@ -9,14 +9,15 @@ import { lireReglages } from "@/lib/reglages";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { Actualiser } from "@/components/Actualiser";
-import { IconeCoche, IconeEclair, IconeHotel, IconeRecu, IconeScooter, IconeSac, IconeWhatsapp } from "@/components/Icones";
+import { Bike, Check, CircleCheck, House, ReceiptText, ShoppingBag, Zap } from "lucide-react";
+import { IconeWhatsapp } from "@/components/Icones";
 import { ViderPanier } from "./ViderPanier";
 import { RecapMontants } from "@/components/RecapMontants";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Suivi de commande", robots: { index: false } };
 
-const ICONES = { RECUE: IconeRecu, COMMANDEE: IconeSac, EN_LIVRAISON: IconeScooter, LIVREE: IconeHotel } as const;
+const ICONES = { RECUE: ReceiptText, COMMANDEE: ShoppingBag, EN_LIVRAISON: Bike, LIVREE: House } as const;
 
 export default async function Suivi({ params, searchParams }: PageProps<"/suivi/[jeton]">) {
   const { jeton } = await params;
@@ -51,12 +52,14 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
       <Actualiser secondes={30} />
 
       {nouvelle && (
-        <section className="rounded-[2rem] bg-emerald-500 p-6 text-white">
-          <p className="text-4xl" aria-hidden="true">🎉</p>
-          <h1 className="mt-2 text-2xl font-extrabold">Merci, ta commande est envoyée !</h1>
-          <p className="mt-1 text-emerald-50">
-            Cette page se met à jour toute seule, et tu la retrouves dans « Mes commandes ». Pour aller plus vite, envoie-nous un WhatsApp.
-          </p>
+        <section className="flex gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
+          <CircleCheck className="mt-0.5 h-7 w-7 shrink-0 text-emerald-700" strokeWidth={1.6} aria-hidden="true" />
+          <div>
+            <h1 className="text-xl font-bold text-emerald-950 sm:text-2xl">Merci, ta commande est envoyée !</h1>
+            <p className="mt-1 text-sm text-emerald-900 sm:text-base">
+              Cette page se met à jour toute seule, et tu la retrouves dans « Mes commandes ». Pour aller plus vite, envoie-nous un WhatsApp.
+            </p>
+          </div>
         </section>
       )}
 
@@ -67,8 +70,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
             <h2 className="text-xl font-extrabold">{LIBELLE_STATUT[commande.statut]}</h2>
           </div>
           {commande.express && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-soleil px-3 py-1 text-sm font-bold text-slate-900">
-              <IconeEclair className="h-4 w-4" /> Express
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-sm font-semibold text-amber-900 ring-1 ring-inset ring-amber-200">
+              <Zap className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Express
             </span>
           )}
         </div>
@@ -81,7 +84,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
             <div aria-hidden="true" className="absolute left-[12.5%] right-[12.5%] top-5 h-1 rounded-full bg-slate-200" />
             <div
               aria-hidden="true"
-              className="absolute left-[12.5%] top-5 h-1 rounded-full bg-marque transition-all"
+              className="absolute left-[12.5%] top-5 h-1 rounded-full bg-encre transition-all"
               style={{ width: `${(Math.max(etapeActuelle, 0) / (ETAPES.length - 1)) * 75}%` }}
             />
             {ETAPES.map((e, i) => {
@@ -91,10 +94,10 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
                 <li key={e} className="relative flex flex-col items-center gap-2 text-center" aria-current={i === etapeActuelle ? "step" : undefined}>
                   <span
                     className={`flex h-11 w-11 items-center justify-center rounded-full ring-4 ring-white ${
-                      i === etapeActuelle ? "bg-marque text-white shadow-flottant" : faite ? "bg-marque-clair text-marque" : "bg-slate-100 text-slate-400"
+                      i === etapeActuelle ? "bg-encre text-white" : faite ? "bg-slate-200 text-encre" : "bg-slate-100 text-slate-400"
                     }`}
                   >
-                    {faite && i < etapeActuelle ? <IconeCoche /> : <Icone />}
+                    {faite && i < etapeActuelle ? <Check className="h-5 w-5" strokeWidth={2} aria-hidden="true" /> : <Icone className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />}
                   </span>
                   <span className={`text-xs ${faite ? "font-bold text-slate-900" : "text-slate-500"}`}>{LIBELLE_STATUT[e]}</span>
                 </li>
@@ -152,8 +155,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
       </section>
 
       <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
-        <Link href="/commandes" className="text-marque hover:underline">Mes commandes</Link>
-        <Link href="/" className="text-marque hover:underline">Retour au catalogue</Link>
+        <Link href="/commandes" className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">Mes commandes</Link>
+        <Link href="/" className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">Retour au catalogue</Link>
       </div>
     </div>
   );

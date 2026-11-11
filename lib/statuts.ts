@@ -20,11 +20,11 @@ export const EXPLICATION_STATUT: Record<StatutCommande, string> = {
 };
 
 export const COULEUR_STATUT: Record<StatutCommande, string> = {
-  RECUE: "bg-amber-100 text-amber-900",
-  COMMANDEE: "bg-sky-100 text-sky-900",
-  EN_LIVRAISON: "bg-violet-100 text-violet-900",
-  LIVREE: "bg-emerald-100 text-emerald-900",
-  ANNULEE: "bg-stone-200 text-stone-700",
+  RECUE: "bg-amber-50 text-amber-900 ring-1 ring-inset ring-amber-200",
+  COMMANDEE: "bg-sky-50 text-sky-900 ring-1 ring-inset ring-sky-200",
+  EN_LIVRAISON: "bg-indigo-50 text-indigo-900 ring-1 ring-inset ring-indigo-200",
+  LIVREE: "bg-emerald-50 text-emerald-900 ring-1 ring-inset ring-emerald-200",
+  ANNULEE: "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-300",
 };
 
 export const STATUTS_EN_COURS: StatutCommande[] = ["RECUE", "COMMANDEE", "EN_LIVRAISON"];

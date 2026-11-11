@@ -1,10 +1,10 @@
+/* eslint-disable @next/next/no-img-element -- photos venant du stockage (Supabase ou /uploads en local) */
 "use client";
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { usePanier } from "@/components/panier/PanierProvider";
-import { Vignette } from "@/components/Vignette";
-import { IconeEclair } from "@/components/Icones";
+import { Minus, Plus, ShoppingCart, Trash2, Zap } from "lucide-react";
 import { calculerTotaux } from "@/lib/calcul";
 import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
 import { RecapMontants } from "@/components/RecapMontants";
@@ -40,8 +40,8 @@ type Valeurs = {
 function Section({ titre, numero, children }: { titre: string; numero: number; children: React.ReactNode }) {
   return (
     <section className="carte space-y-4 p-5" aria-labelledby={`section-${numero}`}>
-      <h2 id={`section-${numero}`} className="flex items-center gap-3 text-lg font-extrabold">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-marque-clair text-sm text-marque">{numero}</span>
+      <h2 id={`section-${numero}`} className="flex items-center gap-3 text-lg font-bold">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold tabular-nums text-slate-700">{numero}</span>
         {titre}
       </h2>
       {children}
@@ -148,8 +148,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
   if (panier.articles.length === 0) {
     return (
       <div className="carte mx-auto max-w-md space-y-4 p-10 text-center">
-        <p className="text-5xl" aria-hidden="true">🛒</p>
-        <h1 className="text-xl font-extrabold">Ton panier est vide</h1>
+        <ShoppingCart className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
+        <h1 className="text-xl font-bold">Ton panier est vide</h1>
         {avis && <p className="text-sm text-amber-800">{avis}</p>}
         <Link href="/" className="bouton">Voir le catalogue</Link>
       </div>
@@ -159,42 +159,42 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
   return (
     <form action={envoyer} noValidate className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 space-y-5">
-        <h1 className="text-2xl font-extrabold sm:text-3xl">Finaliser ma commande</h1>
-        {avis && <p className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">{avis}</p>}
+        <h1 className="text-2xl font-bold sm:text-3xl">Finaliser ma commande</h1>
+        {avis && <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{avis}</p>}
 
         <Section titre="Ton panier" numero={1}>
           <ul className="divide-y divide-slate-100">
             {panier.articles.map((a) => (
               <li key={a.cle} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                <Vignette url={a.photoUrl} emoji={a.emoji} alt="" className="h-16 w-16 shrink-0 rounded-2xl" />
+                {a.photoUrl && <img src={a.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{a.nom}</p>
+                  <p className="font-semibold leading-snug">{a.nom}</p>
                   {a.optionsLibelle && <p className="truncate text-xs text-slate-500">{a.optionsLibelle}</p>}
-                  <p className="text-sm font-bold">{formatPrix(a.prix * a.quantite)}</p>
+                  <p className="text-sm tabular-nums text-slate-600">{formatPrix(a.prix * a.quantite)}</p>
                 </div>
-                <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
+                <div className="flex shrink-0 items-center rounded-xl border border-slate-300">
                   <button
                     type="button"
                     onClick={() => panier.changerQuantite(a.cle, a.quantite - 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold hover:bg-white"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-100"
                     aria-label={a.quantite === 1 ? `Retirer ${a.nom}` : `Un ${a.nom} de moins`}
                   >
-                    {a.quantite === 1 ? "🗑" : "−"}
+                    {a.quantite === 1 ? <Trash2 className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> : <Minus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />}
                   </button>
-                  <span className="w-6 text-center text-sm font-extrabold">{a.quantite}</span>
+                  <span className="w-6 text-center text-sm font-bold tabular-nums">{a.quantite}</span>
                   <button
                     type="button"
                     onClick={() => panier.changerQuantite(a.cle, a.quantite + 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-bold hover:bg-white"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-100"
                     aria-label={`Un ${a.nom} de plus`}
                   >
-                    +
+                    <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
                   </button>
                 </div>
               </li>
             ))}
           </ul>
-          <Link href="/" className="inline-block text-sm font-bold text-marque hover:underline">+ Ajouter d&apos;autres articles</Link>
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre"><Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> Ajouter d&apos;autres articles</Link>
         </Section>
 
         <Section titre="Livraison" numero={2}>
@@ -287,7 +287,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
             {messageErreur("creneau")}
           </fieldset>
 
-          <p className="rounded-2xl bg-sable px-4 py-3 text-sm text-slate-700" aria-live="polite">
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" aria-live="polite">
             <strong>{tarif.nom === NOM_TARIF_DE_BASE ? "Tarif normal" : `Tarif ${tarif.nom.toLowerCase()}`}</strong>
             {" · "}
             {reglages.fraisRegroupes
@@ -301,17 +301,17 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
             <fieldset>
               <legend className="etiquette">Rapidité</legend>
               <div className="grid gap-2 sm:grid-cols-2">
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-slate-200 p-4 has-[:checked]:border-marque has-[:checked]:bg-marque-clair/50">
-                  <input type="radio" name="express" value="0" checked={!express} onChange={() => changer("express", false)} className="mt-1 accent-marque" />
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 p-4 has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
+                  <input type="radio" name="express" value="0" checked={!express} onChange={() => changer("express", false)} className="mt-1 accent-encre" />
                   <span>
                     <span className="block font-bold">Standard</span>
                     <span className="text-sm text-slate-600">Dans le créneau choisi</span>
                   </span>
                 </label>
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-slate-200 p-4 has-[:checked]:border-marque has-[:checked]:bg-marque-clair/50">
-                  <input type="radio" name="express" value="1" checked={express} onChange={() => changer("express", true)} className="mt-1 accent-marque" />
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 p-4 has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
+                  <input type="radio" name="express" value="1" checked={express} onChange={() => changer("express", true)} className="mt-1 accent-encre" />
                   <span>
-                    <span className="flex items-center gap-1 font-bold"><IconeEclair className="h-4 w-4 text-amber-500" /> Express · +{formatPrixCourt(tarif.fraisExpress)}</span>
+                    <span className="flex items-center gap-1.5 font-bold"><Zap className="h-4 w-4 text-slate-600" strokeWidth={1.8} aria-hidden="true" /> Express · +{formatPrixCourt(tarif.fraisExpress)}</span>
                     <span className="text-sm text-slate-600">Ta commande passe en priorité</span>
                   </span>
                 </label>
@@ -325,8 +325,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
             <legend className="etiquette">Si un article manque</legend>
             <div className="grid gap-2">
               {(Object.keys(REMPLACEMENTS) as Remplacement[]).map((r) => (
-                <label key={r} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 has-[:checked]:border-marque has-[:checked]:bg-marque-clair/50">
-                  <input type="radio" name="remplacement" value={r} checked={v.remplacement === r} onChange={() => changer("remplacement", r)} className="accent-marque" />
+                <label key={r} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
+                  <input type="radio" name="remplacement" value={r} checked={v.remplacement === r} onChange={() => changer("remplacement", r)} className="accent-encre" />
                   <span className="font-medium">{REMPLACEMENTS[r].libelle}</span>
                 </label>
               ))}
@@ -351,7 +351,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
 
           {reglages.pourboires.some((p) => p > 0) && (
             <fieldset>
-              <legend className="etiquette">Pourboire pour le livreur 💙</legend>
+              <legend className="etiquette">Pourboire pour le livreur</legend>
               <div className="flex flex-wrap gap-2">
                 {[0, ...reglages.pourboires.filter((p) => p > 0)].map((p) => (
                   <label key={p} className="pastille">
@@ -374,7 +374,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
 
       <aside className="lg:pt-[3.25rem]">
         <div className="carte space-y-4 p-5 lg:sticky lg:top-20">
-          <h2 className="text-lg font-extrabold">Récapitulatif</h2>
+          <h2 className="text-lg font-bold">Récapitulatif</h2>
           <RecapMontants
             totaux={totaux}
             regroupes={reglages.fraisRegroupes}
@@ -384,7 +384,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client }: Props) {
             nombreArticles={panier.nombre}
             ville={ville?.nom}
           />
-          <p className="rounded-2xl bg-sable p-3 text-xs text-slate-700">
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-[13px] text-slate-600">
             Tu paies à la livraison. Un article qui manque n&apos;est pas facturé.
           </p>
 

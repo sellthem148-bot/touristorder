@@ -37,6 +37,10 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - **Livraison le soir** : par défaut, cinq créneaux de 19h à minuit. **Heure limite** (Réglages, 17:00 par défaut) : une commande passée avant est livrée le soir même — le temps que Wolt livre les articles au gérant dans la journée ; après, le soir suivant (le client voit pourquoi). Réglages → « Jours où tu livres » (les autres ne sont pas proposés) et « Délai de préparation » (60 min par défaut : pour le soir même, un créneau n'est proposé que s'il commence au moins ce délai après la commande, le temps de commander sur Wolt et de préparer). Le serveur refuse un créneau devenu trop proche. L'accueil affiche « Livré le soir, 19h – 00h » et la prochaine livraison.
 - **Réglages** : tarif de base (frais de service, livraison, supplément express (0 = pas d'express), minimum de commande général), « Frais de service (livraison comprise) » en une seule ligne pour le client, pourboires proposés, modes de paiement, créneaux, ton WhatsApp, message d'accueil, ouverture et fermeture des commandes.
 
+## Apparence
+
+Côté client, le site est volontairement sobre : texte et boutons en encre, fond clair, traits fins, une seule couleur d'accent, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un article s'affiche comme une ligne de menu — nom, format, prix — avec sa photo seulement s'il en a une (les photos s'ajoutent dans l'espace gérant, fiche du produit). Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
+
 ## Lancer en local
 
 Prérequis : Node 20.9 ou plus récent, et PostgreSQL.

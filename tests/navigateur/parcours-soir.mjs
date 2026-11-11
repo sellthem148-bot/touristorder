@@ -20,8 +20,8 @@ try {
   // 1. Accueil : horaires du soir et prochaine livraison
   await client.goto(BASE + "/");
   const accueil = espaces(await client.locator("main").innerText());
-  verifier(accueil.includes("🌙 Livré le soir, 19h – 00h"), "accueil : « Livré le soir, 19h – 00h »");
-  verifier(/Prochaine livraison : (ce soir|demain|\w+ \d+ \w+) dès \d\d:\d\d/.test(accueil), "accueil : « Prochaine livraison : … dès … »");
+  verifier(accueil.includes("Horaires Le soir, 19h – 00h"), "accueil : horaires « Le soir, 19h – 00h »");
+  verifier(/Prochaine livraison (Ce soir|Demain|\w+ \d+ \w+) dès \d\d:\d\d/.test(accueil), "accueil : « Prochaine livraison … dès … »");
   await client.screenshot({ path: `${OUT}/v5-1-accueil-soir.png` });
 
   // 2. Panier : uniquement des créneaux du soir

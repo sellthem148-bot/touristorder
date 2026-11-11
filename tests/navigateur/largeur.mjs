@@ -6,8 +6,10 @@ const res = []; const mesure = async (nom) => {
   res.push(`${sw > iw || iw > ew ? "✗" : "✓"} ${nom} (${sw}/${iw}/${ew})`);
 };
 await p.goto(B + "/"); await mesure("accueil");
+await p.goto(B + "/recherche?q=maillot"); await mesure("recherche maillot");
 await p.getByRole("button", { name: /^Choisir les options de Maillot/ }).first().click(); await p.getByRole("dialog").waitFor(); await mesure("fiche produit");
 await p.getByRole("button", { name: "Fermer" }).click();
+await p.goto(B + "/");
 await p.getByRole("button", { name: /^Ajouter Pack d'eau/ }).first().click();
 for (const u of ["/panier", "/categorie/plage-soleil", "/recherche?q=couches", "/commandes", "/compte/connexion"]) { await p.goto(B + u); await p.waitForTimeout(600); await mesure(u); }
 await p.goto(B + "/admin/connexion"); await p.getByLabel("Mot de passe").fill(process.env.ADMIN_PASSWORD || "admin123"); await p.getByRole("button", { name: "Se connecter" }).click(); await p.waitForURL(B + "/admin");

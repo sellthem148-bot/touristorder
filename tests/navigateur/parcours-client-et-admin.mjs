@@ -19,7 +19,7 @@ page.on("pageerror", (e) => erreurs.push(String(e)));
 try {
 // 1. Accueil
 await page.goto(BASE + "/");
-await page.getByRole("heading", { name: "⭐ Les plus demandés" }).waitFor();
+await page.getByRole("heading", { name: "Les plus demandés" }).waitFor();
 verifier(!(await page.content()).match(/Super-Pharm|Wolt Market|prixAchat|lienWolt/), "l'accueil ne montre ni boutique ni prix d'achat");
 verifier(!(await deborde(page)), "accueil : pas de défilement horizontal");
 await page.screenshot({ path: `${OUT}/v2-1-accueil.png` });
@@ -119,7 +119,8 @@ await admin.getByRole("button", { name: "Ajouter le produit" }).click();
 await admin.waitForURL(/\/admin\/produits\?ok=/);
 ok("produit à options créé");
 
-await page.goto(BASE + "/");
+// (L'accueil ne montre que les rayons et les articles les plus demandés : on passe par la recherche.)
+await page.goto(BASE + "/recherche?q=casquette");
 await page.getByRole("button", { name: "Choisir les options de Casquette enfant" }).first().click();
 const fiche2 = page.getByRole("dialog", { name: "Casquette enfant" });
 await fiche2.waitFor();

@@ -63,8 +63,8 @@ try {
   // 5. Accueil : les noms des villes, « Livraison dès »
   await client.goto(BASE + "/");
   const accueil = espaces(await client.locator("main").innerText());
-  verifier(accueil.includes("📍 Netanya ·") && !accueil.includes("object Object"), "accueil : les noms des villes");
-  verifier(accueil.includes("Livraison dès"), "accueil : « Livraison dès … »");
+  verifier(accueil.includes("villes livrées Netanya ·") && !accueil.includes("object Object"), "accueil : les noms des villes");
+  verifier(accueil.includes("Frais de livraison dès"), "accueil : « Frais de livraison dès … »");
 
   // 6. Panier : le prix suit la ville
   await client.getByRole("button", { name: "Ajouter Pack d'eau 6 × 1,5 L au panier" }).first().click();

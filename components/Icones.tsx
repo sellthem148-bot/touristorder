@@ -1,31 +1,8 @@
-// Icônes en trait (24 × 24), décoratives : le texte voisin ou l'aria-label porte le sens.
+// Les deux icônes qui ne viennent pas de lucide-react (le logo WhatsApp, l'éclair de l'espace gérant).
+// Décoratives : le texte voisin ou l'aria-label porte le sens.
 type P = { className?: string };
 const base = { fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", viewBox: "0 0 24 24", "aria-hidden": true } as const;
 
-export const IconePanier = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><path d="M6 6h15l-1.5 9h-12z" /><path d="M6 6 5 3H2" /><circle cx="9" cy="20" r="1.5" /><circle cx="18" cy="20" r="1.5" /></svg>
-);
-export const IconeRecu = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg>
-);
-export const IconeCompte = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
-);
-export const IconeLoupe = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-);
-export const IconeSac = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><path d="M5 8h14l-1 13H6z" /><path d="M9 8V6a3 3 0 0 1 6 0v2" /></svg>
-);
-export const IconeScooter = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M9 17h6l3-7h-4" /><path d="M14 6h2l2 4" /><path d="M3 12h6l2 5" /></svg>
-);
-export const IconeHotel = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><path d="M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16" /><path d="M2 21h20M9 7h1M14 7h1M9 11h1M14 11h1M10 21v-4h4v4" /></svg>
-);
-export const IconeCoche = ({ className = "h-5 w-5" }: P) => (
-  <svg {...base} className={className}><path d="m5 12 5 5 9-10" /></svg>
-);
 export const IconeEclair = ({ className = "h-5 w-5" }: P) => (
   <svg {...base} className={className}><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg>
 );

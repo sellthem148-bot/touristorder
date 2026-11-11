@@ -13,8 +13,8 @@ export default async function ConnexionClient({ searchParams }: PageProps<"/comp
   return (
     <div className="mx-auto max-w-md space-y-5">
       <div className="carte space-y-4 p-6">
-        <p className="text-4xl" aria-hidden="true">👋</p>
-        <h1 className="text-2xl font-extrabold">Mon espace client</h1>
+        <p className="surtitre">Espace client</p>
+        <h1 className="text-2xl font-bold">Mon espace client</h1>
         <p className="text-slate-600">
           Pas de mot de passe : entre l&apos;adresse e-mail utilisée pour commander, on t&apos;envoie un lien pour entrer.
         </p>
@@ -27,7 +27,7 @@ export default async function ConnexionClient({ searchParams }: PageProps<"/comp
       </div>
       <p className="text-center text-sm text-slate-600">
         Ton espace est créé automatiquement à ta première commande.{" "}
-        <Link href="/commandes" className="font-bold text-marque hover:underline">Voir les commandes passées sur cet appareil</Link>
+        <Link href="/commandes" className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">Voir les commandes passées sur cet appareil</Link>
       </p>
     </div>
   );

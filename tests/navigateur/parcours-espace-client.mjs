@@ -114,7 +114,7 @@ try {
   await profil.getByLabel("Adresse ou logement habituel").fill("Résidence Sea View, appartement 14");
   await profil.getByLabel("Ville").selectOption("Netanya");
   await profil.getByRole("button", { name: "Enregistrer" }).click();
-  await profil.getByText(/Enregistré ✓/).waitFor();
+  await profil.getByText(/^Enregistré :/).waitFor();
   ok("profil enregistré");
 
   // 5. Commander à nouveau : panier rempli, formulaire pré-rempli, adresse e-mail verrouillée

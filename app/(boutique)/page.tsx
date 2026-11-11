@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { RailProduits } from "@/components/CarteProduit";
-import { pastelDe } from "@/components/Vignette";
-import { IconeEclair, IconeHotel, IconeScooter, IconeSac } from "@/components/Icones";
+import { CalendarClock, ChevronRight, Clock, MapPin, Truck, Wallet, type LucideIcon } from "lucide-react";
+import { GrilleProduits } from "@/components/CarteProduit";
+import { IconeRayon } from "@/components/IconeRayon";
 import { misEnAvant, vitrine } from "@/lib/catalogue";
 import { reglagesPublics } from "@/lib/reglages";
 import { formatPrixCourt } from "@/lib/argent";
@@ -12,83 +12,118 @@ import { amplitudeDesCreneaux, joursDeLivraison } from "@/lib/creneaux";
 export const dynamic = "force-dynamic";
 
 const ETAPES = [
-  { icone: IconeSac, titre: "Tu choisis", texte: "Courses, couches, chargeur, maillot, cadeau…" },
-  { icone: IconeScooter, titre: "On s'occupe de tout", texte: "On achète et on prépare ta commande." },
-  { icone: IconeHotel, titre: "On te livre", texte: "À ton hôtel ou ton logement. Tu paies à la livraison." },
+  { titre: "Tu choisis", texte: "Courses, produits pour bébé, chargeur oublié, pharmacie : tout se commande ici, en français." },
+  { titre: "On s'occupe de tout", texte: "On fait les achats pour toi dans la journée et on prépare ta commande." },
+  { titre: "On te livre", texte: "Le soir, à ton logement ou à ton hôtel. Tu paies à la livraison." },
 ];
 
+type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string };
+
 export default async function Accueil() {
-  const [rayons, populaires, reglages] = await Promise.all([vitrine(), misEnAvant(), reglagesPublics()]);
+  const [rayons, populaires, reglages] = await Promise.all([vitrine(1), misEnAvant(), reglagesPublics()]);
   // Le tarif qui s'appliquerait à une livraison maintenant.
   const tarif = tarifPour(momentPresent(), reglages.plages, tarifDeBase(reglages));
   const amplitude = amplitudeDesCreneaux(reglages.creneaux);
   const prochaine = joursDeLivraison(reglages)[0];
   const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
+  const villes = reglages.villes.map((v) => v.nom);
+
+  const faits: Fait[] = [];
+  if (amplitude) {
+    faits.push({
+      icone: Clock,
+      titre: "Horaires",
+      valeur: `Le soir, ${amplitude}`,
+      precision: expressQuelquefois ? "Express possible selon l'heure" : undefined,
+    });
+  }
+  if (prochaine) {
+    faits.push({
+      icone: CalendarClock,
+      titre: "Prochaine livraison",
+      valeur: `${prochaine.libelle === "Aujourd'hui" ? "Ce soir" : prochaine.libelle} dès ${prochaine.creneaux[0].split(/\s*[–-]\s*/)[0]}`,
+      precision: reglages.heureLimite ? `Commande avant ${reglages.heureLimite.replace(":", "h").replace("h00", "h")}, livré ce soir` : undefined,
+    });
+  }
+  faits.push({
+    icone: Truck,
+    titre: reglages.fraisRegroupes ? "Service + livraison" : "Frais de livraison",
+    valeur: `dès ${formatPrixCourt(reglages.fraisRegroupes ? tarif.fraisService + livraisonLaMoinsChere(tarif, reglages.villes) : livraisonLaMoinsChere(tarif, reglages.villes))}`,
+    precision: tarif.nom !== NOM_TARIF_DE_BASE ? `Tarif ${tarif.nom.toLowerCase()} en ce moment` : undefined,
+  });
+  faits.push({
+    icone: Wallet,
+    titre: "Paiement",
+    valeur: "À la livraison",
+    precision: reglages.paiements.length > 0 ? reglages.paiements.join(", ") : undefined,
+  });
 
   return (
-    <div className="space-y-10">
-      <section className="relative overflow-hidden rounded-[2rem] bg-marque px-5 py-7 text-white sm:px-10 sm:py-12">
-        {/* Soleil et vagues décoratifs */}
-        <div aria-hidden="true" className="absolute -right-12 -top-12 h-28 w-28 rounded-full bg-soleil sm:-right-10 sm:-top-10 sm:h-64 sm:w-64" />
-        <div aria-hidden="true" className="absolute -bottom-16 -left-10 h-40 w-[140%] rounded-[100%] bg-marque-fonce/40" />
-        <div className="relative max-w-xl space-y-3 sm:space-y-4">
-          <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold sm:text-sm">
-            🇫🇷 Service en français
-          </p>
-          <h1 className="pr-8 text-[1.75rem] font-extrabold leading-[1.1] sm:pr-0 sm:text-5xl">
-            Tes courses et tes oublis, livrés à ton hôtel.
+    <div className="space-y-12 sm:space-y-16">
+      <section className="grid gap-8 pt-2 sm:pt-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-12">
+        <div className="space-y-5">
+          <p className="surtitre">Livraison à domicile · Service en français</p>
+          <h1 className="text-balance text-[2rem] font-bold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
+            Tes courses livrées à ton logement, le soir même.
           </h1>
-          {reglages.messageAccueil && <p className="text-blue-50 sm:text-lg">{reglages.messageAccueil}</p>}
-          <div className="flex flex-wrap gap-2 pt-1 text-xs font-semibold sm:text-sm">
-            <span className="rounded-full bg-white px-3 py-1.5 text-marque-fonce">
-              {reglages.fraisRegroupes
-                ? `Service + livraison dès ${formatPrixCourt(tarif.fraisService + livraisonLaMoinsChere(tarif, reglages.villes))}`
-                : `Livraison dès ${formatPrixCourt(livraisonLaMoinsChere(tarif, reglages.villes))}`}
-            </span>
-            {amplitude && <span className="rounded-full bg-white/15 px-3 py-1.5">🌙 Livré le soir, {amplitude}</span>}
-            {reglages.heureLimite && (
-              <span className="rounded-full bg-soleil px-3 py-1.5 text-slate-900">Commande avant {reglages.heureLimite.replace(":", "h").replace("h00", "h")}, livré ce soir</span>
-            )}
-            {prochaine && (
-              <span className="rounded-full bg-white/15 px-3 py-1.5">
-                Prochaine livraison : {prochaine.libelle === "Aujourd'hui" ? "ce soir" : prochaine.libelle.toLowerCase()} dès {prochaine.creneaux[0].split(/\s*[–-]\s*/)[0]}
-              </span>
-            )}
-            {tarif.nom !== NOM_TARIF_DE_BASE && (
-              <span className="rounded-full bg-marque-fonce px-3 py-1.5">Tarif {tarif.nom.toLowerCase()} en ce moment</span>
-            )}
-            {expressQuelquefois && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-soleil px-3 py-1.5 text-slate-900">
-                <IconeEclair className="h-4 w-4" /> Express
-              </span>
-            )}
-            <span className="rounded-full bg-white/15 px-3 py-1.5">Paiement à la livraison</span>
-          </div>
-          {reglages.villes.length > 0 && <p className="text-xs text-blue-100 sm:text-sm">📍 {reglages.villes.map((v) => v.nom).join(" · ")}</p>}
+          {reglages.messageAccueil && <p className="max-w-xl text-pretty text-slate-600 sm:text-lg">{reglages.messageAccueil}</p>}
+          {!reglages.ouvert && (
+            <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+              Les commandes sont fermées pour le moment — tu peux quand même préparer ton panier.
+            </p>
+          )}
+          {rayons.length > 0 && (
+            <div className="flex flex-wrap gap-2.5 pt-1">
+              <a href="#rayons" className="bouton px-4 sm:px-5">Voir les rayons</a>
+              <a href="#etapes" className="bouton-secondaire px-4 sm:px-5">Comment ça marche</a>
+            </div>
+          )}
         </div>
-        {!reglages.ouvert && (
-          <p className="relative mt-5 rounded-2xl bg-white px-4 py-3 font-semibold text-slate-900">
-            Les commandes sont fermées pour le moment — tu peux quand même préparer ton panier.
-          </p>
-        )}
+
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200">
+          {faits.map((f, i) => (
+            <div key={f.titre} className={`flex flex-col gap-2 bg-white p-3.5 sm:flex-row sm:gap-3 sm:p-4 ${faits.length % 2 === 1 && i === faits.length - 1 ? "col-span-2" : ""}`}>
+              <f.icone className="h-5 w-5 shrink-0 text-slate-500 sm:mt-0.5" strokeWidth={1.6} aria-hidden="true" />
+              <div className="min-w-0">
+                <dt className="text-[13px] text-slate-500">{f.titre}</dt>
+                <dd className="font-semibold leading-snug">{f.valeur}</dd>
+                {f.precision && <dd className="mt-0.5 text-[13px] leading-snug text-slate-500">{f.precision}</dd>}
+              </div>
+            </div>
+          ))}
+          {villes.length > 0 && (
+            <div className="col-span-2 flex gap-3 bg-white p-3.5 sm:p-4">
+              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.6} aria-hidden="true" />
+              <div className="min-w-0">
+                <dt className="text-[13px] text-slate-500">{villes.length > 1 ? `${villes.length} villes livrées` : "Ville livrée"}</dt>
+                <dd className="text-sm leading-relaxed text-slate-700">{villes.join(" · ")}</dd>
+              </div>
+            </div>
+          )}
+        </dl>
       </section>
 
       {rayons.length === 0 ? (
         <p className="carte p-8 text-center text-slate-600">Le catalogue arrive très bientôt.</p>
       ) : (
         <>
-          <section aria-labelledby="titre-categories" className="space-y-3">
-            <h2 id="titre-categories" className="text-xl font-extrabold">Catégories</h2>
-            <ul className="rail sm:mx-0 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 lg:grid-cols-7">
+          <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-4">
+            <h2 id="titre-categories" className="text-xl font-bold sm:text-2xl">Rayons</h2>
+            <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
               {rayons.map(({ categorie, total }) => (
-                <li key={categorie.id} className="w-28 shrink-0 snap-start sm:w-auto">
+                <li key={categorie.id}>
                   <Link
                     href={`/categorie/${categorie.slug}`}
-                    className={`flex h-full flex-col items-center gap-2 rounded-3xl ${pastelDe(categorie.slug)} p-3 text-center transition hover:-translate-y-0.5 hover:shadow-carte`}
+                    className="group flex h-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-slate-400 sm:p-3.5"
                   >
-                    <span className="text-4xl" aria-hidden="true">{categorie.emoji}</span>
-                    <span className="text-sm font-bold leading-tight text-slate-800">{categorie.nom}</span>
-                    <span className="text-xs text-slate-600">{total} article{total > 1 ? "s" : ""}</span>
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                      <IconeRayon slug={categorie.slug} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold leading-tight">{categorie.nom}</span>
+                      <span className="block text-xs text-slate-500">{total} article{total > 1 ? "s" : ""}</span>
+                    </span>
+                    <ChevronRight className="hidden h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-700 sm:block" strokeWidth={1.8} aria-hidden="true" />
                   </Link>
                 </li>
               ))}
@@ -96,38 +131,20 @@ export default async function Accueil() {
           </section>
 
           {populaires.length > 0 && (
-            <section aria-labelledby="titre-populaires" className="space-y-3">
-              <h2 id="titre-populaires" className="text-xl font-extrabold">⭐ Les plus demandés</h2>
-              <RailProduits produits={populaires} />
+            <section aria-labelledby="titre-populaires" className="space-y-4">
+              <h2 id="titre-populaires" className="text-xl font-bold sm:text-2xl">Les plus demandés</h2>
+              <GrilleProduits produits={populaires} sansBadge />
             </section>
           )}
 
-          {rayons.map(({ categorie, produits, total }) => (
-            <section key={categorie.id} aria-labelledby={`rayon-${categorie.id}`} className="space-y-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 id={`rayon-${categorie.id}`} className="text-xl font-extrabold">
-                  <span aria-hidden="true">{categorie.emoji}</span> {categorie.nom}
-                </h2>
-                <Link href={`/categorie/${categorie.slug}`} className="shrink-0 rounded-full bg-marque-clair px-3 py-1 text-sm font-bold text-marque hover:bg-marque hover:text-white">
-                  Tout voir{total > produits.length ? ` (${total})` : ""}
-                </Link>
-              </div>
-              <RailProduits produits={produits} />
-            </section>
-          ))}
-
-          <section aria-labelledby="titre-etapes" className="rounded-[2rem] bg-sable p-6 sm:p-8">
-            <h2 id="titre-etapes" className="mb-5 text-xl font-extrabold">Comment ça marche ?</h2>
-            <ol className="grid gap-5 sm:grid-cols-3">
+          <section id="etapes" aria-labelledby="titre-etapes" className="scroll-mt-24 space-y-4">
+            <h2 id="titre-etapes" className="text-xl font-bold sm:text-2xl">Comment ça marche ?</h2>
+            <ol className="grid gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
               {ETAPES.map((e, i) => (
-                <li key={e.titre} className="flex gap-4">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-marque shadow-sm">
-                    <e.icone className="h-6 w-6" />
-                  </span>
-                  <span>
-                    <span className="block font-bold">{i + 1}. {e.titre}</span>
-                    <span className="text-sm text-slate-600">{e.texte}</span>
-                  </span>
+                <li key={e.titre} className="space-y-2 bg-white p-5">
+                  <span className="text-sm font-semibold tabular-nums text-slate-400">0{i + 1}</span>
+                  <span className="block font-semibold">{e.titre}</span>
+                  <span className="block text-sm text-slate-600">{e.texte}</span>
                 </li>
               ))}
             </ol>
