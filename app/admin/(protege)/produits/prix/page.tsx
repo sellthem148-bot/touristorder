@@ -18,6 +18,7 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
     select: { id: true, nom: true, emoji: true, _count: { select: { produits: true } } },
   });
   const aCompleter = await prisma.produit.count({ where: { prix: 0 } });
+  const deLaListe = await prisma.produit.count({ where: { prix: 0, prixIndicatif: { not: null } } });
   // Par défaut : les articles sans prix s'il en reste, sinon la première catégorie.
   const categorieId =
     typeof params.categorie === "string" && categories.some((c) => c.id === params.categorie)
@@ -30,7 +31,7 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
     where,
     orderBy: [{ categorie: { ordre: "asc" } }, { ordre: "asc" }, { nom: "asc" }],
     take: 300,
-    select: { id: true, nom: true, prix: true, prixAchat: true, actif: true, options: true, categorie: { select: { nom: true, emoji: true } } },
+    select: { id: true, nom: true, prix: true, prixAchat: true, prixIndicatif: true, actif: true, options: true, categorie: { select: { nom: true, emoji: true } } },
   });
   const retour = categorieId ? `/admin/produits/prix?categorie=${categorieId}` : "/admin/produits/prix?vue=a-completer";
 
@@ -41,6 +42,11 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
         <p className="text-sm text-slate-600">
           Tape les prix d&apos;une catégorie d&apos;un coup. Un article sans prix reste masqué ; coche « En ligne » pour le montrer aux clients.
         </p>
+        {deLaListe > 0 && (
+          <p className="mt-1 text-sm text-slate-600">
+            {deLaListe > 1 ? `${deLaListe} articles de ta liste attendent leur vrai prix` : "1 article de ta liste attend son vrai prix"} : celui de ta liste est rappelé sous le nom, comme repère. Regarde le prix sur Wolt, tape-le, et l&apos;article passe en ligne.
+          </p>
+        )}
       </div>
       <Messages params={params} />
 
@@ -71,6 +77,11 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
       ) : (
         <form action={enregistrerPrixRapides} className="space-y-3">
           <input type="hidden" name="retour" value={retour} />
+          {!categorieId && aCompleter > produits.length && (
+            <p className="text-sm text-slate-600">
+              Les {produits.length} premiers articles sont affichés, sur {aCompleter} à compléter. Pour avancer rayon par rayon, choisis un rayon ci-dessus : ses articles sans prix sont à la fin.
+            </p>
+          )}
           <ul className="carte divide-y divide-slate-100">
             {produits.map((p) => {
               const options = lireGroupes(p.options);
@@ -84,6 +95,11 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
                       {options.length > 0 ? options.map((g) => g.nom).join(", ") : "Sans option"}
                       {p.prix === 0 && <span className="ml-1 font-bold text-amber-700">· prix à définir</span>}
                     </p>
+                    {p.prix === 0 && p.prixIndicatif != null && (
+                      <p className="text-xs text-slate-600">
+                        Ta liste : <span className="font-bold tabular-nums">{prixPourChamp(p.prixIndicatif)} ₪</span> — à vérifier sur Wolt.
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-end gap-2">
                     <div className="w-24">

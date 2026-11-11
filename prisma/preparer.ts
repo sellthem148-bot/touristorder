@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { installerLesArticlesWolt, installerLesPhotosFrais, remplirLaBase, mettreLesReglagesANiveau } from "./remplissage";
+import { installerLaListeDuGerant, installerLesArticlesWolt, installerLesPhotosFrais, remplirLaBase, mettreLesReglagesANiveau } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -84,6 +84,8 @@ async function main() {
       dire(`catalogue : ${categories} catégories, ${produits} articles déjà là.`);
       // Les articles réels de Wolt : une seule fois, même sur une base déjà en service.
       dire(await installerLesArticlesWolt(prisma));
+      // La liste dressée par le gérant : des articles « à compléter », sans prix de vente, une seule fois.
+      dire(await installerLaListeDuGerant(prisma));
     }
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.
     dire(await installerLesPhotosFrais(prisma));

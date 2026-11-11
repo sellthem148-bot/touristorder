@@ -10,6 +10,7 @@ import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalog
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
+import { ARTICLES_DE_LA_LISTE } from "./articles-liste";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -107,6 +108,51 @@ export async function installerLesArticlesWolt(prisma: PrismaClient): Promise<st
     bilans.push(`${lot.nom} : ${crees} ajouté(s) avec leur prix${completes ? `, ${completes} complété(s)` : ""}${horsLigne ? ` (${horsLigne} hors ligne)` : ""}`);
   }
   return `Articles Wolt — ${bilans.join(" ; ")}.`;
+}
+
+/** Le rang du premier article de la liste du gérant dans son rayon : après tous les articles de Wolt. */
+const ORDRE_DE_LA_LISTE = 1000;
+
+/**
+ * Installe la liste de produits dressée par le gérant (prisma/articles-liste.ts) : des articles
+ * « à compléter », SANS prix de vente (masqués, impossibles à commander), avec le prix indicatif de sa
+ * liste gardé à part comme repère. Ses prix ne sont pas ceux de Wolt : c'est lui qui tape le vrai
+ * prix dans « Prix rapides », et l'article passe en ligne.
+ * Une seule fois : dès qu'un article porte un prix indicatif, ou qu'un nom de la liste existe, on ne
+ * touche plus à rien — un article supprimé ou renommé par le gérant ne revient pas. Un nom déjà pris
+ * par un autre article est laissé tel quel.
+ */
+export async function installerLaListeDuGerant(prisma: PrismaClient): Promise<string> {
+  const noms = ARTICLES_DE_LA_LISTE.map((a) => a.nom);
+  const dejaLa = await prisma.produit.count({ where: { OR: [{ prixIndicatif: { not: null } }, { nom: { in: noms } }] } });
+  if (dejaLa > 0) return `Liste du gérant : déjà installée (${dejaLa}), rien de changé.`;
+
+  // Les rayons de la liste : créés s'ils manquent (le gérant a pu supprimer un rayon resté vide).
+  const rayons = new Map([...CATEGORIES, ...CATEGORIES_WOLT].map((c, i) => [c.nom as string, { emoji: c.emoji, ordre: "ordre" in c ? c.ordre : (i + 1) * 10 }]));
+  const categories = new Map<string, string>();
+  for (const nom of new Set(ARTICLES_DE_LA_LISTE.map((a) => a.categorie))) {
+    const rayon = rayons.get(nom);
+    if (!rayon) throw new Error(`Rayon inconnu dans la liste du gérant : ${nom}`);
+    // Retrouvé par son nom ou par son adresse (un rayon renommé garde son adresse), créé seulement s'il manque.
+    const c =
+      (await prisma.categorie.findFirst({ where: { OR: [{ nom }, { slug: slugDe(nom) }] }, select: { id: true } })) ??
+      (await prisma.categorie.create({ data: { nom, emoji: rayon.emoji, slug: slugDe(nom), ordre: rayon.ordre }, select: { id: true } }));
+    categories.set(nom, c.id);
+  }
+
+  await prisma.produit.createMany({
+    data: ARTICLES_DE_LA_LISTE.map((a, i) => ({
+      nom: a.nom,
+      description: a.description,
+      prix: 0, // à définir : le prix de la liste n'est pas un prix de vente
+      prixIndicatif: enAgorot(a.prixIndicatif),
+      actif: false,
+      boutique: BOUTIQUE_WOLT,
+      categorieId: categories.get(a.categorie)!,
+      ordre: ORDRE_DE_LA_LISTE + i,
+    })),
+  });
+  return `Liste du gérant : ${ARTICLES_DE_LA_LISTE.length} articles ajoutés « à compléter », masqués, avec leur prix indicatif.`;
 }
 
 /**
@@ -251,7 +297,7 @@ export async function remplirLaBase(prisma: PrismaClient, { demo = false }: { de
     }
   }
 
-  const wolt = demo ? "" : ` ${await installerLesArticlesWolt(prisma)} ${await installerLesPhotosFrais(prisma)}`;
+  const wolt = demo ? "" : ` ${await installerLesArticlesWolt(prisma)} ${await installerLaListeDuGerant(prisma)} ${await installerLesPhotosFrais(prisma)}`;
 
   return (
     `Catalogue : ${ajoutes} article(s) ajouté(s) sans prix (${CATALOGUE.length} dans la base), ${CATEGORIES.length} catégories.` +

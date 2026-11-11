@@ -47,6 +47,9 @@ model Produit {
   boutique    String          @default("") // où le commander (ex. « Wolt Market Dizengoff »)
   lienWolt    String          @default("")
   nomWolt     String          @default("") // le nom exact de l'article sur Wolt (hébreu), pour le retrouver
+  // Prix d'une liste du gérant, en agorot : NON vérifié sur Wolt. Un repère pour lui seul (« Prix rapides »),
+  // jamais un prix de vente : l'article reste « à définir » (prix = 0) tant qu'il n'a pas tapé le vrai prix.
+  prixIndicatif Int?
 
   lignes      LigneCommande[]
   createdAt   DateTime        @default(now())
