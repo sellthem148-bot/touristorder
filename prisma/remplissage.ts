@@ -14,6 +14,7 @@ import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
 import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-viande";
 import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
+import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 
 function options(texte: string | undefined, nom: string) {
@@ -302,6 +303,67 @@ export async function retirerLaViande(prisma: PrismaClient): Promise<string> {
   const renomme = rayon != null && pris === 0;
   if (renomme) await prisma.categorie.update({ where: { id: rayon.id }, data: RAYON_POISSON });
   return `Viande et volaille : ${retires.count} article(s) retiré(s) de la vente (masqués)${renomme ? ` ; rayon renommé « ${RAYON_POISSON.nom} »` : ""}.`;
+}
+
+export const CLE_RETRAIT_INTROUVABLES = "retrait-introuvables-2026-11-12";
+
+/**
+ * Cinq articles de la liste du gérant que Wolt ne vend pas : retirés de la vente (sa décision, 12 novembre
+ * 2026). Une seule fois, et MASQUÉS plutôt que supprimés : un article supprimé reviendrait à la prochaine
+ * installation de la liste. Un article qu'il remet en vente ensuite y reste.
+ */
+export async function retirerLesIntrouvables(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RETRAIT_INTROUVABLES);
+  if (faite === null) return "Articles introuvables sur Wolt : réglages pas encore créés, rien retiré.";
+  if (faite) return "Articles introuvables sur Wolt : déjà retirés, rien de changé.";
+  const [retires] = await prisma.$transaction([
+    prisma.produit.updateMany({ where: { actif: true, nom: { in: INTROUVABLES_SUR_WOLT } }, data: { actif: false } }),
+    noterOperation(prisma, CLE_RETRAIT_INTROUVABLES),
+  ]);
+  return `Articles introuvables sur Wolt : ${retires.count} retiré(s) de la vente (masqués).`;
+}
+
+/**
+ * Ce que le rayon « Crèmerie & œufs » ne garde pas (pur) : les articles que le CODE y a installés — lots
+ * de Wolt, liste du gérant, et les articles de sa liste remplacés le 12 novembre, sous leur nouveau nom —
+ * moins la sélection gardée. Reconnus à leur nom ou à leur nom sur Wolt (un article renommé reste reconnu).
+ * Un article que le gérant a créé lui-même dans ce rayon n'y est pas : on n'y touche pas.
+ */
+export function cremerieARetirer(): { noms: string[]; nomsWolt: string[] } {
+  const gardes = new Set(CREMERIE_GARDEE);
+  const rayon: { nom: string; nomWolt?: string }[] = [...LOTS_WOLT.flatMap((l) => l.articles), ...ARTICLES_DE_LA_LISTE].filter((a) => a.categorie === RAYON_CREMERIE);
+  const duRayon = new Set(rayon.map((a) => a.nom));
+  const tous = [...rayon, ...REMPLACEMENTS_DU_12_NOVEMBRE.filter((r) => duRayon.has(r.ancien))];
+  // Un nom sur Wolt porté par un article gardé n'est jamais dans la liste à retirer.
+  const woltGardes = new Set(tous.filter((a) => gardes.has(a.nom)).map((a) => a.nomWolt ?? ""));
+  const aRetirer = tous.filter((a) => !gardes.has(a.nom));
+  return {
+    noms: [...new Set(aRetirer.map((a) => a.nom))],
+    nomsWolt: [...new Set(aRetirer.map((a) => a.nomWolt ?? "").filter((n) => n !== "" && !woltGardes.has(n)))],
+  };
+}
+
+export const CLE_ALLEGEMENT_CREMERIE = "allegement-cremerie-2026-11-12";
+
+/**
+ * Le rayon « Crèmerie & œufs » ramené à une courte sélection : la décision du gérant (12 novembre 2026),
+ * qui trouvait 280 articles trop longs à faire défiler (« il en faut quelques-uns, pas plus »).
+ * Une seule fois, et rien n'est supprimé : les autres articles sont masqués, il remet en vente ceux
+ * qu'il veut. Jamais un article gardé (`CREMERIE_GARDEE`), ni un article qu'il a créé lui-même.
+ */
+export async function allegerLaCremerie(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_ALLEGEMENT_CREMERIE);
+  if (faite === null) return "Crèmerie : réglages pas encore créés, rien retiré.";
+  if (faite) return "Crèmerie : déjà ramenée à sa sélection, rien de changé.";
+  const { noms, nomsWolt } = cremerieARetirer();
+  const [retires] = await prisma.$transaction([
+    prisma.produit.updateMany({
+      where: { actif: true, nom: { notIn: CREMERIE_GARDEE }, OR: [{ nom: { in: noms } }, { nomWolt: { in: nomsWolt } }] },
+      data: { actif: false },
+    }),
+    noterOperation(prisma, CLE_ALLEGEMENT_CREMERIE),
+  ]);
+  return `Crèmerie : ${retires.count} article(s) retiré(s) de la vente (masqués), ${CREMERIE_GARDEE.length} gardés.`;
 }
 
 /**

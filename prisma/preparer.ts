@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, retirerLesIntrouvables, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -95,6 +95,10 @@ async function main() {
     dire(await remplacerLesArticles(prisma));
     // Sa décision suivante : plus de viande ni de volaille (cacherout). Masquées, une seule fois.
     dire(await retirerLaViande(prisma));
+    // Cinq articles de sa liste que Wolt ne vend pas : retirés de la vente (masqués), une seule fois.
+    dire(await retirerLesIntrouvables(prisma));
+    // Le rayon Crèmerie ramené à une courte sélection (sa décision : « il en faut quelques-uns, pas plus »). Une seule fois, rien de supprimé.
+    dire(await allegerLaCremerie(prisma));
     // Sa liste « Dynamica » : installée « à compléter », masquée — et elle le reste (prix et modèles invérifiables).
     dire(await installerLaListeDynamica(prisma));
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.
