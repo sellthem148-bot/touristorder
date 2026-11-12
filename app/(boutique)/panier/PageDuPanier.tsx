@@ -69,7 +69,7 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
 
 export function PageDuPanier({ reglages, jours, limitePassee, client, demande, affichage }: Props) {
   const panier = usePanier();
-  const { langue, t } = useTraduction();
+  const { langue, t, lien } = useTraduction();
   const p = t.panier;
   const [etat, envoyer, enCours] = useActionState<EtatCommande, FormData>(passerCommande, {});
   const [v, setV] = useState<Valeurs>({
@@ -195,7 +195,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
         <ShoppingCart className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
         <h1 className="text-xl font-bold">{p.videTitre}</h1>
         {avis && <p className="text-sm text-amber-800">{avis}</p>}
-        <Link href="/" className="bouton">{t.commun.voirCatalogue}</Link>
+        <Link href={lien("/")} className="bouton">{t.commun.voirCatalogue}</Link>
         <p className="text-sm text-slate-600">
           {t.commun.introuvableQuestion}{" "}
           <button type="button" onClick={() => setDemandeSeule(true)} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">
@@ -246,7 +246,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
               </li>
             ))}
           </ul>}
-          <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre"><Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> {panierVide ? t.commun.voirCatalogue : p.ajouterAutres}</Link>
+          <Link href={lien("/")} className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre"><Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> {panierVide ? t.commun.voirCatalogue : p.ajouterAutres}</Link>
           <div className={panierVide ? "" : "border-t border-slate-100 pt-4"}>
             <label htmlFor="demandeLibre" className="etiquette">{panierVide ? p.demandeLabelSeule : p.demandeLabel}</label>
             <textarea
@@ -516,7 +516,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             {enCours ? p.envoi : panierVide ? p.envoyerDemande : remplir(p.commander, { prix: prix(totaux.total) })}
           </button>
           <p className="text-center text-xs text-slate-500">
-            {p.conditionsAvant}<Link href="/conditions" className="underline underline-offset-2 hover:text-encre">{p.conditionsLien}</Link>{p.conditionsApres}
+            {p.conditionsAvant}<Link href={lien("/conditions")} className="underline underline-offset-2 hover:text-encre">{p.conditionsLien}</Link>{p.conditionsApres}
           </p>
         </div>
       </aside>

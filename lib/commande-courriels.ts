@@ -11,7 +11,7 @@ import { NOM_DU_SITE } from "./marque";
 import { messageDeReglement } from "./paiement";
 import { envoyerTelegram, texteDeLAlerte } from "./telegram";
 import { adresseComplete } from "./adresse";
-import { remplir } from "./langues";
+import { prefixeDe, remplir } from "./langues";
 import { dictionnaire, langueDuCourriel, langueEnregistree, libelleDuMode } from "./i18n";
 import { libelleOptions, nomArticle, nomTarif, nomVille } from "./i18n/catalogue";
 
@@ -70,6 +70,8 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       const pourLeClient: CommandePourCourriel = {
         ...donnees,
         adresse: adresseComplete(c, t.adresse),
+        // Le suivi à l'adresse de sa langue (« /he/suivi/… ») : il y arrive directement, sur n'importe quel appareil.
+        lienSuivi: `${site}${prefixeDe(langue)}/suivi/${c.jeton}`,
         ville: nomVille(c.ville, langue),
         // Les articles et leurs options dans la langue du client (les lignes de la commande restent en français).
         lignes: c.lignes.map((l) => ({ ...l, nom: nomArticle(l.nom, langue), options: libelleOptions(l.options, langue) })),

@@ -54,8 +54,9 @@ export async function demanderLien(_avant: EtatConnexion, form: FormData): Promi
 }
 
 export async function seDeconnecterClient() {
+  const { lien } = await traduction();
   (await cookies()).delete(COOKIE_CLIENT);
-  redirect("/");
+  redirect(lien("/"));
 }
 
 export type EtatProfil = { ok?: boolean; erreur?: string; champs?: Record<string, string> };
@@ -137,12 +138,12 @@ export async function articlesPourRecommander(commandeId: string): Promise<{ art
 export async function supprimerMonEspace(form: FormData) {
   const client = await exigerClient();
   // Le mot à taper est celui de la langue du client (« supprimer », « delete »…) ; le mot français reste accepté.
-  const { t } = await traduction();
+  const { t, lien } = await traduction();
   const tape = String(form.get("confirmation") ?? "").trim().toLowerCase();
   if (tape !== t.compte.motSupprimer.toLowerCase() && tape !== frSite.compte.motSupprimer) {
-    redirect("/compte?erreur=confirmation#supprimer");
+    redirect(lien("/compte?erreur=confirmation#supprimer"));
   }
   await prisma.client.delete({ where: { id: client.id } }); // Commande.clientId passe à null (onDelete: SetNull)
   (await cookies()).delete(COOKIE_CLIENT);
-  redirect("/?espace=supprime");
+  redirect(lien("/?espace=supprime"));
 }

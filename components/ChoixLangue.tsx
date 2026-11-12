@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Globe } from "lucide-react";
-import { LANGUES, NOM_DE_LA_LANGUE, type Langue } from "@/lib/langues";
+import { langueDuChemin, LANGUES, lienPour, NOM_DE_LA_LANGUE, type Langue } from "@/lib/langues";
 import { changerLangue } from "@/app/(boutique)/langue-actions";
 import { useTraduction } from "./LangueProvider";
 
@@ -14,12 +14,16 @@ import { useTraduction } from "./LangueProvider";
 export function ChoixLangue({ compact = false, sansEtiquette = false, id = "langue" }: { compact?: boolean; sansEtiquette?: boolean; id?: string }) {
   const { langue, t } = useTraduction();
   const router = useRouter();
+  const chemin = usePathname();
   const [enCours, demarrer] = useTransition();
 
+  // Le choix est gardé (cookie, espace client), puis le visiteur passe à la même page à l'adresse de
+  // sa langue (« /panier » → « /he/panier ») sans rechargement : ce qu'il a déjà saisi reste en place.
   function choisir(code: string) {
     demarrer(async () => {
       await changerLangue(code);
-      router.refresh();
+      const page = langueDuChemin(chemin).chemin;
+      router.replace(`${lienPour(code as Langue, page)}${window.location.search}${window.location.hash}`, { scroll: false });
     });
   }
 

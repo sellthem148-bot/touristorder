@@ -6,6 +6,13 @@
 
 const fr = {
   meta: {
+    // La carte d'aperçu quand le lien du site est partagé (WhatsApp, réseaux sociaux) : le titre sur trois lignes,
+    // coupées à la main, puis une ligne de précisions. `alt` la décrit à qui ne voit pas l'image.
+    apercu: {
+      lignes: ["Vos courses livrées", "à votre logement,", "le soir même."],
+      sousTitre: "Israël · Service en français · Livraison le soir",
+      alt: "{site} — vos courses livrées à votre logement, le soir même",
+    },
     titre: "{site} — vos courses livrées à votre logement en Israël",
     description:
       "Courses, produits pour bébé, hygiène, chargeurs et oublis de vacances : commandez en français, nous vous livrons le soir à votre logement ou à votre hôtel, à Netanya et dans les villes voisines.",

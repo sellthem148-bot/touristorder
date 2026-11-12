@@ -96,3 +96,86 @@ export function heureLisible(hhmm: string, langue: Langue): string {
 export function jourDansPhrase(libelle: string, langue: Langue): string {
   return langue === "en" ? libelle : libelle.toLocaleLowerCase(LOCALE[langue]);
 }
+
+// ---------------------------------------------------------------------------------------------
+// Une adresse par langue : le français garde les adresses sans préfixe (« /panier »), les autres
+// langues ont le leur (« /he/panier »). proxy.ts aiguille chaque demande avec `aiguiller`.
+// ---------------------------------------------------------------------------------------------
+
+/** L'en-tête par lequel proxy.ts dit au serveur la langue de l'adresse demandée. */
+export const ENTETE_LANGUE = "x-langue";
+
+/** « /he » pour l'hébreu ; rien pour le français, qui n'a pas de préfixe. */
+export function prefixeDe(langue: Langue): string {
+  return langue === LANGUE_PAR_DEFAUT ? "" : `/${langue}`;
+}
+
+/**
+ * L'adresse d'une page dans une langue : « /panier » → « /he/panier », « / » → « /he ».
+ * Une ancre (« #rayons ») ou un lien externe est rendu tel quel.
+ */
+export function lienPour(langue: Langue, chemin: string): string {
+  const prefixe = prefixeDe(langue);
+  if (!prefixe || !chemin.startsWith("/") || chemin.startsWith("//")) return chemin;
+  // « / », « /?q=… », « /#etapes » : pas de barre après le préfixe.
+  return chemin === "/" || chemin[1] === "?" || chemin[1] === "#" ? `${prefixe}${chemin.slice(1)}` : `${prefixe}${chemin}`;
+}
+
+/** « /he/panier » → l'hébreu et « /panier » ; « /panier » → le français. `prefixe` : l'adresse portait un code de langue. */
+export function langueDuChemin(chemin: string): { langue: Langue; chemin: string; prefixe: boolean } {
+  const [, premier, ...reste] = chemin.split("/");
+  if (!estLangue(premier)) return { langue: LANGUE_PAR_DEFAUT, chemin, prefixe: false };
+  return { langue: premier, chemin: `/${reste.join("/")}`, prefixe: true };
+}
+
+// Ce qui n'a pas de langue : l'espace gérant (toujours en français), le lien de connexion reçu par e-mail,
+// les fichiers et les images générées.
+const HORS_LANGUE = /^\/(admin|compte\/acces|apercu|_next|logo|produits|uploads|icon|apple-icon|robots\.txt|sitemap\.xml|favicon\.ico)(\/|$)/;
+
+export type Aiguillage =
+  /** Hors langue : la demande passe telle quelle. */
+  | { action: "laisser" }
+  /** Une adresse sans préfixe, servie en français. */
+  | { action: "suivre"; langue: Langue }
+  /** « /he/panier » : la page « /panier », en hébreu. */
+  | { action: "reecrire"; langue: Langue; chemin: string }
+  | { action: "rediriger"; vers: string; permanent: boolean };
+
+/**
+ * Que faire d'une demande, d'après son adresse :
+ * - « /he/… » : la page dans cette langue (c'est l'adresse qui commande, pas le cookie) ;
+ * - « /fr/… » : le français n'a pas de préfixe → redirection définitive vers « /… » ;
+ * - « /admin/… » : toujours en français ;
+ * - « /… » : en français — sauf si le visiteur a choisi une autre langue, ou si son navigateur en
+ *   demande une : il est alors envoyé vers l'adresse de sa langue. Un moteur de recherche, qui ne
+ *   demande aucune langue, lit donc le français ici et chaque autre langue à sa propre adresse.
+ */
+export function aiguiller(o: { chemin: string; recherche?: string; methode?: string; cookie?: string | null; entete?: string | null }): Aiguillage {
+  const recherche = o.recherche ?? "";
+  const { langue, chemin, prefixe } = langueDuChemin(o.chemin);
+  if (!prefixe) {
+    // L'espace gérant est en français, de gauche à droite, quel que soit le navigateur du gérant.
+    if (/^\/admin(\/|$)/.test(chemin)) return { action: "suivre", langue: LANGUE_PAR_DEFAUT };
+    if (HORS_LANGUE.test(chemin)) return { action: "laisser" };
+    const methode = (o.methode ?? "GET").toUpperCase();
+    if (methode === "GET" || methode === "HEAD") {
+      const preferee = choisirLangue(o.cookie, o.entete);
+      if (preferee !== LANGUE_PAR_DEFAUT) return { action: "rediriger", vers: `${lienPour(preferee, chemin)}${recherche}`, permanent: false };
+    }
+    return { action: "suivre", langue: LANGUE_PAR_DEFAUT };
+  }
+  if (langue === LANGUE_PAR_DEFAUT) return { action: "rediriger", vers: `${chemin}${recherche}`, permanent: true };
+  if (HORS_LANGUE.test(chemin)) return { action: "rediriger", vers: `${chemin}${recherche}`, permanent: false };
+  return { action: "reecrire", langue, chemin };
+}
+
+/**
+ * Pour les moteurs de recherche : l'adresse de référence d'une page dans sa langue, et la même page
+ * dans chaque autre langue (« hreflang »). Sans langue demandée (« x-default ») : le français.
+ */
+export function adressesParLangue(chemin: string, langue: Langue): { canonical: string; languages: Record<string, string> } {
+  return {
+    canonical: lienPour(langue, chemin),
+    languages: { ...Object.fromEntries(LANGUES.map((l) => [l, lienPour(l, chemin)])), "x-default": chemin },
+  };
+}

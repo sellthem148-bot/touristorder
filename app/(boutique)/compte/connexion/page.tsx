@@ -13,9 +13,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ConnexionClient({ searchParams }: PageProps<"/compte/connexion">) {
-  if (await clientConnecte()) redirect("/compte");
+  const { t, lien } = await traduction();
+  if (await clientConnecte()) redirect(lien("/compte"));
   const lienInvalide = (await searchParams).erreur === "lien";
-  const { t } = await traduction();
 
   return (
     <div className="mx-auto max-w-md space-y-5">
@@ -30,7 +30,7 @@ export default async function ConnexionClient({ searchParams }: PageProps<"/comp
       </div>
       <p className="text-center text-sm text-slate-600">
         {t.connexion.creation}{" "}
-        <Link href="/commandes" className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{t.connexion.voirCommandes}</Link>
+        <Link href={lien("/commandes")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{t.connexion.voirCommandes}</Link>
       </p>
     </div>
   );

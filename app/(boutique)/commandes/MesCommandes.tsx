@@ -16,7 +16,7 @@ type Etat = { etape: "chargement" } | { etape: "erreur" } | { etape: "pret"; com
 
 export function MesCommandes() {
   const [etat, setEtat] = useState<Etat>({ etape: "chargement" });
-  const { langue, t } = useTraduction();
+  const { langue, t, lien } = useTraduction();
 
   useEffect(() => {
     let annule = false;
@@ -39,7 +39,7 @@ export function MesCommandes() {
         <ReceiptText className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
         <p className="font-bold">{t.commandes.aucune}</p>
         <p className="text-sm text-slate-600">{t.commandes.aucuneAide}</p>
-        <Link href="/" className="bouton">{t.commun.voirCatalogue}</Link>
+        <Link href={lien("/")} className="bouton">{t.commun.voirCatalogue}</Link>
       </div>
     );
   }
@@ -48,7 +48,7 @@ export function MesCommandes() {
     <ul className="space-y-3">
       {etat.commandes.map((c) => (
         <li key={c.jeton}>
-          <Link href={`/suivi/${c.jeton}`} className="carte flex items-center gap-4 p-4 transition hover:border-slate-400">
+          <Link href={lien(`/suivi/${c.jeton}`)} className="carte flex items-center gap-4 p-4 transition hover:border-slate-400">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700" aria-hidden="true"><ShoppingBag className="h-5 w-5" strokeWidth={1.6} /></span>
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-2">

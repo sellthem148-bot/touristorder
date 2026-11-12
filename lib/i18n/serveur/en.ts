@@ -5,6 +5,11 @@ import type { DictionnaireServeur } from "./fr";
 
 const en: DictionnaireServeur = {
   meta: {
+    apercu: {
+      lignes: ["Your groceries delivered", "to your door,", "the same evening."],
+      sousTitre: "Israel · Service in English · Evening delivery",
+      alt: "{site} — your groceries delivered to your door, the same evening",
+    },
     titre: "{site} — groceries delivered to your door in Israel",
     description:
       "Groceries, baby products, toiletries, chargers and the holiday essentials you forgot: order online and we deliver in the evening to your rental or hotel, in Netanya and nearby cities.",

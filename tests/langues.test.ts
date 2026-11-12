@@ -1,6 +1,6 @@
 // Les cinq langues du site : choix de la langue, traductions complètes, formats, adresse obligatoire.
 import { describe, expect, it } from "vitest";
-import { choisirLangue, compter, estLangue, heureLisible, jourDansPhrase, langueDepuisEntete, LANGUES, pluriel, remplir, sens } from "@/lib/langues";
+import { adressesParLangue, aiguiller, choisirLangue, compter, estLangue, heureLisible, jourDansPhrase, langueDepuisEntete, langueDuChemin, LANGUES, lienPour, pluriel, prefixeDe, remplir, sens } from "@/lib/langues";
 import { DICTIONNAIRES, DICTIONNAIRES_SERVEUR, dictionnaire, dictionnaireServeur, langueDesMessages, langueDuCourriel, langueEnregistree, libelleDuMode, nomDuRayon } from "@/lib/i18n";
 import { comparer } from "@/lib/i18n/verifier";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
@@ -50,6 +50,74 @@ describe("choix de la langue", () => {
     expect(langueEnregistree("ru")).toBe("ru");
     expect(langueEnregistree("")).toBe("fr");
     expect(langueEnregistree(null)).toBe("fr");
+  });
+});
+
+describe("une adresse par langue", () => {
+  it("le français n'a pas de préfixe ; les autres langues ont le leur", () => {
+    expect(prefixeDe("fr")).toBe("");
+    expect(prefixeDe("he")).toBe("/he");
+    expect(lienPour("fr", "/panier")).toBe("/panier");
+    expect(lienPour("he", "/panier")).toBe("/he/panier");
+    expect(lienPour("ru", "/")).toBe("/ru");
+    expect(lienPour("en", "/?espace=supprime")).toBe("/en?espace=supprime");
+    expect(lienPour("es", "/panier?demande=lait")).toBe("/es/panier?demande=lait");
+    expect(lienPour("en", "/compte?erreur=confirmation#supprimer")).toBe("/en/compte?erreur=confirmation#supprimer");
+    // Une ancre ou un lien externe ne change pas.
+    expect(lienPour("he", "#rayons")).toBe("#rayons");
+    expect(lienPour("he", "https://wa.me/972")).toBe("https://wa.me/972");
+    expect(lienPour("he", "//exemple.test/x")).toBe("//exemple.test/x");
+  });
+  it("lire la langue d'une adresse", () => {
+    expect(langueDuChemin("/he/panier")).toEqual({ langue: "he", chemin: "/panier", prefixe: true });
+    expect(langueDuChemin("/he")).toEqual({ langue: "he", chemin: "/", prefixe: true });
+    expect(langueDuChemin("/ru/categorie/boissons")).toEqual({ langue: "ru", chemin: "/categorie/boissons", prefixe: true });
+    expect(langueDuChemin("/panier")).toEqual({ langue: "fr", chemin: "/panier", prefixe: false });
+    expect(langueDuChemin("/")).toEqual({ langue: "fr", chemin: "/", prefixe: false });
+    // Un mot qui commence comme un code de langue n'en est pas un.
+    expect(langueDuChemin("/hello")).toEqual({ langue: "fr", chemin: "/hello", prefixe: false });
+    expect(langueDuChemin("/categorie/he")).toEqual({ langue: "fr", chemin: "/categorie/he", prefixe: false });
+    for (const l of LANGUES) expect(langueDuChemin(lienPour(l, "/suivi/abc")).langue).toBe(l);
+  });
+  it("un moteur de recherche (aucune langue demandée) lit le français sans préfixe, et chaque langue à son adresse", () => {
+    expect(aiguiller({ chemin: "/" })).toEqual({ action: "suivre", langue: "fr" });
+    expect(aiguiller({ chemin: "/categorie/boissons" })).toEqual({ action: "suivre", langue: "fr" });
+    expect(aiguiller({ chemin: "/he" })).toEqual({ action: "reecrire", langue: "he", chemin: "/" });
+    expect(aiguiller({ chemin: "/ru/categorie/boissons" })).toEqual({ action: "reecrire", langue: "ru", chemin: "/categorie/boissons" });
+    // L'adresse commande : un cookie ou un navigateur d'une autre langue n'y change rien.
+    expect(aiguiller({ chemin: "/en/contact", cookie: "he", entete: "ru-RU" })).toEqual({ action: "reecrire", langue: "en", chemin: "/contact" });
+  });
+  it("sans préfixe, le visiteur est envoyé vers l'adresse de sa langue : son choix d'abord, sinon son navigateur", () => {
+    expect(aiguiller({ chemin: "/contact", recherche: "?a=1", entete: "ru-RU,ru;q=0.9" })).toEqual({ action: "rediriger", vers: "/ru/contact?a=1", permanent: false });
+    expect(aiguiller({ chemin: "/", entete: "he-IL" })).toEqual({ action: "rediriger", vers: "/he", permanent: false });
+    expect(aiguiller({ chemin: "/suivi/abc", cookie: "en", entete: "fr-FR" })).toEqual({ action: "rediriger", vers: "/en/suivi/abc", permanent: false });
+    // Il a choisi le français : il y reste, même avec un navigateur russe.
+    expect(aiguiller({ chemin: "/", cookie: "fr", entete: "ru-RU" })).toEqual({ action: "suivre", langue: "fr" });
+    expect(aiguiller({ chemin: "/", entete: "fr-FR,fr;q=0.9,en;q=0.8" })).toEqual({ action: "suivre", langue: "fr" });
+    expect(aiguiller({ chemin: "/", entete: "de-DE" })).toEqual({ action: "suivre", langue: "fr" });
+    // Un envoi de formulaire n'est jamais redirigé (il perdrait ce qu'il porte).
+    expect(aiguiller({ chemin: "/panier", methode: "POST", entete: "ru-RU" })).toEqual({ action: "suivre", langue: "fr" });
+  });
+  it("« /fr/… » revient à l'adresse sans préfixe ; l'espace gérant et le lien de connexion n'ont pas de langue", () => {
+    expect(aiguiller({ chemin: "/fr/contact", recherche: "?x=1" })).toEqual({ action: "rediriger", vers: "/contact?x=1", permanent: true });
+    expect(aiguiller({ chemin: "/fr" })).toEqual({ action: "rediriger", vers: "/", permanent: true });
+    // L'espace gérant : toujours en français, jamais redirigé, même avec un navigateur en hébreu.
+    expect(aiguiller({ chemin: "/admin", entete: "he-IL", cookie: "he" })).toEqual({ action: "suivre", langue: "fr" });
+    expect(aiguiller({ chemin: "/admin/commandes/abc", methode: "POST", entete: "ru" })).toEqual({ action: "suivre", langue: "fr" });
+    expect(aiguiller({ chemin: "/he/admin/journee" })).toEqual({ action: "rediriger", vers: "/admin/journee", permanent: false });
+    // Le lien de connexion reçu par e-mail : il passe tel quel (il choisit lui-même la langue du client).
+    expect(aiguiller({ chemin: "/compte/acces", recherche: "?jeton=x", entete: "he-IL" })).toEqual({ action: "laisser" });
+    expect(aiguiller({ chemin: "/ru/compte/acces", recherche: "?jeton=x" })).toEqual({ action: "rediriger", vers: "/compte/acces?jeton=x", permanent: false });
+    // « /compte » lui-même est une page comme une autre.
+    expect(aiguiller({ chemin: "/compte", entete: "he" })).toEqual({ action: "rediriger", vers: "/he/compte", permanent: false });
+  });
+  it("pour les moteurs de recherche : l'adresse de référence et la même page dans chaque langue", () => {
+    expect(adressesParLangue("/contact", "he")).toEqual({
+      canonical: "/he/contact",
+      languages: { fr: "/contact", en: "/en/contact", ru: "/ru/contact", he: "/he/contact", es: "/es/contact", "x-default": "/contact" },
+    });
+    expect(adressesParLangue("/", "fr").canonical).toBe("/");
+    expect(adressesParLangue("/", "en").languages.en).toBe("/en");
   });
 });
 

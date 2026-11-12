@@ -9,12 +9,12 @@ import { traduction } from "@/lib/traduction";
 
 export default async function LayoutBoutique({ children }: LayoutProps<"/">) {
   // La langue du visiteur (son choix, sinon celle de son navigateur) et ses textes, donnés aussi aux composants du navigateur.
-  const { langue, t } = await traduction();
-  const lien = "hover:text-encre hover:underline";
+  const { langue, t, lien } = await traduction();
+  const survol = "hover:text-encre hover:underline";
   return (
     <LangueProvider langue={langue} t={t}>
       <PanierProvider>
-        <EnTete t={t} />
+        <EnTete t={t} langue={langue} />
         <main id="contenu" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-5 sm:pb-20 sm:pt-8">
           {children}
         </main>
@@ -33,23 +33,23 @@ export default async function LayoutBoutique({ children }: LayoutProps<"/">) {
             </div>
             <div className="space-y-2 text-sm">
               <h2 className="font-semibold text-encre">{t.pied.votreCompte}</h2>
-              <p><Link href="/compte" className={lien}>{t.pied.monEspace}</Link></p>
-              <p><Link href="/commandes" className={lien}>{t.pied.mesCommandesAppareil}</Link></p>
-              <p><Link href="/panier" className={lien}>{t.pied.monPanier}</Link></p>
+              <p><Link href={lien("/compte")} className={survol}>{t.pied.monEspace}</Link></p>
+              <p><Link href={lien("/commandes")} className={survol}>{t.pied.mesCommandesAppareil}</Link></p>
+              <p><Link href={lien("/panier")} className={survol}>{t.pied.monPanier}</Link></p>
             </div>
             <div className="space-y-2 text-sm">
               <h2 className="font-semibold text-encre">{t.pied.informations}</h2>
-              <p><Link href="/contact" className={lien}>{t.pied.contact}</Link></p>
-              <p><Link href="/conditions" className={lien}>{t.pied.conditions}</Link></p>
-              <p><Link href="/confidentialite" className={lien}>{t.pied.confidentialite}</Link></p>
-              <p><Link href="/mentions-legales" className={lien}>{t.pied.mentions}</Link></p>
-              <p><Link href="/credits" className={lien}>{t.pied.credits}</Link></p>
+              <p><Link href={lien("/contact")} className={survol}>{t.pied.contact}</Link></p>
+              <p><Link href={lien("/conditions")} className={survol}>{t.pied.conditions}</Link></p>
+              <p><Link href={lien("/confidentialite")} className={survol}>{t.pied.confidentialite}</Link></p>
+              <p><Link href={lien("/mentions-legales")} className={survol}>{t.pied.mentions}</Link></p>
+              <p><Link href={lien("/credits")} className={survol}>{t.pied.credits}</Link></p>
             </div>
           </div>
           <div className="border-t border-slate-200">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 pb-24 text-xs text-slate-500 sm:pb-4">
               <p>© {new Date().getFullYear()} {NOM_DU_SITE}</p>
-              <Link href="/admin" className={lien}>{t.pied.espaceGerant}</Link>
+              <Link href="/admin" className={survol}>{t.pied.espaceGerant}</Link>
             </div>
           </div>
         </footer>

@@ -17,6 +17,8 @@ const VERSION = (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7);
 export async function generateMetadata(): Promise<Metadata> {
   const { langue, ts } = await traduction();
   const titre = remplir(ts.meta.titre, { site: NOM_DU_SITE });
+  // La carte d'aperçu d'un lien partagé, dans la langue de la page (app/apercu/[langue]).
+  const apercu = { url: `/apercu/${langue}`, width: 1200, height: 630, alt: remplir(ts.meta.apercu.alt, { site: NOM_DU_SITE }) };
   return {
     metadataBase: new URL(ADRESSE_DU_SITE),
     title: { default: titre, template: `%s · ${NOM_DU_SITE}` },
@@ -28,8 +30,9 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: LOCALE[langue].replace("-", "_"),
       title: titre,
       description: ts.meta.description,
+      images: [apercu],
     },
-    twitter: { card: "summary_large_image" },
+    twitter: { card: "summary_large_image", images: [apercu] },
     ...(VERSION ? { other: { version: VERSION } } : {}),
   };
 }

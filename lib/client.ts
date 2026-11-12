@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "./prisma";
 import { COOKIE_CLIENT, lireJetonClient } from "./session-client";
+import { lienPour } from "./langues";
+import { langueActuelle } from "./traduction";
 
 // Ce que les pages lisent du client connecté.
 const CHAMPS = { id: true, email: true, nom: true, telephone: true, ville: true, adresse: true, etage: true, appartement: true, codeEntree: true, langue: true, createdAt: true } as const;
@@ -20,6 +22,7 @@ export type ClientConnecte = NonNullable<Awaited<ReturnType<typeof clientConnect
 /** À appeler en tête de chaque page et action de l'espace client. */
 export async function exigerClient(): Promise<ClientConnecte> {
   const client = await clientConnecte();
-  if (!client) redirect("/compte/connexion");
+  // Vers la page de connexion, à l'adresse de la langue du visiteur.
+  if (!client) redirect(lienPour(await langueActuelle(), "/compte/connexion"));
   return client;
 }

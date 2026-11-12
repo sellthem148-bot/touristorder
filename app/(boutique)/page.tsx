@@ -11,13 +11,17 @@ import { livraisonLaMoinsChere } from "@/lib/villes";
 import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { joursOuverts } from "@/lib/livraisons";
 import { ADRESSE_DU_SITE, MESSAGE_ACCUEIL_PAR_DEFAUT, NOM_DU_SITE } from "@/lib/marque";
-import { compter, heureLisible, remplir, type Langue } from "@/lib/langues";
+import type { Metadata } from "next";
+import { adressesParLangue, compter, heureLisible, lienPour, remplir, type Langue } from "@/lib/langues";
 import { estAujourdhui, libelleDuJour } from "@/lib/dates";
 import { traduction } from "@/lib/traduction";
 import { nomTarif, nomVille } from "@/lib/i18n/catalogue";
 
 export const dynamic = "force-dynamic";
-export const metadata = { alternates: { canonical: "/" } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { langue } = await traduction();
+  return { alternates: adressesParLangue("/", langue) };
+}
 
 // Ce que les moteurs de recherche lisent du site : son nom, son logo, sa recherche.
 const donneesStructurees = (langue: Langue, description: string) => JSON.stringify({
@@ -33,12 +37,12 @@ const donneesStructurees = (langue: Langue, description: string) => JSON.stringi
     },
     {
       "@type": "WebSite",
-      "@id": `${ADRESSE_DU_SITE}/#site`,
+      "@id": `${ADRESSE_DU_SITE}${lienPour(langue, "/")}#site`,
       name: NOM_DU_SITE,
-      url: ADRESSE_DU_SITE,
+      url: `${ADRESSE_DU_SITE}${lienPour(langue, "/")}`,
       inLanguage: langue,
       publisher: { "@id": `${ADRESSE_DU_SITE}/#organisation` },
-      potentialAction: { "@type": "SearchAction", target: `${ADRESSE_DU_SITE}/recherche?q={search_term_string}`, "query-input": "required name=search_term_string" },
+      potentialAction: { "@type": "SearchAction", target: `${ADRESSE_DU_SITE}${lienPour(langue, "/recherche")}?q={search_term_string}`, "query-input": "required name=search_term_string" },
     },
   ],
 }).replace(/</g, "\\u003c");
@@ -46,7 +50,7 @@ const donneesStructurees = (langue: Langue, description: string) => JSON.stringi
 type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string };
 
 export default async function Accueil() {
-  const { langue, t, ts } = await traduction();
+  const { langue, t, ts, lien } = await traduction();
   const [rayons, populaires, reglages] = await Promise.all([vitrine(1, langue), misEnAvant(undefined, langue), reglagesPublics()]);
   const a = t.accueil;
   // Le message d'accueil du gérant ; tant qu'il a gardé celui de départ, le client le lit dans sa langue.
@@ -148,7 +152,7 @@ export default async function Accueil() {
               {rayons.map(({ categorie, total }) => (
                 <li key={categorie.id}>
                   <Link
-                    href={`/categorie/${categorie.slug}`}
+                    href={lien(`/categorie/${categorie.slug}`)}
                     className="group flex h-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 transition hover:border-slate-400 sm:p-3.5"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
@@ -165,7 +169,7 @@ export default async function Accueil() {
             </ul>
             <p className="text-sm text-slate-600">
               {t.commun.introuvableQuestion}{" "}
-              <Link href="/panier?demande=" className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{t.commun.demandezLe}</Link>
+              <Link href={lien("/panier?demande=")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{t.commun.demandezLe}</Link>
               {t.commun.introuvableSuite}
             </p>
           </section>

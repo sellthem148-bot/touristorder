@@ -31,7 +31,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function EspaceClient({ searchParams }: PageProps<"/compte">) {
   const client = await exigerClient();
   const params = await searchParams;
-  const { langue, t } = await traduction();
+  const { langue, t, lien } = await traduction();
   const c0 = t.compte;
   const prix = (agorot: number) => formatPrix(agorot, langue);
   const jour = (valeur: string) => libelleDuJour(valeur, undefined, langue);
@@ -101,7 +101,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                     </li>
                   ))}
                 </ol>
-                <Link href={`/suivi/${c.jeton}`} className="bouton-secondaire w-full py-2.5 text-sm sm:w-auto">{c0.suivre}</Link>
+                <Link href={lien(`/suivi/${c.jeton}`)} className="bouton-secondaire w-full py-2.5 text-sm sm:w-auto">{c0.suivre}</Link>
               </article>
             );
           })}
@@ -121,7 +121,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           <div className="carte space-y-3 p-8 text-center">
             <Receipt className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
             <p className="font-bold">{c0.aucune}</p>
-            <Link href="/" className="bouton">{t.commun.voirCatalogue}</Link>
+            <Link href={lien("/")} className="bouton">{t.commun.voirCatalogue}</Link>
           </div>
         ) : (
           <ul className="space-y-3">
@@ -167,7 +167,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                       />
                       <div className="flex flex-wrap items-start gap-2">
                         <BoutonRecommander commandeId={c.id} />
-                        <Link href={`/suivi/${c.jeton}`} className="bouton-secondaire py-2 text-sm">{c0.voirSuivi}</Link>
+                        <Link href={lien(`/suivi/${c.jeton}`)} className="bouton-secondaire py-2 text-sm">{c0.voirSuivi}</Link>
                       </div>
                     </div>
                   </details>

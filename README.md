@@ -49,7 +49,8 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 
 Le site côté client existe en **français, anglais, russe, hébreu (de droite à gauche) et espagnol**. L'espace gérant reste en français.
 
-- **Quelle langue ?** Celle que le client a choisie (le globe de l'en-tête, le pied de page, ou « Langue » dans son espace client), gardée un an dans un cookie et dans son espace client ; sinon celle de son téléphone ; sinon le français. Se connecter à son espace sur un autre appareil y ramène sa langue.
+- **Une adresse par langue** : le français garde les adresses de toujours (`/`, `/panier`…) ; chaque autre langue a les siennes (`/he`, `/he/panier`, `/en/categorie/boissons`…). C'est l'adresse qui donne la langue de la page.
+- **Quelle langue pour un visiteur ?** Sur une adresse sans langue, il est envoyé vers celle qu'il a choisie (le globe de l'en-tête, le pied de page, ou « Langue » dans son espace client), sinon celle de son téléphone, sinon le français. Son choix est gardé un an dans un cookie et dans son espace client ; se connecter sur un autre appareil y ramène sa langue. Les liens qu'il reçoit (e-mail de confirmation, message WhatsApp préparé dans l'admin) mènent à sa langue. Ton espace gérant n'a pas de langue : toujours `/admin`, toujours en français.
 - **Ce qui est traduit** : toutes les pages (catalogue, panier, suivi, espace client, pages légales — avec la mention « la version française fait foi »), les messages d'erreur, l'e-mail de confirmation et le lien de connexion, et **les messages WhatsApp que tu envoies au client** depuis l'admin (écrits dans la langue de sa commande ; la fiche de la commande te dit laquelle). Tes e-mails et ton alerte Telegram restent en français.
 - **Le catalogue aussi** : le nom et la description de tous les articles de départ (les relevés de Wolt, Dynamica, ta liste), les options (« Taille », « 2 ans »…), les rayons, les villes livrées, les noms des tarifs, « Virement », le message d'accueil. La recherche comprend la langue du client (« молоко » trouve le lait). Dans ton espace, sur tes commandes et ta liste de courses, tout reste en français.
 - **Ce qui ne l'est pas** : ce que tu écris ou modifies toi-même dans l'admin — un nouvel article, un nom ou une description que tu changes, une nouvelle ville, un nouveau tarif, tes créneaux. Ils s'affichent tels quels, en français, dans toutes les langues (le formulaire d'un article te le rappelle).
@@ -142,7 +143,9 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 
 ## Référencement
 
-Le site donne aux moteurs de recherche un plan (`/sitemap.xml` : accueil, rayons, pages d'information) et ses règles (`/robots.txt` : jamais l'espace gérant, l'espace client, le panier ni les pages de suivi). Chaque page a son titre, sa description et son adresse canonique ; l'accueil porte des données structurées (nom, logo, recherche).
+Le site donne aux moteurs de recherche un plan (`/sitemap.xml` : accueil, rayons, pages d'information, **chacun dans les cinq langues**) et ses règles (`/robots.txt` : jamais l'espace gérant, l'espace client, le panier ni les pages de suivi, à aucune de leurs adresses). Chaque page a son titre, sa description, son adresse de référence dans sa langue et la liste de ses équivalents dans les autres (« hreflang ») ; l'accueil porte des données structurées (nom, logo, recherche). Un moteur de recherche, qui ne demande aucune langue, lit le français aux adresses sans préfixe et chaque autre langue à la sienne.
+
+Quand un lien est partagé (WhatsApp, Facebook…), l'aperçu — titre, description, image — est dans la langue de l'adresse partagée (`/apercu/he`, `/apercu/ru`…).
 
 Pour que Google prenne le site en compte plus vite : ouvrir Google Search Console, ajouter la propriété « Domaine » `touristorder.com`, copier l'enregistrement TXT donné par Google dans la zone DNS du domaine (chez Hostinger), puis indiquer le plan du site `https://www.touristorder.com/sitemap.xml`.
 
@@ -175,6 +178,5 @@ En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fi
 
 - Paiement par carte bancaire en ligne (il faut un compte chez un prestataire de paiement israélien : PayPlus, Grow, Tranzila, CardCom…).
 - Facture fiscale : le reçu du site n'en est pas une ; elle se fait dans un logiciel de facturation agréé.
-- Une adresse par langue pour les moteurs de recherche (`/en`, `/he`…) : aujourd'hui la langue suit le navigateur ou le choix du client, et Google ne lit que la version française.
 - Traduction automatique de ce que le gérant écrit lui-même dans l'admin (nouvel article, nouvelle ville).
 - Fiche produit détaillée et variantes (tailles).

@@ -11,7 +11,7 @@ import { articlesPourRecommander } from "./actions";
 export function BoutonRecommander({ commandeId }: { commandeId: string }) {
   const panier = usePanier();
   const router = useRouter();
-  const { langue, t } = useTraduction();
+  const { langue, t, lien } = useTraduction();
   const [etat, setEtat] = useState<{ enCours: boolean; message: string }>({ enCours: false, message: "" });
 
   async function recommander() {
@@ -29,7 +29,7 @@ export function BoutonRecommander({ commandeId }: { commandeId: string }) {
             manquants: compter(langue, manquants, t.compte.recommanderManquants),
           }) });
       }
-      router.push("/panier");
+      router.push(lien("/panier"));
     } catch {
       setEtat({ enCours: false, message: t.compte.recommanderErreur });
     }

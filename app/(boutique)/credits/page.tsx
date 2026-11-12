@@ -7,21 +7,21 @@ import { cadreDeLaPage } from "@/lib/pages-texte";
 import { sujetPhoto } from "@/lib/i18n/catalogue";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { j } = await cadreDeLaPage();
+  const { j, adresses } = await cadreDeLaPage();
   return {
     title: j.credits.titre,
     description: remplir(j.credits.metaDescription, { site: NOM_DU_SITE }),
-    alternates: { canonical: "/credits" },
+    alternates: adresses("/credits"),
   };
 }
 
 /** L'attribution que demandent les licences des photos libres du catalogue. */
 export default async function Credits() {
-  const { j, accueil, langue } = await cadreDeLaPage();
+  const { j, accueil, retour, langue } = await cadreDeLaPage();
   const c = j.credits;
   return (
-    <PageTexte titre={c.titre} accueil={accueil}>
-      <Paragraphe texte={c.intro} />
+    <PageTexte titre={c.titre} accueil={accueil} retour={retour}>
+      <Paragraphe langue={langue} texte={c.intro} />
       <Article titre={c.auteurs}>
         <ul className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white text-sm">
           {CREDITS_PHOTOS.map((p) => (
@@ -42,7 +42,7 @@ export default async function Credits() {
         </ul>
       </Article>
       <Article titre={c.modifications.titre}>
-        <Paragraphe texte={c.modifications.p1} />
+        <Paragraphe langue={langue} texte={c.modifications.p1} />
       </Article>
     </PageTexte>
   );

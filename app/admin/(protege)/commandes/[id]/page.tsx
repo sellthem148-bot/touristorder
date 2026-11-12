@@ -11,7 +11,7 @@ import { COULEUR_STATUT, LIBELLE_STATUT } from "@/lib/statuts";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { messagePourLeClient, prenomDe } from "@/lib/messages-client";
 import { langueDesMessages } from "@/lib/i18n";
-import { NOM_DE_LA_LANGUE } from "@/lib/langues";
+import { NOM_DE_LA_LANGUE, prefixeDe } from "@/lib/langues";
 import { precisionsAdresse } from "@/lib/adresse";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { BoutonCopier } from "@/components/admin/BoutonCopier";
@@ -63,7 +63,8 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   const whatsappClient = lienWhatsapp(
     c.telephone,
     messagePourLeClient(c.statut, {
-      prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi, site: NOM_DU_SITE,
+      // Le lien envoyé au client mène à sa page de suivi dans SA langue ; celui affiché plus bas, pour toi, reste sans langue.
+      prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi: lienSuivi.replace("/suivi/", `${prefixeDe(langueClient.langue)}/suivi/`), site: NOM_DU_SITE,
       paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement,
     }, langueClient),
   );

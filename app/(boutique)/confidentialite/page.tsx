@@ -8,52 +8,52 @@ import { cadreDeLaPage } from "@/lib/pages-texte";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { j } = await cadreDeLaPage();
+  const { j, adresses } = await cadreDeLaPage();
   return {
     title: j.confidentialite.titre,
     description: remplir(j.confidentialite.metaDescription, { site: NOM_DU_SITE }),
-    alternates: { canonical: "/confidentialite" },
+    alternates: adresses("/confidentialite"),
   };
 }
 
 export default async function Confidentialite() {
-  const [i, { j, accueil, misAJour, avis }] = await Promise.all([infosLegales(), cadreDeLaPage()]);
+  const [i, { langue, j, accueil, retour, misAJour, avis }] = await Promise.all([infosLegales(), cadreDeLaPage()]);
   const c = j.confidentialite;
   const responsable = i.nom || NOM_DU_SITE;
   const liste = (points: string[]) => (
     <ul className="list-disc space-y-1.5 ps-5">
-      {points.map((point) => <li key={point}><TexteRiche texte={point} /></li>)}
+      {points.map((point) => <li key={point}><TexteRiche langue={langue} texte={point} /></li>)}
     </ul>
   );
   return (
-    <PageTexte titre={c.titre} accueil={accueil} misAJour={misAJour} avis={avis}>
-      <Paragraphe texte={remplir(c.intro, { responsable, site: NOM_DU_SITE })} />
+    <PageTexte titre={c.titre} accueil={accueil} retour={retour} misAJour={misAJour} avis={avis}>
+      <Paragraphe langue={langue} texte={remplir(c.intro, { responsable, site: NOM_DU_SITE })} />
 
       <Article titre={c.recueil.titre}>{liste(c.recueil.points)}</Article>
 
       <Article titre={c.usage.titre}>
         {liste(c.usage.points)}
-        <Paragraphe texte={c.usage.p1} />
+        <Paragraphe langue={langue} texte={c.usage.p1} />
       </Article>
 
       <Article titre={c.partage.titre}>
-        <Paragraphe texte={c.partage.p1} />
+        <Paragraphe langue={langue} texte={c.partage.p1} />
       </Article>
 
       <Article titre={c.cookies.titre}>
-        <Paragraphe texte={c.cookies.p1} />
+        <Paragraphe langue={langue} texte={c.cookies.p1} />
       </Article>
 
       <Article titre={c.duree.titre}>
-        <Paragraphe texte={c.duree.p1} />
+        <Paragraphe langue={langue} texte={c.duree.p1} />
       </Article>
 
       <Article titre={c.droits.titre}>
-        <Paragraphe texte={i.email ? remplir(c.droits.p1AvecEmail, { email: i.email }) : c.droits.p1} />
+        <Paragraphe langue={langue} texte={i.email ? remplir(c.droits.p1AvecEmail, { email: i.email }) : c.droits.p1} />
       </Article>
 
       <Article titre={c.securite.titre}>
-        <Paragraphe texte={c.securite.p1} />
+        <Paragraphe langue={langue} texte={c.securite.p1} />
       </Article>
     </PageTexte>
   );

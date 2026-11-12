@@ -26,7 +26,7 @@ export async function actualiserPanier(ids: string[]) {
 }
 
 export async function passerCommande(_avant: EtatCommande, form: FormData): Promise<EtatCommande> {
-  const { langue, ts } = await traduction();
+  const { langue, ts, lien } = await traduction();
   // Champ piège invisible : un humain ne le remplit pas.
   if (String(form.get("site") ?? "") !== "") return { erreur: ts.erreurs.refusee };
 
@@ -71,7 +71,7 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
   const site = await adresseDuSite();
   const commandeId = resultat.id;
   after(() => envoyerCourrielsDeCommande(commandeId, site));
-  redirect(`/suivi/${resultat.jeton}?nouvelle=1`);
+  redirect(lien(`/suivi/${resultat.jeton}?nouvelle=1`));
 }
 
 /**

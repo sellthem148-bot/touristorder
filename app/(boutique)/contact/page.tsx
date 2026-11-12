@@ -7,27 +7,27 @@ import { infosLegales } from "@/lib/reglages";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { NOM_DU_SITE } from "@/lib/marque";
-import { remplir } from "@/lib/langues";
+import { adressesParLangue, remplir } from "@/lib/langues";
 import { traduction } from "@/lib/traduction";
 import { nomVille } from "@/lib/i18n/catalogue";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await traduction();
+  const { langue, t } = await traduction();
   return {
     title: t.contact.titre,
     description: remplir(t.contact.metaDescription, { site: NOM_DU_SITE }),
-    alternates: { canonical: "/contact" },
+    alternates: adressesParLangue("/contact", langue),
   };
 }
 
 export default async function Contact() {
-  const [i, { langue, t }] = await Promise.all([infosLegales(), traduction()]);
+  const [i, { langue, t, lien }] = await Promise.all([infosLegales(), traduction()]);
   const whatsapp = lienWhatsapp(i.whatsapp, remplir(t.whatsapp.contact, { site: NOM_DU_SITE }));
   const amplitude = amplitudeDesCreneaux(i.creneaux, langue);
   return (
-    <PageTexte titre={t.contact.titre} accueil={t.commun.accueil}>
+    <PageTexte titre={t.contact.titre} accueil={t.commun.accueil} retour={lien("/")}>
       <p>{t.contact.intro}</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -62,7 +62,7 @@ export default async function Contact() {
       </dl>
 
       <p>
-        {t.commun.introuvableQuestion} <Link href="/panier?demande=" className={LIEN_TEXTE}>{t.commun.demandezLe}</Link>{t.commun.introuvableSuite}
+        {t.commun.introuvableQuestion} <Link href={lien("/panier?demande=")} className={LIEN_TEXTE}>{t.commun.demandezLe}</Link>{t.commun.introuvableSuite}
       </p>
       {(i.nom || i.adresse) && (
         <p className="text-sm text-slate-500"><bdi>{[i.nom, i.adresse].filter(Boolean).join(" — ")}</bdi></p>

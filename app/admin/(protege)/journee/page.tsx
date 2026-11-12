@@ -9,6 +9,7 @@ import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { lienWaze, messageJArrive, messagePourLeClient, prenomDe } from "@/lib/messages-client";
 import { langueDesMessages } from "@/lib/i18n";
+import { prefixeDe } from "@/lib/langues";
 import { precisionsAdresse } from "@/lib/adresse";
 import { COULEUR_PAIEMENT, estReglee, etatDuPaiement, libelleDuSolde, libellePaiement, resteAPayer } from "@/lib/paiement";
 import { prixNonVerifie } from "@/lib/prix-indicatif";
@@ -140,7 +141,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
               const message = lienWhatsapp(
                 c.telephone,
                 messagePourLeClient(c.statut, {
-                  prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi: `${site}/suivi/${c.jeton}`, site: NOM_DU_SITE,
+                  prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi: `${site}${prefixeDe(langueClient.langue)}/suivi/${c.jeton}`, site: NOM_DU_SITE,
                   paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement,
                 }, langueClient),
               );

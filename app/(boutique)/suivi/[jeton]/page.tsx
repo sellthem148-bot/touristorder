@@ -49,7 +49,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
     },
   });
   if (!commande) notFound();
-  const [reglages, { langue, t }] = await Promise.all([lireReglages(), traduction()]);
+  const [reglages, { langue, t, lien }] = await Promise.all([lireReglages(), traduction()]);
   const s = t.suivi;
   const prix = (agorot: number) => formatPrix(agorot, langue);
   const mode = libelleDuMode(commande.paiement, t);
@@ -226,8 +226,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
       </section>
 
       <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
-        <Link href="/commandes" className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.mesCommandes}</Link>
-        <Link href="/" className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.retourCatalogue}</Link>
+        <Link href={lien("/commandes")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.mesCommandes}</Link>
+        <Link href={lien("/")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.retourCatalogue}</Link>
       </div>
     </div>
   );
