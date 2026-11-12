@@ -962,6 +962,10 @@ const en: TraductionsCatalogue = {
     "Apple AirTag": "Apple AirTag",
     "Apple AirTag × 4": "Apple AirTag × 4",
     "Samsung Galaxy SmartTag2": "Samsung Galaxy SmartTag2",
+    // Ajoutés d'après le relevé Wolt du 12 novembre
+    "Hallah tressée Angel 500 g": "Angel braided challah 500 g",
+    "Malabi Gad 160 g": "Gad malabi 160 g",
+    "Café glacé Yotvata 1 L": "Yotvata iced coffee 1 L",
   },
   // Descriptions d'articles
   descriptions: {
@@ -1834,6 +1838,9 @@ const en: TraductionsCatalogue = {
     "6 pains moelleux, 510 g": "6 soft buns, 510 g",
     "Saucisses type hot-dog": "Hot dog-style sausages",
     "20 grands sacs": "20 large bags",
+    "Hallah sucrée tressée, 500 g": "Sweet braided challah, 500 g",
+    "Malabi, le pot de 160 g": "Malabi, 160 g pot",
+    "Café glacé, 1 litre": "Iced coffee, 1 litre",
   },
   // Noms des options
   groupes: {

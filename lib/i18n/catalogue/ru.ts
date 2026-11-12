@@ -962,6 +962,10 @@ const ru: TraductionsCatalogue = {
     "Apple AirTag": "Apple AirTag",
     "Apple AirTag × 4": "Apple AirTag, 4 шт.",
     "Samsung Galaxy SmartTag2": "Samsung Galaxy SmartTag2",
+    // Ajoutés d'après le relevé Wolt du 12 novembre
+    "Hallah tressée Angel 500 g": "Хала плетёная Angel 500 г",
+    "Malabi Gad 160 g": "Малаби Gad 160 г",
+    "Café glacé Yotvata 1 L": "Холодный кофе Yotvata 1 л",
   },
   // Descriptions d'articles
   descriptions: {
@@ -1834,6 +1838,9 @@ const ru: TraductionsCatalogue = {
     "6 pains moelleux, 510 g": "6 мягких булочек, 510 г",
     "Saucisses type hot-dog": "Сосиски для хот-догов",
     "20 grands sacs": "20 больших мешков",
+    "Hallah sucrée tressée, 500 g": "Сладкая плетёная хала, 500 г",
+    "Malabi, le pot de 160 g": "Малаби, стаканчик 160 г",
+    "Café glacé, 1 litre": "Холодный кофе, 1 литр",
   },
   // Noms des options
   groupes: {

@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { appliquerLeReleveDePrix, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -89,6 +89,8 @@ async function main() {
     }
     // La décision du gérant : ces articles en vente au prix de sa liste. Une seule fois, jamais sur un article qu'il a touché.
     dire(await mettreEnVenteLaListe(prisma));
+    // Le relevé de prix du 12 novembre (ses captures de Wolt, prix hors promotion) : une seule fois, jamais sur un prix qu'il a fixé lui-même.
+    dire(await appliquerLeReleveDePrix(prisma));
     // Sa décision suivante : plus de viande ni de volaille (cacherout). Masquées, une seule fois.
     dire(await retirerLaViande(prisma));
     // Sa liste « Dynamica » : installée « à compléter », masquée — et elle le reste (prix et modèles invérifiables).

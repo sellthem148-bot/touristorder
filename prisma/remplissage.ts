@@ -13,6 +13,7 @@ import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fi
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from "./articles-liste";
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
 import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-viande";
+import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, changementsDuReleve } from "./releve-wolt-1112";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -53,6 +54,7 @@ export const LOTS_WOLT: LotWolt[] = [
   { nom: "Wolt Market", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT },
   { nom: "Dynamica", boutique: BOUTIQUE_DYNAMICA, articles: ARTICLES_DYNAMICA },
   { nom: "Wolt Market, fiches du 11 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_FICHES, ordre: 500 },
+  { nom: "Wolt Market, relevé du 12 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_DU_12_NOVEMBRE, ordre: 600 },
 ];
 
 /**
@@ -196,6 +198,31 @@ export async function installerLaListeDynamica(prisma: PrismaClient): Promise<st
   const data = await articlesACompleter(prisma, ARTICLES_DE_LA_LISTE_DYNAMICA, BOUTIQUE_DYNAMICA, ORDRE_DE_LA_LISTE_DYNAMICA);
   await prisma.$transaction([prisma.produit.createMany({ data }), noterOperation(prisma, CLE_LISTE_DYNAMICA)]);
   return `Liste Dynamica : ${data.length} articles ajoutés « à compléter », masqués, avec leur prix indicatif. Aucun n'est mis en vente.`;
+}
+
+export const CLE_RELEVE_DU_12_NOVEMBRE = "releve-prix-2026-11-12";
+
+/**
+ * Applique le relevé de prix du 12 novembre (prisma/releve-wolt-1112.ts), demandé par le gérant d'après
+ * ses captures de Wolt : prix normaux, hors promotion. Une seule fois (`Reglages.operationsFaites`).
+ * Un prix que le gérant a changé lui-même n'est jamais remplacé (`changementsDuReleve`) ; le nom exact
+ * de l'article sur Wolt est noté s'il manquait.
+ */
+export async function appliquerLeReleveDePrix(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RELEVE_DU_12_NOVEMBRE);
+  if (faite === null) return "Relevé de prix du 12 novembre : réglages pas encore créés, rien de changé.";
+  if (faite) return "Relevé de prix du 12 novembre : déjà appliqué, rien de changé.";
+  const produits = await prisma.produit.findMany({
+    where: { OR: [{ nom: { in: RELEVE_DU_12_NOVEMBRE.map((l) => l.nom) } }, { nomWolt: { in: RELEVE_DU_12_NOVEMBRE.map((l) => l.nomWolt) } }] },
+    select: { id: true, nom: true, nomWolt: true, prix: true, prixAchat: true },
+  });
+  const changements = changementsDuReleve(produits);
+  await prisma.$transaction([
+    ...changements.map((c) => prisma.produit.update({ where: { id: c.id }, data: c.data })),
+    noterOperation(prisma, CLE_RELEVE_DU_12_NOVEMBRE),
+  ]);
+  const prix = changements.filter((c) => c.data.prix !== undefined).length;
+  return `Relevé de prix du 12 novembre : ${prix} prix mis à jour sur ${RELEVE_DU_12_NOVEMBRE.length} relevés (les autres ont été fixés par le gérant, ou l'article n'existe plus) ; ${changements.length - prix} nom(s) Wolt noté(s) sans toucher au prix.`;
 }
 
 export const CLE_RETRAIT_VIANDE = "retrait-viande-2026-11-11";

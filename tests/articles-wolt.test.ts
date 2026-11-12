@@ -150,7 +150,7 @@ describe("articles de Dynamica (électronique)", () => {
   it("tous lots confondus : aucun nom en double, ni entre eux ni avec la base du catalogue", async () => {
     const { LOTS_WOLT } = await import("../prisma/remplissage");
     const tous = LOTS_WOLT.flatMap((l) => l.articles);
-    expect(tous).toHaveLength(280);
+    expect(tous).toHaveLength(283); // 207 + 73 + les 3 ajoutés d'après le relevé du 12 novembre
     expect(new Set(tous.map((a) => a.nom)).size).toBe(tous.length);
     expect(new Set(tous.map((a) => a.nomWolt)).size).toBe(tous.length);
     const rayons = new Set<string>([...CATEGORIES.map((c) => c.nom), ...CATEGORIES_WOLT.map((c) => c.nom)]);
