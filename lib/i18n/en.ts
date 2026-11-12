@@ -53,7 +53,7 @@ const en: Dictionnaire = {
   },
 
   accueil: {
-    surtitre: "Home delivery in Israel",
+    surtitre: "Home delivery in Israel · Service in English",
     titre: "Your groceries delivered to your door, the same evening.",
     // Le message d'accueil d'un site neuf (affiché traduit tant que le gérant ne l'a pas réécrit).
     messageParDefaut: "Order whenever you like and we'll deliver in the evening to where you're staying: a forgotten charger, diapers, a swimsuit, groceries…",
@@ -401,7 +401,7 @@ const en: Dictionnaire = {
   contact: {
     titre: "Contact",
     metaDescription: "A question, an order in progress, an item you can't find: how to reach {site}.",
-    intro: "A question before ordering, an order in progress, an item you can't find: write to us and we'll get back to you.",
+    intro: "A question before ordering, an order in progress, an item you can't find: write to us — we reply in English, French or Hebrew.",
     sansContact: "For an order in progress, use the tracking link you received by email: it lets you contact us directly.",
     livraisons: "Deliveries",
     villesLivrees: "Cities we deliver to",

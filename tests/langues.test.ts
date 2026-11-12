@@ -68,13 +68,21 @@ describe("traductions", () => {
       expect(t, t).not.toMatch(/(^|[\s«(])(tu|ta|ton|tes|toi)\b/i);
     }
   });
-  it("aucune traduction ne promet un service dans la langue du client", () => {
-    // Le gérant répond en français : seul le site français l'annonce.
-    expect(DICTIONNAIRES.fr.contact.intro).toContain("en français");
-    expect(DICTIONNAIRES.en.accueil.surtitre).not.toMatch(/english|french/i);
-    expect(DICTIONNAIRES.ru.accueil.surtitre).not.toMatch(/русск/i);
-    expect(DICTIONNAIRES.es.accueil.surtitre).not.toMatch(/español/i);
-    expect(DICTIONNAIRES.he.accueil.surtitre).not.toMatch(/עברית/);
+  it("le gérant répond en français, en anglais ou en hébreu : le site ne promet ni le russe ni l'espagnol", () => {
+    // Ces trois langues annoncent un service dans la langue du client.
+    expect(DICTIONNAIRES.fr.accueil.surtitre).toContain("en français");
+    expect(DICTIONNAIRES.en.accueil.surtitre).toMatch(/in English/);
+    expect(DICTIONNAIRES.he.accueil.surtitre).toMatch(/בעברית/);
+    // La page de contact dit partout dans quelles langues on répond.
+    expect(DICTIONNAIRES.fr.contact.intro).toContain("en français, en anglais ou en hébreu");
+    expect(DICTIONNAIRES.en.contact.intro).toMatch(/English, French or Hebrew/);
+    expect(DICTIONNAIRES.he.contact.intro).toMatch(/בעברית, באנגלית או בצרפתית/);
+    expect(DICTIONNAIRES.ru.contact.intro).toMatch(/на английском, иврите или французском/);
+    expect(DICTIONNAIRES.es.contact.intro).toMatch(/en inglés, hebreo o francés/);
+    // Le russe et l'espagnol ne sont promis nulle part.
+    const textes = (x: unknown): string[] => (typeof x === "string" ? [x] : x && typeof x === "object" ? Object.values(x).flatMap(textes) : []);
+    for (const t of [...textes(DICTIONNAIRES.ru), ...textes(DICTIONNAIRES_SERVEUR.ru)]) expect(t, t).not.toMatch(/на русском|по-русски/i);
+    for (const t of [...textes(DICTIONNAIRES.es), ...textes(DICTIONNAIRES_SERVEUR.es)]) expect(t, t).not.toMatch(/en español|en castellano/i);
   });
   it("chaque langue a ses propres textes", () => {
     const titres = new Set(LANGUES.map((l) => dictionnaire(l).panier.titreCommande));

@@ -404,7 +404,8 @@ const fr = {
   contact: {
     titre: "Contact",
     metaDescription: "Une question, une commande en cours, un article introuvable : comment joindre {site}.",
-    intro: "Une question avant de commander, une commande en cours, un article que vous ne trouvez pas : écrivez-nous, nous répondons en français.",
+    // Le gérant répond en français, en anglais ou en hébreu : chaque langue le dit, sans promettre le russe ni l'espagnol.
+    intro: "Une question avant de commander, une commande en cours, un article que vous ne trouvez pas : écrivez-nous, nous répondons en français, en anglais ou en hébreu.",
     sansContact: "Pour une commande en cours, utilisez le lien de suivi reçu par e-mail : il vous permet de nous joindre directement.",
     livraisons: "Livraisons",
     villesLivrees: "Villes livrées",

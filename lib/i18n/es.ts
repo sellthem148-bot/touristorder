@@ -388,7 +388,7 @@ const es: Dictionnaire = {
   contact: {
     titre: "Contacto",
     metaDescription: "Una pregunta, un pedido en curso, un artículo que no encuentra: cómo ponerse en contacto con {site}.",
-    intro: "Una pregunta antes de pedir, un pedido en curso, un artículo que no encuentra: escríbanos.",
+    intro: "Una pregunta antes de pedir, un pedido en curso, un artículo que no encuentra: escríbanos. Respondemos en inglés, hebreo o francés.",
     sansContact: "Para un pedido en curso, use el enlace de seguimiento que recibió por correo electrónico: le permite contactarnos directamente.",
     livraisons: "Entregas",
     villesLivrees: "Ciudades de entrega",
