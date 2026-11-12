@@ -10,8 +10,9 @@ import { FicheProduit } from "./FicheProduit";
 import { useTraduction } from "./LangueProvider";
 import { remplir } from "@/lib/langues";
 
-// Le bouton posé dans le coin de la photo : arrondi comme elle côté coin, et à l'opposé (la forme de Wolt).
-const COIN = "rounded-ss-xl rounded-ee-xl";
+// Le bouton posé dans le coin haut GAUCHE de la photo, dans toutes les langues (décision du gérant : en
+// hébreu aussi, comme sur Wolt). Arrondi comme la photo côté coin, et à l'opposé : la forme de Wolt.
+const COIN = "rounded-tl-xl rounded-br-xl";
 
 function articleSansOptions(p: ProduitPublic) {
   return { produitId: p.id, nom: p.nom, optionsLibelle: "", prix: p.prix, photoUrl: p.photoUrl, emoji: p.categorie.emoji };
@@ -75,7 +76,8 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
 /**
  * Un article, présenté comme une ligne de menu : le nom, le format, le prix — et la photo
  * seulement quand il y en a une. Toute la ligne ouvre la fiche ; le bouton ajoute au panier.
- * Avec une photo : elle est au début de la ligne et porte le bouton « + » dans son coin, comme sur Wolt.
+ * Avec une photo : elle est à gauche de la ligne — en hébreu aussi — et porte le bouton « + » dans son
+ * coin haut gauche, comme sur Wolt.
  * Sans photo : pas d'image de remplacement, le bouton reste en bas à droite.
  */
 export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitPublic; sansBadge?: boolean }) {
@@ -84,7 +86,7 @@ export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitP
   const detail = produit.description || (produit.options.length > 0 ? remplir(t.produit.auChoix, { options: produit.options.map((g) => g.affiche ?? g.nom).join(", ") }) : "");
 
   return (
-    <article className={`relative flex min-h-[5.75rem] gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-400 ${produit.epuise ? "bg-slate-50" : ""}`}>
+    <article className={`relative flex min-h-[5.75rem] gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-400 rtl:flex-row-reverse ${produit.epuise ? "bg-slate-50" : ""}`}>
       {produit.photoUrl && (
         <div className="relative shrink-0 self-start">
           <img
@@ -93,8 +95,8 @@ export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitP
             loading="lazy"
             className={`h-24 w-24 rounded-xl border border-slate-200 bg-white object-contain ${produit.epuise ? "opacity-50 grayscale" : ""}`}
           />
-          {/* Le « + » dans le coin de la photo (côté début de ligne : en haut à gauche en français). */}
-          <div className="absolute start-0 top-0 z-10">
+          {/* Le « + » en haut à gauche de la photo, quelle que soit la langue : la seule position qui ne se retourne pas en hébreu. */}
+          <div className="absolute left-0 top-0 z-10">
             <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} surPhoto />
           </div>
         </div>
