@@ -7,7 +7,11 @@ const HEBREU = /[֐-׿]/;
 describe("repère Wolt : retrouver sur Wolt un article qu'on ne connaît pas", () => {
   it("le nom relevé sur Wolt passe avant tout : il est exact, et c'est lui qu'on cherche en images", () => {
     const r = repereWolt("Lait Tnuva 3 % 1 L", " חלב תנובה 3% 1 ליטר ");
-    expect(r).toEqual({ hebreu: "חלב תנובה 3% 1 ליטר", exact: true, images: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent("חלב תנובה 3% 1 ליטר")}` });
+    expect(r).toEqual({
+      hebreu: "חלב תנובה 3% 1 ליטר", exact: true, images: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent("חלב תנובה 3% 1 ליטר")}`,
+      // La photo de Wolt, tirée des captures du gérant : retrouvée ici par le nom de l'article.
+      photo: "/admin/repere/lait-tnuva-3-1-l.jpg",
+    });
   });
 
   it("sans nom relevé : la traduction en hébreu du nom français, signalée comme telle", () => {
@@ -19,7 +23,7 @@ describe("repère Wolt : retrouver sur Wolt un article qu'on ne connaît pas", (
 
   it("un article que le gérant a créé ou renommé : pas d'hébreu inventé, la recherche d'images se fait sur son nom", () => {
     const r = repereWolt("Parasol géant du gérant", null);
-    expect(r).toEqual({ hebreu: "", exact: false, images: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent("Parasol géant du gérant")}` });
+    expect(r).toEqual({ hebreu: "", exact: false, images: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent("Parasol géant du gérant")}`, photo: null });
   });
 
   it("chaque article de la liste du gérant mis en vente a son nom en hébreu : c'est pour eux que le repère existe", () => {

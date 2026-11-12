@@ -7,10 +7,11 @@ import { reduirePhoto } from "@/lib/reduire-photo";
 import { rechercheDImage } from "@/lib/recherche-image";
 import { enregistrerPhotoRapide } from "../../actions";
 
-type Props = { id: string; nom: string; nomWolt: string; detail: string; photoUrl: string };
+/** `photoWolt` : la photo que Wolt montre pour l'article (captures du gérant), pour savoir quoi chercher. */
+type Props = { id: string; nom: string; nomWolt: string; detail: string; photoUrl: string; photoWolt?: string | null };
 
 /** Un article et son bouton photo : la photo choisie est allégée puis enregistrée aussitôt. */
-export function LignePhoto({ id, nom, nomWolt, detail, photoUrl }: Props) {
+export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Props) {
   const champ = useRef<HTMLInputElement>(null);
   const [photo, setPhoto] = useState(photoUrl);
   const [etat, setEtat] = useState<{ enCours: boolean; message: string; erreur: boolean }>({ enCours: false, message: "", erreur: false });
@@ -48,6 +49,12 @@ export function LignePhoto({ id, nom, nomWolt, detail, photoUrl }: Props) {
         <p className="font-medium leading-snug">{nom}</p>
         <p className="truncate text-xs text-slate-500">{detail}</p>
         {nomWolt && <p dir="auto" lang="he" className="truncate text-xs text-slate-500">{nomWolt}</p>}
+        {photoWolt && (
+          <a href={photoWolt} target="_blank" rel="noopener noreferrer" className="mt-1 flex items-center gap-2 text-xs text-slate-500" aria-label={`Voir la photo Wolt de ${nom}`}>
+            <img src={photoWolt} alt="" width={96} height={53} loading="lazy" className="h-[53px] w-24 rounded-lg border border-slate-200 bg-white object-contain" />
+            Sur Wolt
+          </a>
+        )}
         <a
           href={rechercheDImage(nom, nomWolt)}
           target="_blank"

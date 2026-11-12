@@ -13,7 +13,7 @@ import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fi
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from "./articles-liste";
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
 import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-viande";
-import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, changementsDuReleve } from "./releve-wolt-1112";
+import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve } from "./releve-wolt-1112";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -223,6 +223,36 @@ export async function appliquerLeReleveDePrix(prisma: PrismaClient): Promise<str
   ]);
   const prix = changements.filter((c) => c.data.prix !== undefined).length;
   return `Relevé de prix du 12 novembre : ${prix} prix mis à jour sur ${RELEVE_DU_12_NOVEMBRE.length} relevés (les autres ont été fixés par le gérant, ou l'article n'existe plus) ; ${changements.length - prix} nom(s) Wolt noté(s) sans toucher au prix.`;
+}
+
+export const CLE_REMPLACEMENTS_DU_12_NOVEMBRE = "remplacements-2026-11-12";
+
+/**
+ * Remplace sept articles de la liste du gérant par ce que Wolt vend vraiment (autre marque, autre format) :
+ * sa décision, sur la liste que le relevé du 12 novembre lui a montrée (« remplace »). L'article garde sa
+ * place, sa photo et son rayon ; il prend le nom, la description, le prix (vente et achat) et le nom exact
+ * de Wolt. Une seule fois (`Reglages.operationsFaites`) ; un article qu'il a renommé ou supprimé entre-temps
+ * n'est pas touché, et rien n'est fait si le nouveau nom existe déjà.
+ */
+export async function remplacerLesArticles(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_REMPLACEMENTS_DU_12_NOVEMBRE);
+  if (faite === null) return "Remplacements du 12 novembre : réglages pas encore créés, rien de changé.";
+  if (faite) return "Remplacements du 12 novembre : déjà faits, rien de changé.";
+  const pris = new Set(
+    (await prisma.produit.findMany({ where: { nom: { in: REMPLACEMENTS_DU_12_NOVEMBRE.map((r) => r.nom) } }, select: { nom: true } })).map((p) => p.nom),
+  );
+  const aFaire = REMPLACEMENTS_DU_12_NOVEMBRE.filter((r) => !pris.has(r.nom));
+  const resultats = await prisma.$transaction([
+    ...aFaire.map((r) =>
+      prisma.produit.updateMany({
+        where: { nom: r.ancien },
+        data: { nom: r.nom, description: r.description, prix: enAgorot(r.prix), prixAchat: enAgorot(r.prix), nomWolt: r.nomWolt },
+      }),
+    ),
+    noterOperation(prisma, CLE_REMPLACEMENTS_DU_12_NOVEMBRE),
+  ]);
+  const remplaces = resultats.slice(0, aFaire.length).reduce((s, r) => s + ("count" in r ? r.count : 0), 0);
+  return `Remplacements du 12 novembre : ${remplaces} article(s) remplacé(s) par ce que Wolt vend vraiment, sur ${REMPLACEMENTS_DU_12_NOVEMBRE.length}.`;
 }
 
 export const CLE_RETRAIT_VIANDE = "retrait-viande-2026-11-11";

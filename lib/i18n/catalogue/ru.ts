@@ -966,6 +966,14 @@ const ru: TraductionsCatalogue = {
     "Hallah tressée Angel 500 g": "Хала плетёная Angel 500 г",
     "Malabi Gad 160 g": "Малаби Gad 160 г",
     "Café glacé Yotvata 1 L": "Холодный кофе Yotvata 1 л",
+    // Les sept articles de la liste remplacés par ce que Wolt vend vraiment (12 novembre)
+    "Beurre tartinable salé Lurpak 250 g": "Масло сливочное мягкое солёное Lurpak 250 г",
+    "Tortillas de blé Mexifoods 20 cm × 8": "Тортильи пшеничные Mexifoods 20 см × 8",
+    "Petits pains moelleux Angel × 6": "Булочки мягкие Angel × 6",
+    "Pain blanc tranché sans gluten 500 g (surgelé)": "Хлеб белый нарезанный без глютена 500 г (замороженный)",
+    "Yaourts Danone Bio 3 % × 8 (150 g)": "Йогурты Danone Bio 3 % × 8 (150 г)",
+    "Yaourt protéiné GO fraise 200 g": "Йогурт протеиновый GO клубника 200 г",
+    "Crème à fouetter Yotvata 38 % 250 g": "Сливки для взбивания Yotvata 38 % 250 г",
   },
   // Descriptions d'articles
   descriptions: {
@@ -1841,6 +1849,13 @@ const ru: TraductionsCatalogue = {
     "Hallah sucrée tressée, 500 g": "Сладкая плетёная хала, 500 г",
     "Malabi, le pot de 160 g": "Малаби, стаканчик 160 г",
     "Café glacé, 1 litre": "Холодный кофе, 1 литр",
+    "Beurre à tartiner salé, 250 g": "Солёное сливочное масло для намазывания, 250 г",
+    "Tortillas à la farine de blé de 20 cm, le paquet de 8 (320 g)": "Тортильи из пшеничной муки, 20 см, упаковка 8 шт. (320 г)",
+    "Petits pains moelleux, le sachet de 6 (450 g)": "Мягкие булочки, упаковка 6 шт. (450 г)",
+    "Pain blanc en tranches, sans gluten, surgelé, 500 g": "Белый нарезанный хлеб, без глютена, замороженный, 500 г",
+    "Pack de 8 yaourts de 150 g, à 3 % de matière grasse": "Упаковка из 8 йогуртов по 150 г, жирность 3 %",
+    "Yaourt crémeux à la fraise, 20 g de protéines, le pot de 200 g": "Кремовый клубничный йогурт, 20 г белка, стаканчик 200 г",
+    "Crème à fouetter à 38 % de matière grasse, 250 g": "Сливки для взбивания жирностью 38 %, 250 г",
   },
   // Noms des options
   groupes: {

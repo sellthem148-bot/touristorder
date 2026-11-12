@@ -35,6 +35,31 @@ export const RELEVE_DU_12_NOVEMBRE: LigneDeReleve[] = [
   { nom: "Pain 100 % seigle complet tranché 500 g", nomWolt: "לחם שיפון 100% ברלין אגמי", prix: 16.9, ancien: 17.9 },
 ];
 
+export type Remplacement = {
+  /** Le nom de l'article de la liste du gérant, que Wolt ne vend pas tel quel. */
+  ancien: string;
+  /** Ce que Wolt vend vraiment : le nom, la description (seulement ce que montre la page de Wolt), le prix normal. */
+  nom: string;
+  description: string;
+  prix: number;
+  nomWolt: string;
+};
+
+/**
+ * Sept articles de la liste du gérant que Wolt vend sous une autre marque ou un autre format. Le gérant,
+ * à qui la liste a été montrée : « remplace ». L'article prend le nom, la description et le prix de ce que
+ * Wolt vend vraiment (`remplacerLesArticles`, prisma/remplissage.ts).
+ */
+export const REMPLACEMENTS_DU_12_NOVEMBRE: Remplacement[] = [
+  { ancien: "Beurre Lurpak salé 200 g", nom: "Beurre tartinable salé Lurpak 250 g", description: "Beurre à tartiner salé, 250 g", prix: 20.6, nomWolt: "ממרח חמאה עם מלח לורפק - 250 גרם" },
+  { ancien: "Tortillas de blé wrap × 6", nom: "Tortillas de blé Mexifoods 20 cm × 8", description: "Tortillas à la farine de blé de 20 cm, le paquet de 8 (320 g)", prix: 8.9, nomWolt: "טורטיות קמח חיטה 20 ס\"מ מקסיפוד - 8 יח'" },
+  { ancien: "Petits pains au lait briochés × 6", nom: "Petits pains moelleux Angel × 6", description: "Petits pains moelleux, le sachet de 6 (450 g)", prix: 12.9, nomWolt: "לחמניה רכה אנג'ל - 6 יח'" },
+  { ancien: "Pain de mie sans gluten Schär 300 g", nom: "Pain blanc tranché sans gluten 500 g (surgelé)", description: "Pain blanc en tranches, sans gluten, surgelé, 500 g", prix: 21.5, nomWolt: "לחם לבן פרוס ללא גלוטן קפוא שרהל'ה" },
+  { ancien: "Yaourt brassé Danone Bio nature × 4", nom: "Yaourts Danone Bio 3 % × 8 (150 g)", description: "Pack de 8 yaourts de 150 g, à 3 % de matière grasse", prix: 22.5, nomWolt: "מאגדת יוגורט ביו דנונה 3% - 150 גרם * 8" },
+  { ancien: "Yaourt protéiné GO Tnuva fruits bois 200 g", nom: "Yaourt protéiné GO fraise 200 g", description: "Yaourt crémeux à la fraise, 20 g de protéines, le pot de 200 g", prix: 7.2, nomWolt: "יוגורט גו קרמי תות 20 ג' חלבון" },
+  { ancien: "Crème fraîche 38 % Chef Lavan 250 ml", nom: "Crème à fouetter Yotvata 38 % 250 g", description: "Crème à fouetter à 38 % de matière grasse, 250 g", prix: 7.64, nomWolt: "שמנת להקצפה 38% מהדרין יטבתה 250 גרם - מחיר מפוקח" },
+];
+
 /** Les trois articles ajoutés ce jour-là (descriptions : seulement ce que montre la page de Wolt). */
 export const ARTICLES_WOLT_DU_12_NOVEMBRE: ArticleWolt[] = [
   { categorie: "Pain & pâtisserie", nom: "Hallah tressée Angel 500 g", description: "Hallah sucrée tressée, 500 g", prix: 18.9, nomWolt: "חלה מתוקה קלועה אנג'ל - 500 גרם" },

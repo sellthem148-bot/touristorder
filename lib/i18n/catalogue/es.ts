@@ -966,6 +966,14 @@ const es: TraductionsCatalogue = {
     "Hallah tressée Angel 500 g": "Jalá trenzada Angel 500 g",
     "Malabi Gad 160 g": "Malabi Gad 160 g",
     "Café glacé Yotvata 1 L": "Café helado Yotvata 1 L",
+    // Les sept articles de la liste remplacés par ce que Wolt vend vraiment (12 novembre)
+    "Beurre tartinable salé Lurpak 250 g": "Mantequilla untable con sal Lurpak 250 g",
+    "Tortillas de blé Mexifoods 20 cm × 8": "Tortillas de trigo Mexifoods 20 cm × 8",
+    "Petits pains moelleux Angel × 6": "Panecillos tiernos Angel × 6",
+    "Pain blanc tranché sans gluten 500 g (surgelé)": "Pan blanco en rebanadas sin gluten 500 g (congelado)",
+    "Yaourts Danone Bio 3 % × 8 (150 g)": "Yogures Danone Bio 3 % × 8 (150 g)",
+    "Yaourt protéiné GO fraise 200 g": "Yogur proteico GO fresa 200 g",
+    "Crème à fouetter Yotvata 38 % 250 g": "Nata para montar Yotvata 38 % 250 g",
   },
   // Descriptions d'articles
   descriptions: {
@@ -1841,6 +1849,13 @@ const es: TraductionsCatalogue = {
     "Hallah sucrée tressée, 500 g": "Jalá dulce trenzada, 500 g",
     "Malabi, le pot de 160 g": "Malabi, envase de 160 g",
     "Café glacé, 1 litre": "Café helado, 1 litro",
+    "Beurre à tartiner salé, 250 g": "Mantequilla para untar con sal, 250 g",
+    "Tortillas à la farine de blé de 20 cm, le paquet de 8 (320 g)": "Tortillas de harina de trigo de 20 cm, paquete de 8 (320 g)",
+    "Petits pains moelleux, le sachet de 6 (450 g)": "Panecillos tiernos, bolsa de 6 (450 g)",
+    "Pain blanc en tranches, sans gluten, surgelé, 500 g": "Pan blanco en rebanadas, sin gluten, congelado, 500 g",
+    "Pack de 8 yaourts de 150 g, à 3 % de matière grasse": "Pack de 8 yogures de 150 g, con 3 % de materia grasa",
+    "Yaourt crémeux à la fraise, 20 g de protéines, le pot de 200 g": "Yogur cremoso de fresa, 20 g de proteínas, envase de 200 g",
+    "Crème à fouetter à 38 % de matière grasse, 250 g": "Nata para montar con 38 % de materia grasa, 250 g",
   },
   // Noms des options
   groupes: {

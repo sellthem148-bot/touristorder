@@ -7,7 +7,7 @@ import { ARTICLES_WOLT_FICHES } from "../prisma/articles-wolt-fiches";
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "../prisma/articles-liste";
 import { VIANDE_ET_VOLAILLE } from "../prisma/retrait-viande";
 import { LOTS_WOLT } from "../prisma/remplissage";
-import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
+import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
 
 const HEBREU = /[֐-׿]/;
 const DEJA_RELEVES = [...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_WOLT_FICHES];
@@ -83,5 +83,35 @@ describe("mise en ligne", () => {
     const corps = remplissage.slice(remplissage.indexOf("export async function appliquerLeReleveDePrix"), remplissage.indexOf("export const CLE_RETRAIT_VIANDE"));
     expect(corps).toContain("operationFaite(prisma, CLE_RELEVE_DU_12_NOVEMBRE)");
     expect(corps).toContain("noterOperation(prisma, CLE_RELEVE_DU_12_NOVEMBRE)");
+  });
+});
+
+describe("articles de la liste remplacés par ce que Wolt vend vraiment", () => {
+  it("chaque remplacement part d'un article de la liste mis en vente, vers un nom neuf", () => {
+    const noms = new Set([...DEJA_RELEVES, ...ARTICLES_WOLT_DU_12_NOVEMBRE, ...ARTICLES_DE_LA_LISTE].map((a) => a.nom));
+    const nomsWolt = new Set([...DEJA_RELEVES, ...ARTICLES_WOLT_DU_12_NOVEMBRE, ...RELEVE_DU_12_NOVEMBRE].map((a) => a.nomWolt));
+    for (const r of REMPLACEMENTS_DU_12_NOVEMBRE) {
+      expect(ARTICLES_MIS_EN_VENTE.some((a) => a.nom === r.ancien), r.ancien).toBe(true);
+      // Ni le relevé de prix ni un autre lot ne vise cet article.
+      expect(RELEVE_DU_12_NOVEMBRE.some((l) => l.nom === r.ancien), r.ancien).toBe(false);
+      expect(noms.has(r.nom), r.nom).toBe(false);
+      expect(nomsWolt.has(r.nomWolt), r.nomWolt).toBe(false);
+      expect(r.nomWolt).toMatch(HEBREU);
+      expect(Number.isInteger(enAgorot(r.prix)) && r.prix > 0, r.nom).toBe(true);
+      expect(r.description.trim().length).toBeGreaterThan(10);
+      expect(VIANDE_ET_VOLAILLE).not.toContain(r.nom);
+    }
+    expect(new Set(REMPLACEMENTS_DU_12_NOVEMBRE.map((r) => r.ancien)).size).toBe(REMPLACEMENTS_DU_12_NOVEMBRE.length);
+    expect(new Set(REMPLACEMENTS_DU_12_NOVEMBRE.map((r) => r.nom)).size).toBe(REMPLACEMENTS_DU_12_NOVEMBRE.length);
+  });
+
+  it("l'opération se fait une seule fois, après le relevé de prix, et ne crée pas de doublon", () => {
+    const preparer = readFileSync("prisma/preparer.ts", "utf8");
+    expect(preparer.indexOf("remplacerLesArticles(prisma)")).toBeGreaterThan(preparer.indexOf("appliquerLeReleveDePrix(prisma)"));
+    const remplissage = readFileSync("prisma/remplissage.ts", "utf8");
+    const corps = remplissage.slice(remplissage.indexOf("export async function remplacerLesArticles"), remplissage.indexOf("export const CLE_RETRAIT_VIANDE"));
+    expect(corps).toContain("operationFaite(prisma, CLE_REMPLACEMENTS_DU_12_NOVEMBRE)");
+    expect(corps).toContain("noterOperation(prisma, CLE_REMPLACEMENTS_DU_12_NOVEMBRE)");
+    expect(corps).toContain("!pris.has(r.nom)");
   });
 });

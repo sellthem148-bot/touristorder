@@ -966,6 +966,14 @@ const he: TraductionsCatalogue = {
     "Hallah tressée Angel 500 g": "חלה קלועה אנג׳ל 500 גרם",
     "Malabi Gad 160 g": "מלבי גד 160 גרם",
     "Café glacé Yotvata 1 L": "אייס קפה יטבתה 1 ליטר",
+    // Les sept articles de la liste remplacés par ce que Wolt vend vraiment (12 novembre)
+    "Beurre tartinable salé Lurpak 250 g": "ממרח חמאה מלוח לורפק 250 גרם",
+    "Tortillas de blé Mexifoods 20 cm × 8": "טורטיות חיטה מקסיפוד 20 ס״מ × 8",
+    "Petits pains moelleux Angel × 6": "לחמניות רכות אנג׳ל × 6",
+    "Pain blanc tranché sans gluten 500 g (surgelé)": "לחם לבן פרוס ללא גלוטן 500 גרם (קפוא)",
+    "Yaourts Danone Bio 3 % × 8 (150 g)": "יוגורט דנונה ביו 3% × 8 (150 גרם)",
+    "Yaourt protéiné GO fraise 200 g": "יוגורט חלבון גו תות 200 גרם",
+    "Crème à fouetter Yotvata 38 % 250 g": "שמנת להקצפה יטבתה 38% 250 גרם",
   },
   // Descriptions d'articles
   descriptions: {
@@ -1841,6 +1849,13 @@ const he: TraductionsCatalogue = {
     "Hallah sucrée tressée, 500 g": "חלה מתוקה קלועה, 500 גרם",
     "Malabi, le pot de 160 g": "מלבי, גביע 160 גרם",
     "Café glacé, 1 litre": "אייס קפה, 1 ליטר",
+    "Beurre à tartiner salé, 250 g": "ממרח חמאה עם מלח, 250 גרם",
+    "Tortillas à la farine de blé de 20 cm, le paquet de 8 (320 g)": "טורטיות מקמח חיטה, 20 ס״מ, אריזה של 8 (320 גרם)",
+    "Petits pains moelleux, le sachet de 6 (450 g)": "לחמניות רכות, שקית של 6 (450 גרם)",
+    "Pain blanc en tranches, sans gluten, surgelé, 500 g": "לחם לבן פרוס, ללא גלוטן, קפוא, 500 גרם",
+    "Pack de 8 yaourts de 150 g, à 3 % de matière grasse": "מארז 8 יוגורטים של 150 גרם, 3% שומן",
+    "Yaourt crémeux à la fraise, 20 g de protéines, le pot de 200 g": "יוגורט קרמי בטעם תות, 20 גרם חלבון, גביע 200 גרם",
+    "Crème à fouetter à 38 % de matière grasse, 250 g": "שמנת להקצפה 38% שומן, 250 גרם",
   },
   // Noms des options
   groupes: {

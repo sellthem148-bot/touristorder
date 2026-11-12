@@ -966,6 +966,14 @@ const en: TraductionsCatalogue = {
     "Hallah tressée Angel 500 g": "Angel braided challah 500 g",
     "Malabi Gad 160 g": "Gad malabi 160 g",
     "Café glacé Yotvata 1 L": "Yotvata iced coffee 1 L",
+    // Les sept articles de la liste remplacés par ce que Wolt vend vraiment (12 novembre)
+    "Beurre tartinable salé Lurpak 250 g": "Lurpak salted spreadable butter 250 g",
+    "Tortillas de blé Mexifoods 20 cm × 8": "Mexifoods wheat tortillas 20 cm × 8",
+    "Petits pains moelleux Angel × 6": "Angel soft rolls × 6",
+    "Pain blanc tranché sans gluten 500 g (surgelé)": "Gluten-free sliced white bread 500 g (frozen)",
+    "Yaourts Danone Bio 3 % × 8 (150 g)": "Danone Bio yoghurts 3% × 8 (150 g)",
+    "Yaourt protéiné GO fraise 200 g": "GO strawberry protein yoghurt 200 g",
+    "Crème à fouetter Yotvata 38 % 250 g": "Yotvata whipping cream 38% 250 g",
   },
   // Descriptions d'articles
   descriptions: {
@@ -1841,6 +1849,13 @@ const en: TraductionsCatalogue = {
     "Hallah sucrée tressée, 500 g": "Sweet braided challah, 500 g",
     "Malabi, le pot de 160 g": "Malabi, 160 g pot",
     "Café glacé, 1 litre": "Iced coffee, 1 litre",
+    "Beurre à tartiner salé, 250 g": "Salted spreadable butter, 250 g",
+    "Tortillas à la farine de blé de 20 cm, le paquet de 8 (320 g)": "Wheat flour tortillas, 20 cm, pack of 8 (320 g)",
+    "Petits pains moelleux, le sachet de 6 (450 g)": "Soft rolls, bag of 6 (450 g)",
+    "Pain blanc en tranches, sans gluten, surgelé, 500 g": "Sliced white bread, gluten-free, frozen, 500 g",
+    "Pack de 8 yaourts de 150 g, à 3 % de matière grasse": "Pack of 8 yoghurts of 150 g, 3% fat",
+    "Yaourt crémeux à la fraise, 20 g de protéines, le pot de 200 g": "Creamy strawberry yoghurt, 20 g of protein, 200 g pot",
+    "Crème à fouetter à 38 % de matière grasse, 250 g": "Whipping cream with 38% fat, 250 g",
   },
   // Noms des options
   groupes: {
