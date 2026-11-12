@@ -53,3 +53,15 @@ export const BOISSONS_GARDEES: string[] = [
   "Gatorade Cool Blue 50 cl",
   "Boisson énergisante XL 25 cl",
 ];
+
+/**
+ * Remises en vente à la demande du gérant (« remets Red Bull et Monster en vente », 12 novembre 2026), une fois
+ * la sélection faite. Ce sont des articles de SA liste, au prix de sa liste : ce prix n'a jamais été vérifié sur
+ * Wolt, ils restent donc signalés « prix non vérifié » dans son espace jusqu'à ce qu'il note le prix de Wolt.
+ */
+export const BOISSONS_REMISES_EN_VENTE: string[] = [
+  "Canette Red Bull Energy Drink 25 cl",
+  "Canette Red Bull Sugarfree 25 cl",
+  "Canette Monster Energy Ultra White 50 cl",
+  "Canette Monster Mango Loco 50 cl",
+];

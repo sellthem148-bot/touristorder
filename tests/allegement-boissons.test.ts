@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "../prisma/articles-liste";
-import { BOISSONS_GARDEES, RAYON_BOISSONS } from "../prisma/allegement-boissons";
+import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "../prisma/allegement-boissons";
 import { CREMERIE_GARDEE } from "../prisma/allegement-cremerie";
 import { LOTS_WOLT, RELEVES_DE_PRIX, boissonsARetirer, rayonARetirer } from "../prisma/remplissage";
 
@@ -38,12 +38,12 @@ describe("rayon Boissons : une sélection courte", () => {
 
   it("tout le reste du rayon que le code a mis en vente est retiré — jamais un article gardé, jamais l'alcool", () => {
     const { noms, nomsWolt } = boissonsARetirer();
-    const gardes = new Set(BOISSONS_GARDEES);
+    const gardes = new Set([...BOISSONS_GARDEES, ...BOISSONS_REMISES_EN_VENTE]);
     const misEnVente = [...boissonsWolt.filter((a) => !a.horsLigne), ...ARTICLES_MIS_EN_VENTE.filter((a) => a.categorie === RAYON_BOISSONS)];
     expect(misEnVente.length).toBeGreaterThan(160);
     expect(misEnVente.filter((a) => !gardes.has(a.nom) && !noms.includes(a.nom))).toEqual([]);
     expect(noms.filter((n) => gardes.has(n))).toEqual([]);
-    expect(noms.length).toBe(misEnVente.length - BOISSONS_GARDEES.length);
+    expect(noms.length).toBe(misEnVente.length - BOISSONS_GARDEES.length - BOISSONS_REMISES_EN_VENTE.length);
     const woltGardes = new Set(boissonsWolt.filter((a) => gardes.has(a.nom)).map((a) => a.nomWolt));
     expect(nomsWolt.filter((n) => woltGardes.has(n))).toEqual([]);
     // L'alcool est installé masqué : s'il est en vente, c'est le gérant qui l'a décidé — on n'y touche pas.
@@ -54,6 +54,27 @@ describe("rayon Boissons : une sélection courte", () => {
     expect(noms.filter((n) => CREMERIE_GARDEE.includes(n))).toEqual([]);
     expect(noms).not.toContain("Machine à eau gazeuse SodaStream Terra blanche");
     expect(noms).toContain("Sirop SodaStream Pepsi 44 cl");
+  });
+
+  it("Red Bull et Monster, remis en vente à la demande du gérant : quatre articles de sa liste, hors de ce qui est retiré", () => {
+    expect(BOISSONS_REMISES_EN_VENTE).toHaveLength(4);
+    const deLaListe = new Map(ARTICLES_MIS_EN_VENTE.filter((a) => a.categorie === RAYON_BOISSONS).map((a) => [a.nom, a]));
+    for (const nom of BOISSONS_REMISES_EN_VENTE) {
+      expect(nom).toMatch(/Red Bull|Monster/);
+      expect(deLaListe.get(nom)?.prixIndicatif, nom).toBeGreaterThan(0);
+      expect(BOISSONS_GARDEES, nom).not.toContain(nom);
+      expect(boissonsARetirer().noms, nom).not.toContain(nom);
+    }
+    // Tous les Red Bull et Monster du rayon, et rien d'autre.
+    expect([...deLaListe.keys()].filter((n) => /Red Bull|Monster/.test(n)).sort()).toEqual([...BOISSONS_REMISES_EN_VENTE].sort());
+    const source = lire("prisma/remplissage.ts");
+    const debut = source.indexOf("export async function remettreEnVenteRedBullEtMonster");
+    const corps = source.slice(debut, source.indexOf("\n}\n", debut));
+    // Une seule fois, dans la même transaction ; seulement un article masqué qui a un prix ; rien d'autre n'est modifié.
+    for (const morceau of ["operationFaite(", "noterOperation(", "$transaction", "actif: false, prix: { gt: 0 }", "data: { actif: true }"]) expect(corps, morceau).toContain(morceau);
+    expect(corps).not.toMatch(/delete|prix: \d|prixAchat/);
+    const preparer = lire("prisma/preparer.ts");
+    expect(preparer.indexOf("await remettreEnVenteRedBullEtMonster(prisma)")).toBeGreaterThan(preparer.indexOf("await allegerLesBoissons(prisma)"));
   });
 
   it("un rayon sans sélection ne perdrait rien de ce que le gérant a créé : seuls les articles du code sont visés", () => {

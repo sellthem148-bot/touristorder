@@ -16,7 +16,7 @@ import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-vi
 import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
 import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./articles-wolt-captures-boissons";
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
-import { BOISSONS_GARDEES, RAYON_BOISSONS } from "./allegement-boissons";
+import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 
 function options(texte: string | undefined, nom: string) {
@@ -386,8 +386,11 @@ export async function allegerLaCremerie(prisma: PrismaClient): Promise<string> {
   return allegerUnRayon(prisma, { cle: CLE_ALLEGEMENT_CREMERIE, titre: "Crèmerie", rayon: RAYON_CREMERIE, selection: CREMERIE_GARDEE });
 }
 
+/** Ce que le rayon « Boissons » garde : la sélection, et ce que le gérant a fait remettre en vente ensuite. */
+const BOISSONS_EN_VENTE = [...BOISSONS_GARDEES, ...BOISSONS_REMISES_EN_VENTE];
+
 /** Ce que le rayon « Boissons » ne garde pas (pur). */
-export const boissonsARetirer = () => rayonARetirer(RAYON_BOISSONS, BOISSONS_GARDEES);
+export const boissonsARetirer = () => rayonARetirer(RAYON_BOISSONS, BOISSONS_EN_VENTE);
 
 export const CLE_ALLEGEMENT_BOISSONS = "allegement-boissons-2026-11-12";
 
@@ -396,7 +399,25 @@ export const CLE_ALLEGEMENT_BOISSONS = "allegement-boissons-2026-11-12";
  * quand ses captures l'ont porté à 173 articles. L'alcool, que le code n'a jamais mis en vente, n'est pas touché.
  */
 export async function allegerLesBoissons(prisma: PrismaClient): Promise<string> {
-  return allegerUnRayon(prisma, { cle: CLE_ALLEGEMENT_BOISSONS, titre: "Boissons", rayon: RAYON_BOISSONS, selection: BOISSONS_GARDEES });
+  return allegerUnRayon(prisma, { cle: CLE_ALLEGEMENT_BOISSONS, titre: "Boissons", rayon: RAYON_BOISSONS, selection: BOISSONS_EN_VENTE });
+}
+
+export const CLE_REMISE_EN_VENTE_RED_BULL_MONSTER = "remise-en-vente-red-bull-monster-2026-11-12";
+
+/**
+ * Red Bull et Monster remis en vente : la demande du gérant (12 novembre 2026), après que la sélection courte
+ * des boissons les avait masqués. Une seule fois : s'il les remasque ensuite, ils le restent. Jamais un
+ * article sans prix (« à définir ») : seulement ceux qui en ont un.
+ */
+export async function remettreEnVenteRedBullEtMonster(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_REMISE_EN_VENTE_RED_BULL_MONSTER);
+  if (faite === null) return "Red Bull et Monster : réglages pas encore créés, rien de changé.";
+  if (faite) return "Red Bull et Monster : déjà remis en vente, rien de changé.";
+  const [remis] = await prisma.$transaction([
+    prisma.produit.updateMany({ where: { actif: false, prix: { gt: 0 }, nom: { in: BOISSONS_REMISES_EN_VENTE } }, data: { actif: true } }),
+    noterOperation(prisma, CLE_REMISE_EN_VENTE_RED_BULL_MONSTER),
+  ]);
+  return `Red Bull et Monster : ${remis.count} article(s) remis en vente.`;
 }
 
 /**
