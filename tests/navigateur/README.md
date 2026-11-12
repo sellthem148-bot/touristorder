@@ -23,6 +23,7 @@ node tests/navigateur/parcours-paiement.mjs /tmp/captures   # demande hors catal
 node tests/navigateur/parcours-telegram.mjs /tmp/captures   # l'alerte Telegram contre un faux Telegram local : relancer le site avec TELEGRAM_API=http://127.0.0.1:3199 npm run dev -- -p 3100
 node tests/navigateur/parcours-langues.mjs /tmp/captures   # les cinq langues : chaque page, une commande en hébreu refusée sans étage ni téléphone, e-mail et message WhatsApp dans la langue du client, langue de l'espace client (lit .courriels/, comme le parcours de l'espace client)
 node tests/navigateur/largeur.mjs /tmp/captures     # aucune page plus large qu'un téléphone de 320 px
+node tests/navigateur/repere-wolt.mjs /tmp/captures   # le repère Wolt du gérant : nom en hébreu à copier et lien « Images » dans Ma journée, la commande et Prix rapides
 node tests/navigateur/menu-gerant.mjs               # le menu du gérant : aucun lien hors de l'écran, de l'ordinateur au petit téléphone (ne modifie rien)
 ```
 

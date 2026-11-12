@@ -15,6 +15,8 @@ import { NOM_DE_LA_LANGUE } from "@/lib/langues";
 import { precisionsAdresse } from "@/lib/adresse";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { BoutonCopier } from "@/components/admin/BoutonCopier";
+import { RepereWolt } from "@/components/admin/RepereWolt";
+import { repereWolt } from "@/lib/repere-wolt";
 import { RecapMontants } from "@/components/RecapMontants";
 import { IconeEclair, IconeWhatsapp } from "@/components/Icones";
 import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
@@ -45,7 +47,7 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   const [c, reglages] = await Promise.all([
     prisma.commande.findUnique({
       where: { id },
-      include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }] } },
+      include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }], include: { produit: { select: { nomWolt: true } } } } },
     }),
     lireReglages(),
   ]);
@@ -75,8 +77,11 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
     const cle = l.boutique || "Boutique non précisée";
     parBoutique.set(cle, [...(parBoutique.get(cle) ?? []), l]);
   }
+  // Le repère de chaque article : son nom en hébreu à chercher sur Wolt (le nom relevé, sinon une traduction).
+  const reperes = new Map(c.lignes.map((l) => [l.id, repereWolt(l.nom, l.produit?.nomWolt)]));
+  const hebreu = (ligneId: string) => reperes.get(ligneId)?.hebreu ?? "";
   const listeTexte = [...parBoutique]
-    .map(([b, lignes]) => `${b}\n${lignes.filter((l) => !l.indisponible).map((l) => `- ${l.quantite} × ${l.nom}${l.options ? ` (${l.options})` : ""}`).join("\n")}`)
+    .map(([b, lignes]) => `${b}\n${lignes.filter((l) => !l.indisponible).map((l) => `- ${l.quantite} × ${l.nom}${l.options ? ` (${l.options})` : ""}${hebreu(l.id) ? ` — ${hebreu(l.id)}` : ""}`).join("\n")}`)
     .join("\n\n");
 
   return (
@@ -131,6 +136,7 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
                             <> · <a href={l.lienWolt} target="_blank" rel="noopener noreferrer" className="text-marque underline">voir sur Wolt</a></>
                           )}
                         </p>
+                        {!l.indisponible && <RepereWolt nom={l.nom} {...reperes.get(l.id)!} />}
                       </div>
                       <form action={modifierLigne} className="flex items-center gap-2 text-sm">
                         <input type="hidden" name="ligneId" value={l.id} />

@@ -6,6 +6,8 @@ import { prixPourChamp } from "@/lib/argent";
 import { lireGroupes } from "@/lib/options";
 import { Messages } from "@/components/admin/Messages";
 import { PRIX_NON_VERIFIE, prixNonVerifie } from "@/lib/prix-indicatif";
+import { RepereWolt } from "@/components/admin/RepereWolt";
+import { repereWolt } from "@/lib/repere-wolt";
 import { enregistrerPrixRapides } from "../../actions";
 
 export const metadata = { title: "Prix rapides" };
@@ -36,7 +38,7 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
     where,
     orderBy: [{ categorie: { ordre: "asc" } }, { ordre: "asc" }, { nom: "asc" }],
     take: 300,
-    select: { id: true, nom: true, prix: true, prixAchat: true, prixIndicatif: true, actif: true, options: true, categorie: { select: { nom: true, emoji: true } } },
+    select: { id: true, nom: true, nomWolt: true, prix: true, prixAchat: true, prixIndicatif: true, actif: true, options: true, categorie: { select: { nom: true, emoji: true } } },
   });
   const retour = vueAVerifier ? "/admin/produits/prix?vue=a-verifier" : categorieId ? `/admin/produits/prix?categorie=${categorieId}` : "/admin/produits/prix?vue=a-completer";
   const total = vueAVerifier ? aVerifier : aCompleter;
@@ -115,6 +117,8 @@ export default async function PrixRapides({ searchParams }: PageProps<"/admin/pr
                       {options.length > 0 ? options.map((g) => g.nom).join(", ") : "Sans option"}
                       {p.prix === 0 && <span className="ml-1 font-bold text-amber-700">· prix à définir</span>}
                     </p>
+                    {/* Pour retrouver l'article sur Wolt : son nom en hébreu à copier, et des images pour le reconnaître. */}
+                    <RepereWolt nom={p.nom} {...repereWolt(p.nom, p.nomWolt)} />
                     {p.prix === 0 && p.prixIndicatif != null && (
                       <p className="text-xs text-slate-600">
                         Ta liste : <span className="font-bold tabular-nums">{prixPourChamp(p.prixIndicatif)} ₪</span> — à vérifier sur Wolt.

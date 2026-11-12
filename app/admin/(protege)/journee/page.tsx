@@ -16,6 +16,8 @@ import { lireReglages } from "@/lib/reglages";
 import { adresseDuSite } from "@/lib/site";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { BoutonCopier } from "@/components/admin/BoutonCopier";
+import { RepereWolt } from "@/components/admin/RepereWolt";
+import { repereWolt, type RepereWolt as Repere } from "@/lib/repere-wolt";
 import { IconeWhatsapp } from "@/components/Icones";
 import { changerStatut, marquerCommandees, solderCommande } from "../actions";
 
@@ -50,7 +52,8 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
   const livrees = commandes.filter((c) => c.statut === "LIVREE");
 
   // Liste de courses de toutes les commandes à passer, additionnée par boutique puis par article.
-  const parBoutique = new Map<string, Map<string, { quantite: number; numeros: number[]; nomWolt: string; aVerifier: string }>>();
+  // Chaque article porte son repère : le nom en hébreu à chercher sur Wolt (le nom relevé, sinon une traduction).
+  const parBoutique = new Map<string, Map<string, { quantite: number; numeros: number[]; nom: string; repere: Repere; aVerifier: string }>>();
   for (const c of aCommander) {
     for (const l of c.lignes) {
       if (l.indisponible) continue;
@@ -58,13 +61,13 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
       const articles = parBoutique.get(boutique) ?? new Map();
       const cle = l.options ? `${l.nom} (${l.options})` : l.nom;
       // Vendu au prix de la liste du gérant, jamais vérifié : c'est en l'achetant qu'il voit le vrai prix.
-      const a = articles.get(cle) ?? { quantite: 0, numeros: [], nomWolt: l.produit?.nomWolt ?? "", aVerifier: l.produit && prixNonVerifie(l.produit) ? l.produit.id : "" };
-      articles.set(cle, { quantite: a.quantite + l.quantite, numeros: [...a.numeros, c.numero], nomWolt: a.nomWolt, aVerifier: a.aVerifier });
+      const a = articles.get(cle) ?? { quantite: 0, numeros: [], nom: l.nom, repere: repereWolt(l.nom, l.produit?.nomWolt), aVerifier: l.produit && prixNonVerifie(l.produit) ? l.produit.id : "" };
+      articles.set(cle, { ...a, quantite: a.quantite + l.quantite, numeros: [...a.numeros, c.numero] });
       parBoutique.set(boutique, articles);
     }
   }
   const listeTexte = [...parBoutique]
-    .map(([b, articles]) => `${b}\n${[...articles].map(([nom, a]) => `- ${a.quantite} × ${nom}${a.nomWolt ? ` — ${a.nomWolt}` : ""}`).join("\n")}`)
+    .map(([b, articles]) => `${b}\n${[...articles].map(([nom, a]) => `- ${a.quantite} × ${nom}${a.repere.hebreu ? ` — ${a.repere.hebreu}` : ""}`).join("\n")}`)
     .join("\n\n");
 
   // Ce qui a été reçu pour ce jour, par mode de paiement.
@@ -194,6 +197,9 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
           </p>
         ) : (
           <>
+            <p className="text-xs text-slate-500">
+              Sous chaque article : son nom en hébreu, à copier dans la recherche de Wolt (« traduction » = ce n&apos;est pas le nom exact de Wolt), et « Images » pour voir à quoi il ressemble.
+            </p>
             {[...parBoutique].map(([boutique, articles]) => (
               <div key={boutique} className="space-y-1">
                 <h3 className="font-bold text-marque-fonce">{boutique}</h3>
@@ -202,7 +208,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                     <li key={nom} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
                       <span className="min-w-0">
                         <strong>{a.quantite} ×</strong> {nom}
-                        {a.nomWolt && <span dir="rtl" lang="he" className="block text-xs text-slate-500">{a.nomWolt}</span>}
+                        <RepereWolt nom={a.nom} {...a.repere} />
                         {a.aVerifier && (
                           <span className="block text-xs font-semibold text-amber-700">
                             Prix de ta liste, pas vérifié sur Wolt —{" "}

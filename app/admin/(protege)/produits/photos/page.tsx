@@ -2,6 +2,7 @@ import Link from "next/link";
 import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { formatPrix } from "@/lib/argent";
+import { repereWolt } from "@/lib/repere-wolt";
 import { LignePhoto } from "./LignePhoto";
 
 export const metadata = { title: "Photos rapides" };
@@ -70,7 +71,7 @@ export default async function PagePhotos({ searchParams }: PageProps<"/admin/pro
             <h2 className="font-bold">{rayon} <span className="text-sm font-normal text-slate-500">({articles.length})</span></h2>
             <ul className="carte divide-y divide-slate-100">
               {articles.map((p) => (
-                <LignePhoto key={p.id} id={p.id} nom={p.nom} nomWolt={p.nomWolt} detail={[p.description, formatPrix(p.prix)].filter(Boolean).join(" · ")} photoUrl={p.photoUrl} />
+                <LignePhoto key={p.id} id={p.id} nom={p.nom} nomWolt={repereWolt(p.nom, p.nomWolt).hebreu} detail={[p.description, formatPrix(p.prix)].filter(Boolean).join(" · ")} photoUrl={p.photoUrl} />
               ))}
             </ul>
           </section>

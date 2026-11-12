@@ -4,12 +4,10 @@
 import { useRef, useState } from "react";
 import { Camera, Check, ImageOff, Search } from "lucide-react";
 import { reduirePhoto } from "@/lib/reduire-photo";
+import { rechercheDImage } from "@/lib/recherche-image";
 import { enregistrerPhotoRapide } from "../../actions";
 
 type Props = { id: string; nom: string; nomWolt: string; detail: string; photoUrl: string };
-
-/** Une recherche d'images sur le nom exact de l'article (celui de Wolt, en hébreu, quand on l'a). */
-export const rechercheDImage = (nom: string, nomWolt: string) => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nomWolt.trim() || nom)}`;
 
 /** Un article et son bouton photo : la photo choisie est allégée puis enregistrée aussitôt. */
 export function LignePhoto({ id, nom, nomWolt, detail, photoUrl }: Props) {
