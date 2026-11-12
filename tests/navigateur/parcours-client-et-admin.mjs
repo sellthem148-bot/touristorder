@@ -102,7 +102,7 @@ verifier(espaces(await admin.locator("main").innerText()).includes("À payer · 
 const ligneAdmin = espaces(await admin.locator("a", { hasText: "Sarah Cohen" }).first().innerText());
 const numero = Number(ligneAdmin.match(/n°(\d+)/)[1]);
 verifier(ligneAdmin.includes(`réf. ${reference}`), `liste admin : n°${numero} et sa référence ${reference}`);
-verifier(Number([...reference.slice(5)].reverse().join("")) === numero, "la référence se relit : deux chiffres de côté, le reste à l'envers = le numéro");
+verifier(Number(reference.slice(5)) === numero, "la référence se relit : deux chiffres de côté, le reste = le numéro");
 await admin.getByLabel("Retrouver une commande").fill(reference.toLowerCase());
 await admin.getByRole("button", { name: "Chercher" }).click();
 await admin.waitForURL(/\/admin\?q=/);

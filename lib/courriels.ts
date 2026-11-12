@@ -98,7 +98,7 @@ export type CommandePourCourriel = {
   site: string;
   logo?: string | null; // adresse de l'image du logo (adresseDuLogo) ; absente = nom seul
   numero: number; // pour le gérant seulement
-  reference: string; // ce que le client lit : « BC-58100 » (lib/reference.ts)
+  reference: string; // ce que le client lit : « BC-58001 » (lib/reference.ts)
   nomClient: string;
   prenom: string;
   telephone: string;

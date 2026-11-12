@@ -64,7 +64,7 @@ const fr = {
   // Les e-mails envoyés au client. {par} = « par Bit », espace devant compris, ou rien.
   courriel: {
     par: " par {mode}",
-    // {reference} = « BC-58100 » (en gras dans l'e-mail).
+    // {reference} = « BC-58001 » (en gras dans l'e-mail).
     merciCommande: "Merci {prenom} ! Votre commande {reference} est bien enregistrée.",
     merciDemande: "Merci {prenom} ! Votre demande {reference} est bien enregistrée.",
     suiteCommande: "Elle est préparée dès réception de votre paiement, puis livrée à votre logement.",

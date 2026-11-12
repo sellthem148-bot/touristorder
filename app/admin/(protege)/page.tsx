@@ -26,7 +26,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
   await exigerAdmin();
   const { filtre: brut, q: recherche } = await searchParams;
   const filtre: Filtre = typeof brut === "string" && brut in FILTRES ? (brut as Filtre) : "en-cours";
-  // Chercher une commande : par la référence que le client cite (« BC-58100 »), par son numéro, ou par le nom du client.
+  // Chercher une commande : par la référence que le client cite (« BC-58001 »), par son numéro, ou par le nom du client.
   const q = typeof recherche === "string" ? recherche.trim().slice(0, 60) : "";
   const numeroCherche = q ? numeroDepuisReference(q) : null;
   const trouver: Prisma.CommandeWhereInput | null = q
@@ -58,7 +58,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
       <form action="/admin" className="flex flex-wrap items-end gap-2" role="search">
         <div className="min-w-0 flex-1">
           <label htmlFor="q" className="etiquette">Retrouver une commande</label>
-          <input id="q" name="q" type="search" defaultValue={q} maxLength={60} className="champ" placeholder="Référence du client (BC-58100), numéro ou nom" />
+          <input id="q" name="q" type="search" defaultValue={q} maxLength={60} className="champ" placeholder="Référence du client (BC-58001), numéro ou nom" />
         </div>
         <button type="submit" className="bouton-secondaire">Chercher</button>
         {q && <Link href="/admin" className="py-2.5 text-sm font-semibold text-marque hover:underline">Tout afficher</Link>}
@@ -66,7 +66,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
       <details className="text-sm text-slate-600">
         <summary className="cursor-pointer font-semibold text-slate-700">Lire une référence client</summary>
         <p className="mt-1">
-          Le client ne voit jamais « n°1 » : il voit une référence, par exemple <strong>BC-58100</strong>. Les lettres sont ses initiales. Dans le nombre, laisse de côté les deux premiers chiffres (58) et lis le reste à l&apos;envers : 100 → 001 → commande n°1. Ici, chaque commande affiche son vrai numéro et sa référence.
+          Le client ne voit jamais « n°1 » : il voit une référence, par exemple <strong>BC-58001</strong>. Les lettres sont ses initiales. Dans le nombre, laisse de côté les deux premiers chiffres (58) : ce qui reste est le numéro de la commande (001 → commande n°1). Ici, chaque commande affiche son vrai numéro et sa référence.
         </p>
       </details>
       <nav aria-label="Filtrer les commandes" className="-mx-4 overflow-x-auto px-4">

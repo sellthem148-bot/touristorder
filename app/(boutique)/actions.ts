@@ -92,6 +92,6 @@ export async function mesCommandes(jetons: string[]) {
       _count: { select: { lignes: true } },
     },
   });
-  // Le navigateur reçoit la référence (« BC-58100 »), jamais le numéro d'ordre de la commande.
+  // Le navigateur reçoit la référence (« BC-58001 »), jamais le numéro d'ordre de la commande.
   return commandes.map(({ numero, nomClient, ...c }) => ({ ...c, reference: referenceDeCommande(numero, nomClient) }));
 }

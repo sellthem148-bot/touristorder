@@ -94,10 +94,10 @@ describe("whatsapp", () => {
     expect(lienWhatsapp("+972501234567", "Bonjour & merci")).toBe("https://wa.me/972501234567?text=Bonjour%20%26%20merci");
     expect(lienWhatsapp("", "x")).toBeNull();
   });
-  const infos = { prenom: "Sarah", reference: "SA-15210", total: 8970, lienSuivi: "https://x/suivi/a", site: "Site", mode: "Bit", coordonnees: "Bit : 050 000 0000" };
+  const infos = { prenom: "Sarah", reference: "SA-15012", total: 8970, lienSuivi: "https://x/suivi/a", site: "Site", mode: "Bit", coordonnees: "Bit : 050 000 0000" };
   it("commande reçue, pas encore payée : le montant, le mode et les coordonnées de paiement", () => {
     const m = nbsp(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "A_PAYER", montant: 8970 } }));
-    expect(m).toContain("votre commande SA-15210");
+    expect(m).toContain("votre commande SA-15012");
     expect(m).not.toContain("n°");
     expect(m).toContain("Montant à régler : 89,70 ₪ par Bit.");
     expect(m).toContain("Bit : 050 000 0000");
@@ -113,7 +113,7 @@ describe("whatsapp", () => {
       const m = messagePourLeClient(statut, { ...infos, paiement: { etat: "PAYEE", montant: 0 } });
       expect(m, statut).not.toContain("050 000 0000");
       expect(m, statut).not.toContain("₪");
-      expect(m, statut).toContain("SA-15210");
+      expect(m, statut).toContain("SA-15012");
     }
     expect(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "PAYEE", montant: 0 } })).toContain("votre paiement");
   });

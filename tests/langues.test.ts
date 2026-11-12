@@ -283,14 +283,14 @@ describe("adresse de livraison", () => {
       expect(lu, langue).not.toContain("Ne pas monter");
       expect(t.panier.hotelAvis.length, langue).toBeGreaterThan(30);
       const infos = {
-        prenom: "Anna", reference: "AN-15210", total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
+        prenom: "Anna", reference: "AN-15012", total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
         paiement: { etat: "PAYEE" as const, montant: 0 as const }, mode: "Bit", coordonnees: "",
       };
       // « En route » et « j'arrive » : la consigne de l'hôtel, seulement pour une commande à l'hôtel.
       expect(messagePourLeClient("EN_LIVRAISON", { ...infos, hotel: true }, l), langue).toContain(l.m.hotel);
       expect(messagePourLeClient("EN_LIVRAISON", infos, l), langue).not.toContain(l.m.hotel);
       expect(messagePourLeClient("RECUE", { ...infos, hotel: true }, l), langue).not.toContain(l.m.hotel);
-      const arrive = { prenom: "Anna", reference: "AN-15210", reste: 0, mode: "Bit", site: "Tourist Order" };
+      const arrive = { prenom: "Anna", reference: "AN-15012", reste: 0, mode: "Bit", site: "Tourist Order" };
       expect(messageJArrive({ ...arrive, hotel: true }, l), langue).toContain(l.m.hotel);
       expect(messageJArrive(arrive, l), langue).not.toContain(l.m.hotel);
     }
@@ -305,7 +305,7 @@ describe("adresse de livraison", () => {
 
 describe("e-mails et messages dans la langue du client", () => {
   const commande: CommandePourCourriel = {
-    site: "Tourist Order", numero: 42, reference: "AP-45240", nomClient: "Anna Petrova", prenom: "Anna", telephone: "+7 912 345-67-89", ville: "Netanya",
+    site: "Tourist Order", numero: 42, reference: "AP-45042", nomClient: "Anna Petrova", prenom: "Anna", telephone: "+7 912 345-67-89", ville: "Netanya",
     adresse: "Rue Herzl 12\nÉtage 3", jour: "Demain", creneau: "20:00 – 21:00", paiement: "Bit", notes: "", demandeLibre: "",
     lignes: [{ nom: "Lait 3 % 1 L", options: "", quantite: 2, prixUnitaire: 990 }],
     totaux: { sousTotal: 1980, majoration: 0, fraisService: 1500, fraisLivraison: 3000, pourboire: 0, total: 6480 },
@@ -319,8 +319,8 @@ describe("e-mails et messages dans la langue du client", () => {
     expect(c.html).toContain(`<html lang="${langue}" dir="${sens(langue)}">`);
     expect(c.html).toContain('href="https://exemple.test/suivi/abc"');
     // Le client lit sa référence, jamais le numéro d'ordre de la commande.
-    expect(c.html).toContain("AP-45240");
-    expect(`${c.sujet} ${c.texte}`).toContain("AP-45240");
+    expect(c.html).toContain("AP-45042");
+    expect(`${c.sujet} ${c.texte}`).toContain("AP-45042");
     expect(`${c.sujet} ${c.html} ${c.texte}`).not.toMatch(/(n°|#|№|n\.º|מס')\s?42\b/);
     expect(c.texte).toContain("Lait 3 % 1 L");
     expect(c.html).toContain(formatPrix(6480, langue));
@@ -339,20 +339,20 @@ describe("e-mails et messages dans la langue du client", () => {
   it.each(LANGUES)("%s : les messages WhatsApp du gérant portent la référence, le montant et ses coordonnées de paiement", (langue) => {
     const l = langueDesMessages(langue);
     const infos = {
-      prenom: "Anna", reference: "AN-15210", total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
+      prenom: "Anna", reference: "AN-15012", total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
       paiement: { etat: "A_PAYER" as const, montant: 8970 }, mode: l.mode("Virement"), coordonnees: "IBAN IL00 0000",
     };
     for (const statut of ["RECUE", "COMMANDEE", "EN_LIVRAISON", "LIVREE", "ANNULEE"] as const) {
       const m = messagePourLeClient(statut, infos, l);
       expect(m, statut).not.toMatch(/\{\w+\}/);
-      expect(m, statut).toContain("AN-15210");
+      expect(m, statut).toContain("AN-15012");
       expect(m, statut).toContain("Anna");
     }
     const recue = messagePourLeClient("RECUE", infos, l);
     expect(recue).toContain(formatPrix(8970, langue));
     expect(recue).toContain("IBAN IL00 0000");
     expect(recue).toContain("https://x/suivi/a");
-    const arrive = messageJArrive({ prenom: "Anna", reference: "AN-15210", reste: 8970, mode: "Bit", site: "Tourist Order" }, l);
+    const arrive = messageJArrive({ prenom: "Anna", reference: "AN-15012", reste: 8970, mode: "Bit", site: "Tourist Order" }, l);
     expect(arrive).not.toMatch(/\{\w+\}/);
     expect(arrive).toContain("(Bit)");
   });

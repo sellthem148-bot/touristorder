@@ -61,7 +61,7 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   // Le message porte le montant, le mode et les coordonnées de paiement tant qu'il reste à régler.
   // Il est écrit dans la langue du client (celle du site quand il a commandé).
   const langueClient = langueDesMessages(c.langue);
-  // Ce que le client lit et te cite à la place du numéro : « BC-58100 » (lib/reference.ts).
+  // Ce que le client lit et te cite à la place du numéro : « BC-58001 » (lib/reference.ts).
   const reference = referenceDeCommande(c.numero, c.nomClient);
   const whatsappClient = lienWhatsapp(
     c.telephone,

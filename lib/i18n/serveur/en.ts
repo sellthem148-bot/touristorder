@@ -61,7 +61,7 @@ const en: DictionnaireServeur = {
   // Les e-mails envoyés au client. {par} = « by Bit », espace devant compris, ou rien.
   courriel: {
     par: " by {mode}",
-    // {reference} = « BC-58100 » (en gras dans l'e-mail).
+    // {reference} = « BC-58001 » (en gras dans l'e-mail).
     merciCommande: "Thank you, {prenom}! We've received your order {reference}.",
     merciDemande: "Thank you, {prenom}! We've received your request {reference}.",
     suiteCommande: "We'll prepare it as soon as we receive your payment, then deliver it to where you're staying.",

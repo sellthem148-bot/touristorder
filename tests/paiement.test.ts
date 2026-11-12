@@ -64,8 +64,8 @@ describe("paiement d'une commande (avant les achats)", () => {
     }
   });
   it("le message du client pour régler : référence, montant, mode", () => {
-    expect(nbsp(messageDeReglement({ reference: "SC-45240", montant: 17790, mode: "PayBox", site: "Tourist Order" }))).toBe(
-      "Bonjour ! Je souhaite régler ma commande SC-45240 sur Tourist Order (177,90 ₪) par PayBox.",
+    expect(nbsp(messageDeReglement({ reference: "SC-45042", montant: 17790, mode: "PayBox", site: "Tourist Order" }))).toBe(
+      "Bonjour ! Je souhaite régler ma commande SC-45042 sur Tourist Order (177,90 ₪) par PayBox.",
     );
   });
 });
@@ -99,7 +99,7 @@ describe("lien de paiement Bit", () => {
   });
   it("dans le message du gérant : après ses coordonnées, tant qu'il reste à régler et que le client paie par Bit", () => {
     const infos = {
-      prenom: "Sarah", reference: "SC-45240", total: 17790, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
+      prenom: "Sarah", reference: "SC-45042", total: 17790, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
       paiement: { etat: "A_PAYER" as const, montant: 17790 }, mode: "Bit", coordonnees: "Bit : 050 000 0000", lienBit: "https://exemple.test/payer/abc",
     };
     expect(messagePourLeClient("RECUE", infos)).toContain("Bit : 050 000 0000\nhttps://exemple.test/payer/abc\n");
@@ -204,8 +204,8 @@ describe("export comptable", () => {
 
 describe("alerte Telegram", () => {
   it("porte le numéro et la référence que le client cite", () => {
-    const alerte = texteDeLAlerte({ numero: 42, reference: "SC-45240", nomClient: "Sarah Cohen", ville: "Netanya", jour: "Demain", creneau: "20:00 – 21:00", total: 17790, paiement: "Bit", nombreArticles: 3, demandeLibre: "", lienAdmin: "https://x.test/admin/commandes/abc" });
-    expect(alerte.split("\n")[0]).toBe("Nouvelle commande n°42 · réf. SC-45240");
+    const alerte = texteDeLAlerte({ numero: 42, reference: "SC-45042", nomClient: "Sarah Cohen", ville: "Netanya", jour: "Demain", creneau: "20:00 – 21:00", total: 17790, paiement: "Bit", nombreArticles: 3, demandeLibre: "", lienAdmin: "https://x.test/admin/commandes/abc" });
+    expect(alerte.split("\n")[0]).toBe("Nouvelle commande n°42 · réf. SC-45042");
   });
   it("reconnaît la forme d'un jeton de robot", () => {
     expect(estJetonTelegram("123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw")).toBe(true);

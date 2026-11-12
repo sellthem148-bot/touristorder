@@ -56,7 +56,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
   const mode = libelleDuMode(commande.paiement, t);
   const precisions = precisionsAdresse(commande, t.adresse);
 
-  // Ce que le client lit et cite : une référence (« BC-58100 »), jamais le numéro d'ordre de la commande.
+  // Ce que le client lit et cite : une référence (« BC-58001 »), jamais le numéro d'ordre de la commande.
   const reference = referenceDeCommande(commande.numero, commande.nomClient);
 
   const etapeActuelle = ETAPES.indexOf(commande.statut);

@@ -24,31 +24,32 @@ describe("référence d'une commande", () => {
     expect(initialesDe("B")).toBe("B");
     for (const nom of ["בנימין כהן", "Анна Петрова", "", "  ", "123"]) expect(initialesDe(nom), nom).toBe("TO");
   });
-  it("initiales, deux chiffres qui ne comptent pas, puis le numéro à l'envers", () => {
-    expect(referenceDeCommande(1, "Benjamin Cohen")).toBe("BC-58100");
+  it("initiales, deux chiffres qui ne comptent pas, puis le numéro à l'endroit", () => {
+    expect(referenceDeCommande(1, "Benjamin Cohen")).toBe("BC-58001");
+    expect(referenceDeCommande(2, "Benjamin Cohen")).toBe("BC-95002");
     expect(referenceDeCommande(10, "Marc Levy")).toBe("ML-31010");
-    expect(referenceDeCommande(11, "אבי")).toBe("TO-68110");
-    expect(referenceDeCommande(1234, "Sarah Cohen")).toMatch(/^SC-\d{2}4321$/);
+    expect(referenceDeCommande(11, "אבי")).toBe("TO-68011");
+    expect(referenceDeCommande(1234, "Sarah Cohen")).toMatch(/^SC-\d{2}1234$/);
     // Rien qui ressemble à « commande n°1 » : toujours cinq chiffres au moins.
     for (let n = 1; n <= 999; n++) expect(referenceDeCommande(n, "A B")).toMatch(/^AB-[1-9]\d{4}$/);
   });
-  it("le gérant retrouve le numéro : les deux premiers chiffres de côté, le reste lu à l'envers", () => {
+  it("le gérant retrouve le numéro : les deux premiers chiffres de côté, le reste est le numéro", () => {
     const vues = new Set<string>();
     for (let n = 1; n <= 20000; n++) {
       const reference = referenceDeCommande(n, "Benjamin Cohen");
       expect(numeroDepuisReference(reference)).toBe(n);
       vues.add(reference);
-      // À la main : « 58100 » → « 100 » → « 001 » → 1.
-      expect(Number([...reference.slice(5)].reverse().join(""))).toBe(n);
+      // À la main : « 58001 » → « 001 » → 1.
+      expect(Number(reference.slice(5))).toBe(n);
     }
     // Jamais deux commandes sous la même référence.
     expect(vues.size).toBe(20000);
   });
   it("la recherche du gérant accepte la référence, ses chiffres seuls, ou le numéro", () => {
-    for (const saisie of ["BC-58100", "bc-58100", " BC 58100 ", "58100", "xx-58100"]) expect(numeroDepuisReference(saisie), saisie).toBe(1);
+    for (const saisie of ["BC-58001", "bc-58001", " BC 58001 ", "58001", "xx-58001"]) expect(numeroDepuisReference(saisie), saisie).toBe(1);
     for (const [saisie, numero] of [["1", 1], ["n°12", 12], ["042", 42], ["1234", 1234]] as const) expect(numeroDepuisReference(saisie), saisie).toBe(numero);
     // Un nom, rien, ou des chiffres qui ne sont pas une référence : ce n'est pas un numéro.
-    for (const saisie of ["Cohen", "", "BC-", "99100", "0"]) expect(numeroDepuisReference(saisie), saisie).toBeNull();
+    for (const saisie of ["Cohen", "", "BC-", "99001", "58100", "0"]) expect(numeroDepuisReference(saisie), saisie).toBeNull();
   });
 });
 

@@ -1,6 +1,6 @@
 // Où le client loge (appartement, maison, hôtel), la référence de commande et le bouton « Payer avec Bit ».
 // - une maison n'a ni étage ni appartement ; à l'hôtel on ne monte pas dans les chambres ;
-// - le client lit une référence (« RB-58100 »), jamais « n°1 » ; le gérant voit les deux ;
+// - le client lit une référence (« RB-58001 »), jamais « n°1 » ; le gérant voit les deux ;
 // - un seul bouton WhatsApp à la fois ; le bouton Bit n'apparaît qu'avec le lien du gérant, pour un paiement par Bit.
 import { chromium, devices } from "playwright";
 import { writeFileSync } from "node:fs";

@@ -54,7 +54,7 @@ async function remplirEtCommander(p, { nom, tel, email, adresse }) {
   await p.getByText("Bit", { exact: true }).click();
   await p.getByRole("button", { name: /^Commander/ }).click();
   await p.waitForURL(/\/suivi\//);
-  // Ce que le client lit : la référence de sa commande (« SC-58100 »), jamais son numéro.
+  // Ce que le client lit : la référence de sa commande (« SC-58001 »), jamais son numéro.
   return (await p.getByText(/^Commande [A-Z]{1,2}-\d{5,}$/).first().innerText()).replace("Commande ", "");
 }
 

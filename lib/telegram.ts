@@ -14,7 +14,7 @@ export function estJetonTelegram(t: string): boolean {
 
 export type AlerteCommande = {
   numero: number;
-  /** La référence que le client cite (« BC-58100 »). */
+  /** La référence que le client cite (« BC-58001 »). */
   reference?: string;
   nomClient: string;
   ville: string;
