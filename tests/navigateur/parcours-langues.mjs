@@ -1,7 +1,8 @@
 // Les cinq langues du site (français, anglais, russe, hébreu, espagnol) et l'adresse obligatoire :
 // chaque page dans chaque langue (sens d'écriture, largeur), une commande refusée tant qu'il manque
 // le nom, le téléphone, la rue, l'étage ou l'appartement, l'e-mail et le message du gérant dans la langue
-// du client, le choix de la langue dans l'espace client. L'espace gérant reste en français.
+// du client, le choix de la langue dans l'espace client. Le catalogue (articles, options, villes) se lit
+// dans la langue du client ; la recherche la comprend. L'espace gérant reste en français.
 // En développement, sans clé Resend, les e-mails sont écrits dans .courriels/ : ce parcours les y lit.
 import { chromium, devices } from "playwright";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -66,12 +67,45 @@ try {
     await ctx.close();
   }
 
-  // 3. Une commande en hébreu : refusée tant qu'il manque une coordonnée
+  // 3. Le catalogue dans la langue du client : les articles, leurs options, la recherche
+  const francais = await contexte(nav, "fr");
+  await francais.p.goto(BASE + "/categorie/courses-epicerie", { waitUntil: "networkidle" });
+  const nomFr = (await francais.p.locator("article h3").first().innerText()).trim();
+  await francais.p.goto(BASE + "/categorie/bebe-enfants", { waitUntil: "networkidle" });
+  const rangCouches = (await francais.p.locator("article h3").allInnerTexts()).findIndex((n) => n.includes("Couches Huggies"));
+  await francais.ctx.close();
+  verifier(rangCouches >= 0, "jeu de test : « Couches Huggies » (article à options) est en vente");
+
+  const russe = await contexte(nav, "ru");
+  await russe.p.goto(BASE + "/categorie/courses-epicerie", { waitUntil: "networkidle" });
+  const nomsRu = await russe.p.locator("article h3").allInnerTexts();
+  verifier(nomsRu.length > 0 && nomsRu.every((n) => /[\u0400-\u04ff]/.test(n)), `catalogue en russe : ${nomsRu.length} articles du rayon ont leur nom en russe (« ${nomFr} » → « ${nomsRu[0].trim()} »)`);
+  await russe.p.goto(BASE + "/recherche?q=" + encodeURIComponent("молоко"), { waitUntil: "networkidle" });
+  verifier((await russe.p.locator("article").count()) > 0, "recherche en russe : « молоко » trouve le lait");
+  await russe.p.goto(BASE + "/recherche?q=lait", { waitUntil: "networkidle" });
+  verifier((await russe.p.locator("article").count()) > 0, "recherche en russe : le nom français « lait » se trouve toujours");
+  await russe.ctx.close();
+
+  // 4. Une commande en hébreu : refusée tant qu'il manque une coordonnée
   const { ctx, p } = await contexte(nav, "he");
   await p.goto(BASE + "/categorie/courses-epicerie", { waitUntil: "networkidle" });
+  const nomHe = (await p.locator("article h3").first().innerText()).trim();
+  verifier(/[\u0590-\u05ff]/.test(nomHe) && nomHe !== nomFr, `catalogue en hébreu : « ${nomFr} » → « ${nomHe} »`);
   await p.locator("article button.border-slate-300").first().click();
+  // Un article à options : la fiche montre « Taille » et ses choix dans la langue du client
+  await p.goto(BASE + "/categorie/bebe-enfants", { waitUntil: "networkidle" });
+  await p.locator("article").nth(rangCouches).locator("h3 button").click();
+  const fiche = p.locator("dialog[open]");
+  await fiche.waitFor();
+  const groupeHe = (await fiche.locator("legend bdi").first().innerText()).trim();
+  verifier(/[\u0590-\u05ff]/.test(groupeHe), `fiche en hébreu : l'option « Taille » s'appelle « ${groupeHe} »`);
+  await fiche.locator("label.pastille", { hasText: /^\s*4/ }).first().click();
+  await fiche.locator("button.bouton").click();
+  await fiche.waitFor({ state: "hidden" });
   await p.goto(BASE + "/panier", { waitUntil: "networkidle" });
   await p.waitForSelector("#nomClient");
+  const panier = await p.locator("section[aria-labelledby=section-1]").innerText();
+  verifier(panier.includes(nomHe) && panier.includes(groupeHe) && !panier.includes("Taille"), "panier en hébreu : noms d'articles et options dans la langue du client");
   await p.locator('button[type="submit"]').click();
   await p.waitForSelector("#etage-erreur");
   for (const champ of ["nomClient", "telephone", "email", "ville", "adresse", "etage", "appartement"]) {
@@ -100,18 +134,20 @@ try {
   await p.waitForLoadState("networkidle");
   const suivi = await p.locator("main").innerText();
   verifier(suivi.includes("Herzl 12") && suivi.includes("1234#") && suivi.includes("+972 50 123 4567") && !oubli(suivi), "suivi : rue, étage, code et téléphone affichés");
+  verifier(suivi.includes(nomHe) && suivi.includes(groupeHe) && suivi.includes("נתניה") && !suivi.includes("Taille"), "suivi : articles, options et ville en hébreu");
   verifier(!(await deborde(p)), "suivi en hébreu : pas de débordement");
   if (OUT) await p.screenshot({ path: `${OUT}/langues-he-suivi.png`, fullPage: true });
 
-  // 4. L'e-mail du client est en hébreu ; l'avis au gérant en français, avec l'adresse entière
+  // 5. L'e-mail du client est en hébreu ; l'avis au gérant en français, avec l'adresse entière
   const confirmation = await courriel(email);
+  verifier(confirmation.includes(nomHe) && confirmation.includes(groupeHe) && !confirmation.includes("Couches Huggies"), "e-mail de confirmation : articles et options en hébreu");
   verifier(confirmation.includes('<html lang="he" dir="rtl">') && confirmation.includes("Herzl 12") && confirmation.includes("1234#") && !oubli(confirmation), "e-mail de confirmation en hébreu, avec l'adresse entière");
   if (process.env.EMAIL_GERANT || existsSync(BOITE)) {
     const avis = await courriel("gerant@exemple.test").catch(() => null);
-    if (avis) verifier(avis.includes("Étage 3 · Appt / chambre 12 · Code 1234#") && avis.includes("Langue du client"), "avis au gérant : en français, étage, appartement, code, langue du client");
+    if (avis) verifier(avis.includes("Étage 3 · Appt / chambre 12 · Code 1234#") && avis.includes("Langue du client") && avis.includes("Couches Huggies") && avis.includes("Taille : 4"), "avis au gérant : en français (articles compris), étage, appartement, code, langue du client");
   }
 
-  // 5. L'espace client : étage et appartement enregistrés ; le client y change sa langue
+  // 6. L'espace client : étage et appartement enregistrés ; le client y change sa langue
   const lien = /href="([^"]*\/compte\/acces\?jeton=[^"]+)"/.exec(confirmation)[1].replace(/&amp;/g, "&");
   await p.goto(lien, { waitUntil: "networkidle" });
   verifier(p.url().endsWith("/compte") && (await p.inputValue("#profil-etage")) === "3" && (await p.inputValue("#profil-appartement")) === "12", "espace client : étage et appartement de la commande");
@@ -123,13 +159,13 @@ try {
   ok("en-tête : passage à l'anglais");
   await ctx.close();
 
-  // 6. Sur un autre appareil (navigateur en français), la connexion ramène la langue choisie
+  // 7. Sur un autre appareil (navigateur en français), la connexion ramène la langue choisie
   const autre = await contexte(nav, null, { locale: "fr-FR" });
   await autre.p.goto(lien, { waitUntil: "networkidle" });
   verifier((await langueDeLaPage(autre.p)) === "en/ltr", "autre appareil : après connexion, la langue du client (anglais)");
   await autre.ctx.close();
 
-  // 7. L'espace gérant : en français, de gauche à droite, même quand le site est en hébreu ;
+  // 8. L'espace gérant : en français, de gauche à droite, même quand le site est en hébreu ;
   //    la commande y porte l'adresse entière, la langue du client et un message WhatsApp en hébreu
   const gerant = await contexte(nav, "he", devices["Desktop Chrome"]);
   const a = gerant.p;
@@ -142,6 +178,7 @@ try {
   await a.waitForURL(/\/admin\/commandes\//);
   const commande = await a.locator("main").innerText();
   verifier(commande.includes("Étage 3 · Appt / chambre 12 · Code 1234#") && commande.includes("Langue du client"), "gérant : étage, appartement, code et langue du client sur la commande");
+  verifier(commande.includes(nomFr) && commande.includes("Couches Huggies") && commande.includes("Taille : 4") && !commande.includes(nomHe), "gérant : les articles et leurs options restent en français sur la commande");
   const message = decodeURIComponent((await a.locator('a[href*="wa.me"]').first().getAttribute("href")).split("text=")[1]);
   verifier(/[֐-׿]/.test(message) && message.includes("/suivi/") && !oubli(message), "le message WhatsApp du gérant au client est en hébreu");
   await gerant.ctx.close();

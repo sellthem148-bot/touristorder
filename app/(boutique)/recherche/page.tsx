@@ -15,7 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function PageRecherche({ searchParams }: PageProps<"/recherche">) {
   const brut = (await searchParams).q;
   const q = (Array.isArray(brut) ? brut[0] : brut ?? "").trim();
-  const [produits, { langue, t }] = await Promise.all([rechercher(q), traduction()]);
+  const { langue, t } = await traduction();
+  const produits = await rechercher(q, langue);
   const r = t.recherche;
 
   return (

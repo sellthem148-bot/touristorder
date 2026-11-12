@@ -5,6 +5,7 @@ import { joursOuverts } from "@/lib/livraisons";
 import { clientConnecte } from "@/lib/client";
 import { libelleDuJour } from "@/lib/dates";
 import { traduction } from "@/lib/traduction";
+import { nomTarif, nomVille } from "@/lib/i18n/catalogue";
 import { PageDuPanier } from "./PageDuPanier";
 
 export const dynamic = "force-dynamic";
@@ -28,5 +29,10 @@ export default async function Panier({ searchParams }: PageProps<"/panier">) {
   const client = c
     ? { email: c.email, nom: c.nom, telephone: c.telephone, ville: c.ville, adresse: c.adresse, etage: c.etage, appartement: c.appartement, codeEntree: c.codeEntree }
     : null;
-  return <PageDuPanier reglages={reglages} jours={jours} limitePassee={limitePassee} client={client} demande={demande} />;
+  // Les noms des villes et des tarifs dans la langue du client (ce qui est envoyé reste le nom du gérant).
+  const affichage = {
+    villes: Object.fromEntries(reglages.villes.map((v) => [v.nom, nomVille(v.nom, langue)])),
+    tarifs: Object.fromEntries(reglages.plages.map((p) => [p.nom, nomTarif(p.nom, langue)])),
+  };
+  return <PageDuPanier reglages={reglages} jours={jours} limitePassee={limitePassee} client={client} demande={demande} affichage={affichage} />;
 }

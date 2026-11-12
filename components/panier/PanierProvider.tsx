@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useMemo, useSyncExternalStore } from "react";
 import { QUANTITE_MAX } from "@/lib/calcul";
-import { cleDeVariante, resoudreSelection, type GroupeOptions, type Selection } from "@/lib/options";
+import { cleDeVariante, libelleAffiche, resoudreSelection, type GroupeOptions, type Selection } from "@/lib/options";
+import { useTraduction } from "../LangueProvider";
 
 export type ArticlePanier = {
   cle: string; // produit + options choisies
@@ -110,6 +111,9 @@ function modifier(f: (a: ArticlePanier[]) => ArticlePanier[]) {
 
 export function PanierProvider({ children }: { children: React.ReactNode }) {
   const { articles, pret } = useSyncExternalStore(abonner, instantane, () => SERVEUR);
+  const { langue } = useTraduction();
+  // « : » entre une option et son choix — avec une espace devant en français seulement.
+  const deuxPoints = langue === "fr" ? " : " : ": ";
 
   const valeur = useMemo<Panier>(
     () => ({
@@ -146,13 +150,13 @@ export function PanierProvider({ children }: { children: React.ReactNode }) {
               retires += 1;
               return [];
             }
-            return [{ ...a, nom: p.nom, prix: p.prix + choix.supplement, optionsLibelle: choix.libelle, photoUrl: p.photoUrl }];
+            return [{ ...a, nom: p.nom, prix: p.prix + choix.supplement, optionsLibelle: libelleAffiche(p.options, a.options, deuxPoints) || choix.libelle, photoUrl: p.photoUrl }];
           }),
         );
         return retires;
       },
     }),
-    [articles, pret],
+    [articles, pret, deuxPoints],
   );
 
   return <Contexte.Provider value={valeur}>{children}</Contexte.Provider>;

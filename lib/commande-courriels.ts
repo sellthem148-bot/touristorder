@@ -13,6 +13,7 @@ import { envoyerTelegram, texteDeLAlerte } from "./telegram";
 import { adresseComplete } from "./adresse";
 import { remplir } from "./langues";
 import { dictionnaire, langueDuCourriel, langueEnregistree, libelleDuMode } from "./i18n";
+import { libelleOptions, nomArticle, nomTarif, nomVille } from "./i18n/catalogue";
 
 /**
  * Après une commande : la confirmation au client, l'avis au gérant (EMAIL_GERANT) et son alerte Telegram.
@@ -69,6 +70,10 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       const pourLeClient: CommandePourCourriel = {
         ...donnees,
         adresse: adresseComplete(c, t.adresse),
+        ville: nomVille(c.ville, langue),
+        // Les articles et leurs options dans la langue du client (les lignes de la commande restent en français).
+        lignes: c.lignes.map((l) => ({ ...l, nom: nomArticle(l.nom, langue), options: libelleOptions(l.options, langue) })),
+        presentation: { ...donnees.presentation, tarifNom: nomTarif(c.tarifNom, langue), ville: nomVille(c.ville, langue) },
         jour: libelleDuJour(c.dateLivraison, undefined, langue),
         paiement: mode,
         lienWhatsapp: lienWhatsapp(reglages.whatsapp, remplir(t.whatsapp.question, { numero: c.numero })),

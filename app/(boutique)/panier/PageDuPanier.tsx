@@ -27,6 +27,8 @@ type Props = {
   client: Coordonnees | null; // connecté à son espace
   /** « Je ne trouve pas mon article » : la page s'ouvre sur la demande libre, pré-remplie (recherche sans résultat). */
   demande: string | null;
+  /** Les noms des villes et des tarifs dans la langue du client (clé : le nom saisi par le gérant). */
+  affichage: { villes: Record<string, string>; tarifs: Record<string, string> };
 };
 
 type Valeurs = {
@@ -65,7 +67,7 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
   );
 }
 
-export function PageDuPanier({ reglages, jours, limitePassee, client, demande }: Props) {
+export function PageDuPanier({ reglages, jours, limitePassee, client, demande, affichage }: Props) {
   const panier = usePanier();
   const { langue, t } = useTraduction();
   const p = t.panier;
@@ -92,7 +94,10 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
   const [avis, setAvis] = useState("");
   // Une demande sans article du catalogue : le formulaire s'affiche même avec un panier vide.
   const [demandeSeule, setDemandeSeule] = useState(demande !== null);
-  const dejaSynchronise = useRef(false);
+  // La langue dans laquelle le panier a été remis à jour (noms et options) ; il l'est de nouveau si elle change.
+  const langueSynchronisee = useRef<string | null>(null);
+  const nomDeVille = (nom: string) => affichage.villes[nom] ?? nom;
+  const nomDeTarif = (nom: string) => affichage.tarifs[nom] ?? nom;
 
   // Un champ corrigé après un refus ne garde pas son message d'erreur.
   const [corriges, setCorriges] = useState<{ pour: EtatCommande; champs: string[] }>({ pour: etat, champs: [] });
@@ -120,8 +125,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
   // prix et options actuels, et on retire ce qui n'existe plus.
   const { pret, articles, synchroniser } = panier;
   useEffect(() => {
-    if (!pret || (dejaSynchronise.current && !etat.panierPerime)) return;
-    dejaSynchronise.current = true;
+    if (!pret || (langueSynchronisee.current === langue && !etat.panierPerime)) return;
+    langueSynchronisee.current = langue;
     if (articles.length === 0) return;
     let annule = false;
     actualiserPanier(articles.map((a) => a.produitId))
@@ -136,8 +141,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
     return () => {
       annule = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- une fois au chargement, puis sur panier périmé
-  }, [pret, etat]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- au chargement, sur panier périmé, et quand la langue change
+  }, [pret, etat, langue]);
 
   // Les créneaux du jour choisi, dans l'ordre des réglages ; ceux qui sont complets restent affichés, grisés.
   const jourChoisi = jours.find((j) => j.valeur === v.dateLivraison);
@@ -295,7 +300,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
               <option value="">{p.choisir}</option>
               {reglages.villes.map((x) => (
                 <option key={x.nom} value={x.nom}>
-                  {x.supplementLivraison > 0 ? remplir(p.villeSupplement, { ville: x.nom, prix: prixCourt(x.supplementLivraison) }) : x.nom}
+                  {x.supplementLivraison > 0 ? remplir(p.villeSupplement, { ville: nomDeVille(x.nom), prix: prixCourt(x.supplementLivraison) }) : nomDeVille(x.nom)}
                 </option>
               ))}
             </select>
@@ -371,12 +376,12 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
           </fieldset>
 
           <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" aria-live="polite">
-            <strong>{tarif.nom === NOM_TARIF_DE_BASE ? p.tarifNormal : remplir(p.tarifNom, { nom: tarif.nom.toLowerCase() })}</strong>
+            <strong>{tarif.nom === NOM_TARIF_DE_BASE ? p.tarifNormal : remplir(p.tarifNom, { nom: nomDeTarif(tarif.nom).toLowerCase() })}</strong>
             {" · "}
             {reglages.fraisRegroupes
               ? remplir(p.serviceEtLivraison, { prix: prixCourt(tarif.fraisService + livraison) })
               : remplir(p.serviceLivraisonDetail, { service: prixCourt(tarif.fraisService), livraison: prixCourt(livraison) })}
-            {ville && ville.supplementLivraison > 0 && remplir(p.dontVille, { prix: prixCourt(ville.supplementLivraison), ville: ville.nom })}
+            {ville && ville.supplementLivraison > 0 && remplir(p.dontVille, { prix: prixCourt(ville.supplementLivraison), ville: nomDeVille(ville.nom) })}
             {tarif.majorationPct > 0 && remplir(p.articlesPlus, { pct: tarif.majorationPct })}
           </p>
 
@@ -464,10 +469,10 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
               totaux={totaux}
               regroupes={reglages.fraisRegroupes}
               express={express}
-              tarifNom={tarif.nom}
+              tarifNom={nomDeTarif(tarif.nom)}
               majorationPct={tarif.majorationPct}
               nombreArticles={panier.nombre}
-              ville={ville?.nom}
+              ville={ville ? nomDeVille(ville.nom) : undefined}
               langue={langue}
               libelles={t.montants}
               libelleTotal={t.montants.total}
@@ -493,7 +498,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande }:
           {!panierVide && sousLeMinimum && (
             <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
               {ville && ville.minimumCommande > reglages.minimumCommande
-                ? remplir(p.minimumVille, { ville: ville.nom, prix: prix(minimum) })
+                ? remplir(p.minimumVille, { ville: nomDeVille(ville.nom), prix: prix(minimum) })
                 : remplir(p.minimum, { prix: prix(minimum) })}
             </p>
           )}

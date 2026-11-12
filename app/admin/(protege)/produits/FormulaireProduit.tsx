@@ -95,6 +95,9 @@ export function FormulaireProduit({ produit, categories, boutiques }: Props) {
           <label htmlFor="nom" className="etiquette">Nom du produit</label>
           <input {...attrs("nom")} defaultValue={v("nom")} required placeholder="Chargeur iPhone USB-C 20W" />
           {erreur("nom")}
+          <p className="mt-1 text-xs text-slate-500">
+            Les articles de départ sont traduits en anglais, russe, hébreu et espagnol. Un nom ou une description que tu écris ou modifies toi-même s&apos;affiche tel quel, en français, dans toutes les langues.
+          </p>
         </div>
         <div>
           <label htmlFor="description" className="etiquette">Description (visible par le client)</label>

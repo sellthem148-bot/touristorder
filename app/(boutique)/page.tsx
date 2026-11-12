@@ -14,6 +14,7 @@ import { ADRESSE_DU_SITE, MESSAGE_ACCUEIL_PAR_DEFAUT, NOM_DU_SITE } from "@/lib/
 import { compter, heureLisible, remplir, type Langue } from "@/lib/langues";
 import { estAujourdhui, libelleDuJour } from "@/lib/dates";
 import { traduction } from "@/lib/traduction";
+import { nomTarif, nomVille } from "@/lib/i18n/catalogue";
 
 export const dynamic = "force-dynamic";
 export const metadata = { alternates: { canonical: "/" } };
@@ -45,7 +46,8 @@ const donneesStructurees = (langue: Langue, description: string) => JSON.stringi
 type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string };
 
 export default async function Accueil() {
-  const [rayons, populaires, reglages, { langue, t, ts }] = await Promise.all([vitrine(1), misEnAvant(), reglagesPublics(), traduction()]);
+  const { langue, t, ts } = await traduction();
+  const [rayons, populaires, reglages] = await Promise.all([vitrine(1, langue), misEnAvant(undefined, langue), reglagesPublics()]);
   const a = t.accueil;
   // Le message d'accueil du gérant ; tant qu'il a gardé celui de départ, le client le lit dans sa langue.
   const messageAccueil = reglages.messageAccueil === MESSAGE_ACCUEIL_PAR_DEFAUT ? a.messageParDefaut : reglages.messageAccueil;
@@ -55,7 +57,7 @@ export default async function Accueil() {
   // La prochaine livraison possible : le premier créneau qui n'est ni passé ni complet.
   const prochaine = (await joursOuverts(reglages))[0];
   const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
-  const villes = reglages.villes.map((v) => v.nom);
+  const villes = reglages.villes.map((v) => nomVille(v.nom, langue));
 
   const faits: Fait[] = [];
   if (amplitude) {
@@ -81,7 +83,7 @@ export default async function Accueil() {
     icone: Truck,
     titre: reglages.fraisRegroupes ? a.serviceLivraison : a.fraisLivraison,
     valeur: remplir(a.desPrix, { prix: formatPrixCourt(reglages.fraisRegroupes ? tarif.fraisService + livraisonLaMoinsChere(tarif, reglages.villes) : livraisonLaMoinsChere(tarif, reglages.villes), langue) }),
-    precision: tarif.nom !== NOM_TARIF_DE_BASE ? remplir(a.tarifEnCeMoment, { nom: tarif.nom.toLowerCase() }) : undefined,
+    precision: tarif.nom !== NOM_TARIF_DE_BASE ? remplir(a.tarifEnCeMoment, { nom: nomTarif(tarif.nom, langue).toLowerCase() }) : undefined,
   });
   faits.push({
     icone: Wallet,

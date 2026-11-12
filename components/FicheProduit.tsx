@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ProduitPublic } from "@/lib/catalogue";
 import { formatPrix } from "@/lib/argent";
 import { QUANTITE_MAX } from "@/lib/calcul";
-import { resoudreSelection, type Selection } from "@/lib/options";
+import { libelleAffiche, resoudreSelection, type Selection } from "@/lib/options";
 import { usePanier } from "./panier/PanierProvider";
 import { Minus, Plus, X } from "lucide-react";
 import { PastilleBadge, Prix } from "./Prix";
@@ -27,7 +27,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
   }, []);
 
   const choix = resoudreSelection(produit.options, selection);
-  const manquants = produit.options.filter((g) => !selection[g.nom]).map((g) => g.nom.toLocaleLowerCase(LOCALE[langue]));
+  const manquants = produit.options.filter((g) => !selection[g.nom]).map((g) => (g.affiche ?? g.nom).toLocaleLowerCase(LOCALE[langue]));
   const prixUnitaire = produit.prix + (choix.ok ? choix.supplement : 0);
 
   function ajouter() {
@@ -37,7 +37,8 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
         produitId: produit.id,
         nom: produit.nom,
         options: produit.options.length ? selection : undefined,
-        optionsLibelle: choix.libelle,
+        // Ce que le client lit dans son panier, dans sa langue ; le choix envoyé reste celui du gérant (`selection`).
+        optionsLibelle: libelleAffiche(produit.options, selection, langue === "fr" ? " : " : ": ") || choix.libelle,
         prix: prixUnitaire,
         photoUrl: produit.photoUrl,
         emoji: produit.categorie.emoji,
@@ -88,7 +89,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
         {produit.options.map((g) => (
           <fieldset key={g.nom} className="space-y-2">
             <legend className="mb-2 flex w-full items-center justify-between font-semibold">
-              <bdi>{g.nom}</bdi>
+              <bdi>{g.affiche ?? g.nom}</bdi>
               <span className="text-xs font-normal text-slate-500">{t.produit.obligatoire}</span>
             </legend>
             <div className="flex flex-wrap gap-2">
@@ -102,7 +103,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
                     onChange={() => setSelection((s) => ({ ...s, [g.nom]: c.libelle }))}
                     className="sr-only"
                   />
-                  <bdi>{c.libelle}</bdi>
+                  <bdi>{c.affiche ?? c.libelle}</bdi>
                   {c.supplement > 0 && <span className="opacity-75" dir="ltr">+{formatPrix(c.supplement, langue)}</span>}
                 </label>
               ))}

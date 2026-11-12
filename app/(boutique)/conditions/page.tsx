@@ -6,6 +6,7 @@ import { NOM_DU_SITE } from "@/lib/marque";
 import { heureLisible, remplir } from "@/lib/langues";
 import { libelleDuMode } from "@/lib/i18n/rayons";
 import { cadreDeLaPage } from "@/lib/pages-texte";
+import { nomVille } from "@/lib/i18n/catalogue";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function Conditions() {
   const amplitude = amplitudeDesCreneaux(i.creneaux, langue);
   // La livraison : les villes, les horaires et l'heure limite du gérant, quand ils sont réglés.
   const livraison = [
-    i.villes.length > 0 ? remplir(c.livraison.villes, { villes: i.villes.join(", ") }) : c.livraison.sansVilles,
+    i.villes.length > 0 ? remplir(c.livraison.villes, { villes: i.villes.map((v) => nomVille(v, langue)).join(", ") }) : c.livraison.sansVilles,
     amplitude ? remplir(c.livraison.horaires, { amplitude }) : c.livraison.creneau,
     ...(i.heureLimite ? [remplir(c.livraison.limite, { heure: heureLisible(i.heureLimite, langue) })] : []),
   ].join(" ");

@@ -13,6 +13,7 @@ import { compter, remplir } from "@/lib/langues";
 import { libelleDuMode } from "@/lib/i18n/rayons";
 import { adresseComplete } from "@/lib/adresse";
 import { traduction } from "@/lib/traduction";
+import { libelleOptions, nomArticle, nomTarif, nomVille } from "@/lib/i18n/catalogue";
 import { ChoixLangue } from "@/components/ChoixLangue";
 import { prenomDe } from "@/lib/messages-client";
 import { RailProduits } from "@/components/CarteProduit";
@@ -53,7 +54,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
   ]);
   const resume = resumeDuClient(commandes);
   const enCours = commandes.filter((c) => STATUTS_EN_COURS.includes(c.statut));
-  const preferes = await produitsParIds(produitsPreferes(commandes));
+  const preferes = await produitsParIds(produitsPreferes(commandes), langue);
 
   return (
     <div className="space-y-8">
@@ -138,15 +139,15 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                     </summary>
                     <div className="space-y-4 border-t border-slate-100 p-4">
                       <p className="text-sm text-slate-600">
-                        {remplir(c0.livraison, { jour: jour(c.dateLivraison), creneau: c.creneau, adresse: adresseComplete(c, t.adresse).replace(/\s+/g, " "), ville: c.ville })}
+                        {remplir(c0.livraison, { jour: jour(c.dateLivraison), creneau: c.creneau, adresse: adresseComplete(c, t.adresse).replace(/\s+/g, " "), ville: nomVille(c.ville, langue) })}
                         {c.paiement && remplir(c0.paiementMode, { mode: libelleDuMode(c.paiement, t) })}
                       </p>
                       <ul className="divide-y divide-slate-100 text-sm">
                         {c.lignes.map((l) => (
                           <li key={l.id} className={`flex justify-between gap-3 py-2 ${l.indisponible ? "text-slate-400" : ""}`}>
                             <span>
-                              <span className={l.indisponible ? "line-through" : ""}>{l.quantite} × <bdi>{l.nom}</bdi></span>
-                              {l.options && <span className="block text-xs text-slate-500"><bdi>{l.options}</bdi></span>}
+                              <span className={l.indisponible ? "line-through" : ""}>{l.quantite} × <bdi>{nomArticle(l.nom, langue)}</bdi></span>
+                              {l.options && <span className="block text-xs text-slate-500"><bdi>{libelleOptions(l.options, langue)}</bdi></span>}
                               {l.indisponible && <span className="block text-xs font-semibold text-amber-700">{c0.indispo}</span>}
                             </span>
                             <span className={`shrink-0 font-semibold tabular-nums ${l.indisponible ? "line-through" : ""}`}>{prix(l.prixUnitaire * l.quantite)}</span>
@@ -157,9 +158,9 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                         totaux={c}
                         regroupes={reglages.fraisRegroupes}
                         express={c.express}
-                        tarifNom={c.tarifNom}
+                        tarifNom={nomTarif(c.tarifNom, langue)}
                         majorationPct={c.majorationPct}
-                        ville={c.ville}
+                        ville={nomVille(c.ville, langue)}
                         langue={langue}
                         libelles={t.montants}
                         libelleTotal={t.montants.total}
@@ -185,7 +186,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
         </div>
         <FormulaireProfil
           client={{ nom: client.nom, telephone: client.telephone, ville: client.ville, adresse: client.adresse, etage: client.etage, appartement: client.appartement, codeEntree: client.codeEntree }}
-          villes={villes.map((v) => v.nom)}
+          villes={villes.map((v) => ({ nom: v.nom, affiche: nomVille(v.nom, langue) }))}
         />
       </section>
 

@@ -15,7 +15,8 @@ import { adresseDuSite } from "@/lib/site";
 import { envoyerCourriel } from "@/lib/courriel";
 import { adresseDuLogo, courrielDeConnexion } from "@/lib/courriels";
 import { produitsPourLePanier } from "@/lib/catalogue";
-import { resoudreSelection, type Selection } from "@/lib/options";
+import { libelleAffiche, resoudreSelection, type Selection } from "@/lib/options";
+import { deuxPointsDe } from "@/lib/i18n/catalogue";
 import { selectionDepuisLibelle } from "@/lib/espace-client";
 import { NOM_DU_SITE } from "@/lib/marque";
 
@@ -97,6 +98,7 @@ export type ArticleARemettre = {
  */
 export async function articlesPourRecommander(commandeId: string): Promise<{ articles: ArticleARemettre[]; manquants: number }> {
   const client = await exigerClient();
+  const { langue } = await traduction();
   if (typeof commandeId !== "string" || commandeId.length === 0 || commandeId.length > 40) return { articles: [], manquants: 0 };
   // La commande doit être celle du client connecté : l'identifiant seul ne suffit pas.
   const commande = await prisma.commande.findFirst({
@@ -105,7 +107,7 @@ export async function articlesPourRecommander(commandeId: string): Promise<{ art
   });
   if (!commande) return { articles: [], manquants: 0 };
 
-  const produits = new Map((await produitsPourLePanier(commande.lignes.flatMap((l) => (l.produitId ? [l.produitId] : [])))).map((p) => [p.id, p]));
+  const produits = new Map((await produitsPourLePanier(commande.lignes.flatMap((l) => (l.produitId ? [l.produitId] : [])), langue)).map((p) => [p.id, p]));
   const articles: ArticleARemettre[] = [];
   let manquants = 0;
   for (const l of commande.lignes) {
@@ -120,7 +122,8 @@ export async function articlesPourRecommander(commandeId: string): Promise<{ art
       produitId: p.id,
       nom: p.nom,
       options: p.options.length ? selection : undefined,
-      optionsLibelle: choix.libelle,
+      // Le nom et les options tels que le client les lit, dans sa langue ; le serveur recalcule tout à la commande.
+      optionsLibelle: libelleAffiche(p.options, selection, deuxPointsDe(langue)) || choix.libelle,
       prix: p.prix + choix.supplement,
       photoUrl: p.photoUrl,
       emoji: p.categorie.emoji,

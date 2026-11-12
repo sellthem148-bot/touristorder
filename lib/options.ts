@@ -3,8 +3,10 @@
 import { z } from "zod";
 import { lirePrix, prixPourChamp } from "./argent";
 
-export type Choix = { libelle: string; supplement: number };
-export type GroupeOptions = { nom: string; choix: Choix[] };
+// `affiche` : le nom dans la langue du client (lib/i18n/catalogue), posé par le serveur pour l'affichage seulement.
+// Ce qui est choisi, envoyé et vérifié reste `nom` / `libelle`, tels que le gérant les a saisis.
+export type Choix = { libelle: string; supplement: number; affiche?: string };
+export type GroupeOptions = { nom: string; choix: Choix[]; affiche?: string };
 
 /** Ce que le client a choisi : { "Taille": "4 ans" }. */
 export type Selection = Record<string, string>;
@@ -89,6 +91,22 @@ export function resoudreSelection(
     morceaux.push(`${g.nom} : ${c.libelle}`);
   }
   return { ok: true, supplement, libelle: morceaux.join(" · ") };
+}
+
+/**
+ * Le choix du client tel qu'on le lui montre (« Size: 4 · Colour: Blue »), dans sa langue quand le serveur
+ * a posé les noms `affiche`. Vide si le choix n'est pas complet. La ligne de commande, elle, garde le
+ * libellé du gérant (`resoudreSelection`).
+ */
+export function libelleAffiche(groupes: GroupeOptions[], selection: Selection | undefined, deuxPoints = " : "): string {
+  const sel = selection ?? {};
+  const morceaux: string[] = [];
+  for (const g of groupes) {
+    const c = g.choix.find((x) => x.libelle === sel[g.nom]);
+    if (!c) return "";
+    morceaux.push(`${g.affiche ?? g.nom}${deuxPoints}${c.affiche ?? c.libelle}`);
+  }
+  return morceaux.join(" · ");
 }
 
 /** Une clé stable pour une variante (deux choix identiques = la même ligne de panier). */

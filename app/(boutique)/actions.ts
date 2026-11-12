@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { clientConnecte } from "@/lib/client";
 import { envoyerCourrielsDeCommande } from "@/lib/commande-courriels";
 import { adresseDuSite } from "@/lib/site";
-import { traduction } from "@/lib/traduction";
+import { langueActuelle, traduction } from "@/lib/traduction";
 
 export type EtatCommande = {
   erreur?: string;
@@ -21,7 +21,8 @@ export type EtatCommande = {
 /** Prix et disponibilité actuels des articles du panier. */
 export async function actualiserPanier(ids: string[]) {
   if (!Array.isArray(ids)) return [];
-  return etatDuPanier(ids);
+  // Les noms et les options reviennent dans la langue du client.
+  return etatDuPanier(ids, await langueActuelle());
 }
 
 export async function passerCommande(_avant: EtatCommande, form: FormData): Promise<EtatCommande> {

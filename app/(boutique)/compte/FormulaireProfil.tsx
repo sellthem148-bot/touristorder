@@ -6,7 +6,7 @@ import { enregistrerProfil, type EtatProfil } from "./actions";
 
 type Props = {
   client: { nom: string; telephone: string; ville: string; adresse: string; etage: string; appartement: string; codeEntree: string };
-  villes: string[];
+  villes: { nom: string; affiche: string }[]; // `affiche` : le nom de la ville dans la langue du client
 };
 
 export function FormulaireProfil({ client, villes }: Props) {
@@ -53,7 +53,7 @@ export function FormulaireProfil({ client, villes }: Props) {
         <label htmlFor="profil-ville" className="etiquette">{t.panier.ville}</label>
         <select {...champ("ville")}>
           <option value="">{t.panier.choisir}</option>
-          {villes.map((x) => <option key={x} value={x}>{x}</option>)}
+          {villes.map((x) => <option key={x.nom} value={x.nom}>{x.affiche}</option>)}
         </select>
         {erreur("ville")}
       </div>

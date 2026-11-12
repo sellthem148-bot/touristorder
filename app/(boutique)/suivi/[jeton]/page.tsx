@@ -10,6 +10,7 @@ import { remplir } from "@/lib/langues";
 import { libelleDuMode } from "@/lib/i18n/rayons";
 import { precisionsAdresse } from "@/lib/adresse";
 import { traduction } from "@/lib/traduction";
+import { libelleOptions, nomArticle, nomTarif, nomVille } from "@/lib/i18n/catalogue";
 import { lireReglages } from "@/lib/reglages";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { NOM_DU_SITE } from "@/lib/marque";
@@ -178,7 +179,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           <h2 className="mb-1 text-base font-extrabold">{s.livraison}</h2>
           <p className="font-semibold"><bdi>{commande.nomClient}</bdi></p>
           <p><bdi dir="ltr">{commande.telephone}</bdi></p>
-          <p className="whitespace-pre-line"><bdi>{commande.adresse}</bdi>, <bdi>{commande.ville}</bdi></p>
+          <p className="whitespace-pre-line"><bdi>{commande.adresse}</bdi>, <bdi>{nomVille(commande.ville, langue)}</bdi></p>
           {precisions && <p><bdi>{precisions}</bdi></p>}
           <p>{libelleDuJour(commande.dateLivraison, undefined, langue)} · {commande.creneau}</p>
         </div>
@@ -202,8 +203,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           {commande.lignes.map((l) => (
             <li key={l.id} className={`flex justify-between gap-3 py-2.5 ${l.indisponible ? "text-slate-400" : ""}`}>
               <span>
-                <span className={l.indisponible ? "line-through" : ""}>{l.quantite} × <bdi>{l.nom}</bdi></span>
-                {l.options && <span className="block text-xs text-slate-500"><bdi>{l.options}</bdi></span>}
+                <span className={l.indisponible ? "line-through" : ""}>{l.quantite} × <bdi>{nomArticle(l.nom, langue)}</bdi></span>
+                {l.options && <span className="block text-xs text-slate-500"><bdi>{libelleOptions(l.options, langue)}</bdi></span>}
                 {l.indisponible && <span className="mt-0.5 block text-xs font-semibold text-amber-700">{commande.montantPaye > 0 ? s.indispoRembourse : s.indispoNonFacture}</span>}
               </span>
               <span className={`shrink-0 font-semibold ${l.indisponible ? "line-through" : ""}`}>{prix(l.prixUnitaire * l.quantite)}</span>
@@ -215,10 +216,10 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           totaux={commande}
           regroupes={reglages.fraisRegroupes}
           express={commande.express}
-          tarifNom={commande.tarifNom}
+          tarifNom={nomTarif(commande.tarifNom, langue)}
           majorationPct={commande.majorationPct}
           libelleTotal={resteARegler || etat.etat === "RIEN" ? t.montants.totalAPayer : t.montants.total}
-          ville={commande.ville}
+          ville={nomVille(commande.ville, langue)}
           langue={langue}
           libelles={t.montants}
         />

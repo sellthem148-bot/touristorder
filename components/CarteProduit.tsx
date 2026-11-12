@@ -68,7 +68,7 @@ function BoutonRapide({ produit, ouvrir }: { produit: ProduitPublic; ouvrir: () 
 export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitPublic; sansBadge?: boolean }) {
   const [ouvert, setOuvert] = useState(false);
   const { langue, t } = useTraduction();
-  const detail = produit.description || (produit.options.length > 0 ? remplir(t.produit.auChoix, { options: produit.options.map((g) => g.nom).join(", ") }) : "");
+  const detail = produit.description || (produit.options.length > 0 ? remplir(t.produit.auChoix, { options: produit.options.map((g) => g.affiche ?? g.nom).join(", ") }) : "");
 
   return (
     <article className={`relative flex min-h-[5.75rem] flex-col rounded-2xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-400 ${produit.epuise ? "bg-slate-50" : ""}`}>

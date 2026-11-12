@@ -29,7 +29,7 @@ export default async function PageCategorie({ params }: PageProps<"/categorie/[s
   const [categories, { langue, t }] = await Promise.all([categoriesVisibles(), traduction()]);
   const c = categories.find((x) => x.slug === slug);
   if (!c) notFound();
-  const produits = await produitsDeLaCategorie(slug);
+  const produits = await produitsDeLaCategorie(slug, langue);
 
   return (
     <div className="space-y-6">
