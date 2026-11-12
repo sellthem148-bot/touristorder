@@ -54,3 +54,4 @@ await p.goto(B + "/", { waitUntil: "networkidle" });
 ok((await etat(p)) === "/ fr/ltr", `puis l'accueil reste en français malgré le téléphone en hébreu → ${await etat(p)}`);
 await nav.close();
 console.log(erreurs.length ? `\n${erreurs.length} PROBLÈME(S) : ${erreurs.join(" | ")}` : "\nTout est bon.");
+if (erreurs.length) process.exit(1);
