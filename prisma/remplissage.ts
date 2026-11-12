@@ -16,6 +16,7 @@ import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-vi
 import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
 import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./articles-wolt-captures-boissons";
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
+import { BOISSONS_GARDEES, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 
 function options(texte: string | undefined, nom: string) {
@@ -329,16 +330,21 @@ export async function retirerLesIntrouvables(prisma: PrismaClient): Promise<stri
 }
 
 /**
- * Ce que le rayon « Crèmerie & œufs » ne garde pas (pur) : les articles que le CODE y a installés — lots
- * de Wolt, liste du gérant, et les articles de sa liste remplacés le 12 novembre, sous leur nouveau nom —
- * moins la sélection gardée. Reconnus à leur nom ou à leur nom sur Wolt (un article renommé reste reconnu).
- * Un article que le gérant a créé lui-même dans ce rayon n'y est pas : on n'y touche pas.
+ * Ce qu'un rayon ne garde pas quand le gérant en demande une courte sélection (pur) : les articles que le CODE
+ * y a mis en vente — lots de Wolt, liste du gérant, et les articles de sa liste remplacés le 12 novembre, sous
+ * leur nouveau nom — moins la sélection gardée. Reconnus à leur nom ou à leur nom sur Wolt (un article
+ * renommé reste reconnu).
+ * N'y sont jamais : un article que le gérant a créé lui-même, ni un article que le code a installé masqué
+ * (alcool, médicament) — s'il est en vente, c'est que le gérant l'a décidé.
  */
-export function cremerieARetirer(): { noms: string[]; nomsWolt: string[] } {
-  const gardes = new Set(CREMERIE_GARDEE);
-  const rayon: { nom: string; nomWolt?: string }[] = [...LOTS_WOLT.flatMap((l) => l.articles), ...ARTICLES_DE_LA_LISTE].filter((a) => a.categorie === RAYON_CREMERIE);
-  const duRayon = new Set(rayon.map((a) => a.nom));
-  const tous = [...rayon, ...REMPLACEMENTS_DU_12_NOVEMBRE.filter((r) => duRayon.has(r.ancien))];
+export function rayonARetirer(rayon: string, selection: string[]): { noms: string[]; nomsWolt: string[] } {
+  const gardes = new Set(selection);
+  const duRayon: { nom: string; nomWolt?: string }[] = [
+    ...LOTS_WOLT.flatMap((l) => l.articles).filter((a) => !a.horsLigne),
+    ...ARTICLES_MIS_EN_VENTE,
+  ].filter((a) => a.categorie === rayon);
+  const noms = new Set(duRayon.map((a) => a.nom));
+  const tous = [...duRayon, ...REMPLACEMENTS_DU_12_NOVEMBRE.filter((r) => noms.has(r.ancien))];
   // Un nom sur Wolt porté par un article gardé n'est jamais dans la liste à retirer.
   const woltGardes = new Set(tous.filter((a) => gardes.has(a.nom)).map((a) => a.nomWolt ?? ""));
   const aRetirer = tous.filter((a) => !gardes.has(a.nom));
@@ -348,27 +354,49 @@ export function cremerieARetirer(): { noms: string[]; nomsWolt: string[] } {
   };
 }
 
+/**
+ * Ramène un rayon à sa courte sélection. Une seule fois (`cle`), et rien n'est supprimé : les autres articles
+ * sont masqués, le gérant remet en vente ceux qu'il veut. Jamais un article de la sélection.
+ */
+export async function allegerUnRayon(prisma: PrismaClient, o: { cle: string; titre: string; rayon: string; selection: string[] }): Promise<string> {
+  const faite = await operationFaite(prisma, o.cle);
+  if (faite === null) return `${o.titre} : réglages pas encore créés, rien retiré.`;
+  if (faite) return `${o.titre} : déjà ramené à sa sélection, rien de changé.`;
+  const { noms, nomsWolt } = rayonARetirer(o.rayon, o.selection);
+  const [retires] = await prisma.$transaction([
+    prisma.produit.updateMany({
+      where: { actif: true, nom: { notIn: o.selection }, OR: [{ nom: { in: noms } }, { nomWolt: { in: nomsWolt } }] },
+      data: { actif: false },
+    }),
+    noterOperation(prisma, o.cle),
+  ]);
+  return `${o.titre} : ${retires.count} article(s) retiré(s) de la vente (masqués), ${o.selection.length} gardés.`;
+}
+
+/** Ce que le rayon « Crèmerie & œufs » ne garde pas (pur). */
+export const cremerieARetirer = () => rayonARetirer(RAYON_CREMERIE, CREMERIE_GARDEE);
+
 export const CLE_ALLEGEMENT_CREMERIE = "allegement-cremerie-2026-11-12";
 
 /**
  * Le rayon « Crèmerie & œufs » ramené à une courte sélection : la décision du gérant (12 novembre 2026),
  * qui trouvait 280 articles trop longs à faire défiler (« il en faut quelques-uns, pas plus »).
- * Une seule fois, et rien n'est supprimé : les autres articles sont masqués, il remet en vente ceux
- * qu'il veut. Jamais un article gardé (`CREMERIE_GARDEE`), ni un article qu'il a créé lui-même.
  */
 export async function allegerLaCremerie(prisma: PrismaClient): Promise<string> {
-  const faite = await operationFaite(prisma, CLE_ALLEGEMENT_CREMERIE);
-  if (faite === null) return "Crèmerie : réglages pas encore créés, rien retiré.";
-  if (faite) return "Crèmerie : déjà ramenée à sa sélection, rien de changé.";
-  const { noms, nomsWolt } = cremerieARetirer();
-  const [retires] = await prisma.$transaction([
-    prisma.produit.updateMany({
-      where: { actif: true, nom: { notIn: CREMERIE_GARDEE }, OR: [{ nom: { in: noms } }, { nomWolt: { in: nomsWolt } }] },
-      data: { actif: false },
-    }),
-    noterOperation(prisma, CLE_ALLEGEMENT_CREMERIE),
-  ]);
-  return `Crèmerie : ${retires.count} article(s) retiré(s) de la vente (masqués), ${CREMERIE_GARDEE.length} gardés.`;
+  return allegerUnRayon(prisma, { cle: CLE_ALLEGEMENT_CREMERIE, titre: "Crèmerie", rayon: RAYON_CREMERIE, selection: CREMERIE_GARDEE });
+}
+
+/** Ce que le rayon « Boissons » ne garde pas (pur). */
+export const boissonsARetirer = () => rayonARetirer(RAYON_BOISSONS, BOISSONS_GARDEES);
+
+export const CLE_ALLEGEMENT_BOISSONS = "allegement-boissons-2026-11-12";
+
+/**
+ * Le rayon « Boissons » ramené à une courte sélection, lui aussi : la demande du gérant (12 novembre 2026)
+ * quand ses captures l'ont porté à 173 articles. L'alcool, que le code n'a jamais mis en vente, n'est pas touché.
+ */
+export async function allegerLesBoissons(prisma: PrismaClient): Promise<string> {
+  return allegerUnRayon(prisma, { cle: CLE_ALLEGEMENT_BOISSONS, titre: "Boissons", rayon: RAYON_BOISSONS, selection: BOISSONS_GARDEES });
 }
 
 /**

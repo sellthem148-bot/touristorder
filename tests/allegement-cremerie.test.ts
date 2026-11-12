@@ -65,7 +65,12 @@ describe("articles introuvables sur Wolt", () => {
 });
 
 describe("masqués, une seule fois — jamais supprimés", () => {
-  it.each(["allegerLaCremerie", "retirerLesIntrouvables"])("%s : une opération notée dans la même transaction, qui masque sans supprimer", (nom) => {
+  it("la Crèmerie passe par l'opération commune aux rayons courts, avec sa clé et sa sélection", () => {
+    const corps = corpsDe("allegerLaCremerie");
+    expect(corps).toContain("allegerUnRayon(prisma, { cle: CLE_ALLEGEMENT_CREMERIE");
+    expect(corps).toContain("selection: CREMERIE_GARDEE");
+  });
+  it.each(["allegerUnRayon", "retirerLesIntrouvables"])("%s : une opération notée dans la même transaction, qui masque sans supprimer", (nom) => {
     const corps = corpsDe(nom);
     expect(corps).toContain("operationFaite(");
     expect(corps).toContain("noterOperation(");
