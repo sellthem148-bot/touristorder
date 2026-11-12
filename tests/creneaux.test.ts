@@ -103,7 +103,7 @@ describe("limite de commandes par créneau", () => {
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
       creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", heureLimite: "",
-      coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
+      coordonneesPaiement: "", lienBit: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, commandesParCreneau: "4" }).commandesParCreneau).toBe(4);
     expect(reglagesSchema.parse({ ...base, commandesParCreneau: "" }).commandesParCreneau).toBe(0);
@@ -114,11 +114,11 @@ describe("limite de commandes par créneau", () => {
 describe("tournée du soir", () => {
   it("message « j'arrive » : le montant n'est rappelé que s'il reste à régler", async () => {
     const { messageJArrive, lienWaze } = await import("@/lib/messages-client");
-    const reste = messageJArrive({ prenom: "Sarah", numero: 12, reste: 8990, mode: "Bit", site: "Courses Express" }).replace(/[  ]/g, " ");
-    expect(reste).toContain("votre commande n°12");
+    const reste = messageJArrive({ prenom: "Sarah", reference: "SA-15210", reste: 8990, mode: "Bit", site: "Courses Express" }).replace(/[  ]/g, " ");
+    expect(reste).toContain("votre commande SA-15210");
     expect(reste).toContain("Il reste 89,90 ₪ à régler (Bit).");
     // Payée (le cas normal : le paiement se fait avant les achats) : aucun montant.
-    const payee = messageJArrive({ prenom: "Sarah", numero: 12, reste: 0, mode: "Bit", site: "Courses Express" });
+    const payee = messageJArrive({ prenom: "Sarah", reference: "SA-15210", reste: 0, mode: "Bit", site: "Courses Express" });
     expect(payee).not.toContain("₪");
     expect(payee).not.toContain("régler");
     expect(lienWaze("Hôtel Dan,\n chambre 512", "Tel Aviv")).toBe(
@@ -130,7 +130,7 @@ describe("tournée du soir", () => {
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
       creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "",
-      coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
+      coordonneesPaiement: "", lienBit: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, heureLimite: "17:00" }).heureLimite).toBe("17:00");
     expect(reglagesSchema.parse({ ...base, heureLimite: "" }).heureLimite).toBe("");

@@ -7,7 +7,6 @@ import type { Formes } from "../langues";
 
 const fr = {
   commun: {
-    numero: "n°{numero}",
     articles: { one: "{n} article", other: "{n} articles" } as Formes,
     voirCatalogue: "Voir le catalogue",
     chargement: "Chargement…",
@@ -151,6 +150,10 @@ const fr = {
     etage: "Étage {etage}",
     appartement: "Appt / chambre {appartement}",
     code: "Code {code}",
+    maison: "Maison",
+    hotel: "Hôtel",
+    chambre: "Chambre {chambre}",
+    remiseHotel: "Remise à la réception : nous vous appelons à notre arrivée",
   },
 
   panier: {
@@ -186,17 +189,24 @@ const fr = {
     emailAide: "Pour recevoir la confirmation et retrouver vos commandes dans votre espace client.",
 
     sectionAdresse: "Adresse de livraison",
-    adresseObligatoire: "Adresse, étage, numéro d'appartement et téléphone sont obligatoires : sans eux, nous ne pouvons ni préparer ni livrer votre commande.",
+    adresseObligatoire: "L'adresse et le téléphone sont obligatoires : sans eux, nous ne pouvons ni préparer ni livrer votre commande.",
+    // Où le client loge : étage et appartement ne sont demandés que pour un appartement ; à l'hôtel, on ne monte pas dans les chambres.
+    logement: "Où logez-vous ?",
+    logements: { APPARTEMENT: "Appartement", MAISON: "Maison", HOTEL: "Hôtel" },
+    hotelNom: "Nom de l'hôtel",
+    hotelNomPlaceholder: "Ex. : hôtel Dan",
+    chambre: "N° de chambre (facultatif)",
+    hotelAvis: "À l'hôtel, nous ne montons pas dans les chambres : nous vous appelons à notre arrivée et vous descendez récupérer votre commande à la réception.",
     ville: "Ville",
     choisir: "Choisir…",
     villeSupplement: "{ville} (livraison +{prix})",
-    adresse: "Rue et numéro, ou nom de l'hôtel",
-    adressePlaceholder: "Ex. : rue Herzl 12, ou hôtel Dan",
+    adresse: "Rue et numéro",
+    adressePlaceholder: "Ex. : rue Herzl 12",
     etage: "Étage",
     etagePlaceholder: "Ex. : 3",
     // Sous les champs « Étage » et « Appartement » (un champ étroit ne laisse pas la place dans l'exemple).
-    etageAide: "Rez-de-chaussée ou maison : indiquez 0 pour l'étage.",
-    appartement: "N° d'appartement ou de chambre",
+    etageAide: "Rez-de-chaussée : indiquez 0 pour l'étage.",
+    appartement: "N° d'appartement",
     appartementPlaceholder: "Ex. : 12",
     codeEntree: "Code d'entrée ou interphone (facultatif)",
     codeEntreePlaceholder: "Ex. : 1234#",
@@ -287,6 +297,8 @@ const fr = {
     par: " par {mode}",
     enAttente: "Paiement en attente · {montant}",
     enAttenteTexte: "Votre commande est préparée dès réception de votre paiement{par}. Les coordonnées de paiement vous sont envoyées sur WhatsApp.",
+    // Quand la page montre un bouton de paiement (lien Bit du gérant) : rien n'est à attendre sur WhatsApp.
+    enAttenteTexteLien: "Votre commande est préparée dès réception de votre paiement{par}.",
     reste: "Reste à régler · {montant}",
     resteTexte: "Votre commande a été complétée : il reste ce montant à régler{par}.",
     recu: "Paiement reçu",
@@ -297,9 +309,9 @@ const fr = {
 
   // Les messages WhatsApp pré-remplis que le client envoie au gérant.
   whatsapp: {
-    commande: "Bonjour ! J'ai passé la commande n°{numero} sur {site} ({nom}, {ville}).",
-    reglement: "Bonjour ! Je souhaite régler ma commande n°{numero} sur {site} ({montant}){par}.",
-    question: "Bonjour ! J'ai une question sur ma commande n°{numero}.",
+    commande: "Bonjour ! J'ai passé la commande {reference} sur {site} ({nom}, {ville}).",
+    reglement: "Bonjour ! Je souhaite régler ma commande {reference} sur {site} ({montant}){par}.",
+    question: "Bonjour ! J'ai une question sur ma commande {reference}.",
     contact: "Bonjour ! J'ai une question au sujet de {site}.",
   },
 
@@ -308,12 +320,16 @@ const fr = {
     merciDemande: "Merci, votre demande est envoyée.",
     merciCommande: "Merci, votre commande est enregistrée.",
     pageAJour: "Cette page se met à jour toute seule, et vous la retrouvez dans « Mes commandes ».",
-    commande: "Commande n°{numero}",
+    commande: "Commande {reference}",
     express: "Express",
     recueDemande: "Nous avons bien reçu votre demande. Nous recherchons l'article et vous confirmons son prix sur WhatsApp.",
     recueAPayer: "Nous avons bien reçu votre commande. Elle est préparée dès réception de votre paiement.",
     recuePayee: "Nous avons bien reçu votre commande et votre paiement. Nous nous occupons de vos achats.",
     recevoirCoordonnees: "Recevoir les coordonnées de paiement",
+    // Le bouton de paiement Bit (quand le gérant a donné son lien) et le lien discret pour toute autre question.
+    payerBit: "Payer avec Bit",
+    bitAide: "Montant : {montant}. Indiquez la référence {reference} dans le message du paiement.",
+    question: "Une question ?",
     annulee: "Commande annulée",
     avancement: "Avancement",
     ecrire: "Nous écrire sur WhatsApp",
@@ -349,7 +365,7 @@ const fr = {
     statArticles: "Articles commandés",
     statDepense: "Total dépensé",
     enCours: "En cours",
-    ligneCommande: "Commande n°{numero} · {jour}, {creneau}",
+    ligneCommande: "Commande {reference} · {jour}, {creneau}",
     suivre: "Suivre cette commande",
     preferes: "Vos articles préférés",
     historique: "Historique d'achat",

@@ -37,7 +37,7 @@ async function commander({ nom, tel, ville, adresse, creneau }) {
   await p.getByLabel("Votre numéro de téléphone (WhatsApp)").fill(tel);
   await p.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await p.getByLabel("Ville").selectOption(ville);
-  await p.getByLabel("Rue et numéro, ou nom de l'hôtel").fill(adresse); await p.getByLabel("Étage", { exact: true }).fill("3"); await p.getByLabel("N° d'appartement ou de chambre").fill("12");
+  await p.getByText("Appartement", { exact: true }).click(); await p.getByLabel("Rue et numéro", { exact: true }).fill(adresse); await p.getByLabel("Étage", { exact: true }).fill("3"); await p.getByLabel("N° d'appartement", { exact: true }).fill("12");
   await p.getByText("Bit", { exact: true }).click();
   await p.getByRole("button", { name: /^Commander/ }).click();
   await p.waitForURL(/\/suivi\//);

@@ -133,7 +133,7 @@ try {
   await client.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 11 22 33 44");
   await client.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await client.getByLabel("Ville").selectOption("Netanya");
-  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Carlton, chambre 210"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement ou de chambre").fill("12");
+  await client.getByText("Appartement", { exact: true }).click(); await client.getByLabel("Rue et numéro", { exact: true }).fill("Hôtel Carlton, chambre 210"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement", { exact: true }).fill("12");
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);
   await client.getByText("Merci, votre commande est enregistrée.").waitFor();

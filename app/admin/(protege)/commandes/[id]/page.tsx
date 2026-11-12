@@ -23,6 +23,7 @@ import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { COULEUR_PAIEMENT, etatDuPaiement, libelleDuSolde, libellePaiement } from "@/lib/paiement";
 import { lireReglages } from "@/lib/reglages";
 import { ajouterLigneLibre, annulerPaiement, changerStatut, enregistrerNoteInterne, modifierLigne, solderCommande } from "../../actions";
+import { referenceDeCommande } from "@/lib/reference";
 
 export const metadata = { title: "Commande" };
 
@@ -60,12 +61,14 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   // Le message porte le montant, le mode et les coordonnées de paiement tant qu'il reste à régler.
   // Il est écrit dans la langue du client (celle du site quand il a commandé).
   const langueClient = langueDesMessages(c.langue);
+  // Ce que le client lit et te cite à la place du numéro : « BC-58100 » (lib/reference.ts).
+  const reference = referenceDeCommande(c.numero, c.nomClient);
   const whatsappClient = lienWhatsapp(
     c.telephone,
     messagePourLeClient(c.statut, {
       // Le lien envoyé au client mène à sa page de suivi dans SA langue ; celui affiché plus bas, pour toi, reste sans langue.
-      prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi: lienSuivi.replace("/suivi/", `${prefixeDe(langueClient.langue)}/suivi/`), site: NOM_DU_SITE,
-      paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement,
+      prenom: prenomDe(c.nomClient), reference, total: c.total, lienSuivi: lienSuivi.replace("/suivi/", `${prefixeDe(langueClient.langue)}/suivi/`), site: NOM_DU_SITE,
+      paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement, lienBit: reglages.lienBit, hotel: c.logement === "HOTEL",
     }, langueClient),
   );
   const precisions = precisionsAdresse(c);
@@ -91,6 +94,7 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
 
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-extrabold">Commande n°{c.numero}</h1>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700" title="La référence que le client voit et te cite, à la place du numéro">réf. client {reference}</span>
         <span className={`rounded-full px-3 py-1 text-sm font-semibold ${COULEUR_STATUT[c.statut]}`}>{LIBELLE_STATUT[c.statut]}</span>
         {c.express && (
           <span className="inline-flex items-center gap-1 rounded-full bg-soleil px-3 py-1 text-sm font-bold text-slate-900">
@@ -278,7 +282,8 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
                 <button type="submit" className="bouton w-full">→ {suivant.libelle}</button>
               </form>
             )}
-            {whatsappClient && (
+            {/* Tant qu'il reste à payer, le bouton « Envoyer le montant » (plus haut) ouvre ce même message : un seul bouton WhatsApp. */}
+            {whatsappClient && !resteAPayer && (
               <a href={whatsappClient} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full">
                 <IconeWhatsapp /> Écrire au client sur WhatsApp
               </a>

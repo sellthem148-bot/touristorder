@@ -50,7 +50,7 @@ await page.getByLabel("Votre nom").fill("Sarah Cohen");
 await page.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 12 34 56 78");
 await page.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
 await page.getByLabel("Ville").selectOption("Netanya");
-await page.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Dan, chambre 512"); await page.getByLabel("Étage", { exact: true }).fill("3"); await page.getByLabel("N° d'appartement ou de chambre").fill("12");
+await page.getByText("Appartement", { exact: true }).click(); await page.getByLabel("Rue et numéro", { exact: true }).fill("Hôtel Dan, chambre 512"); await page.getByLabel("Étage", { exact: true }).fill("3"); await page.getByLabel("N° d'appartement", { exact: true }).fill("12");
 await page.getByText("Demain", { exact: true }).click();
 await page.getByText("19:00 – 20:00", { exact: true }).click();
 await page.getByText(/Express · \+/).click();
@@ -70,12 +70,22 @@ verifier(await page.getByText("Mode de paiement : Bit").isVisible(), "suivi : mo
 verifier(espaces(await page.locator("main").innerText()).includes("Paiement en attente · 249,70 ₪"), "suivi : paiement en attente, avec le montant");
 const reglement = decodeURIComponent(await page.getByRole("link", { name: "Recevoir les coordonnées de paiement" }).getAttribute("href"));
 verifier(reglement.startsWith("https://wa.me/972501234567?text=") && reglement.includes("régler ma commande") && reglement.includes("par Bit"), "suivi : bouton WhatsApp pour recevoir les coordonnées de paiement");
+// La référence : ce que le client lit et cite — initiales + un nombre, jamais « n°1 ».
+const reference = (await page.getByText(/^Commande [A-Z]{1,2}-\d{5,}$/).innerText()).replace("Commande ", "");
+verifier(/^SC-\d{5,}$/.test(reference) && !/n°\s?\d/.test(await page.locator("main").innerText()), `suivi : la commande porte une référence (${reference}), aucun « n° » sur la page`);
+verifier(reglement.includes(`régler ma commande ${reference} sur`), "suivi : le message de règlement cite la référence");
+// Un seul gros bouton WhatsApp ; « nous écrire » n'est plus qu'un lien, avec la référence dans le message.
+verifier((await page.locator("main a.bouton-whatsapp").count()) === 1, "suivi : un seul bouton WhatsApp tant qu'il reste à payer");
+const question = decodeURIComponent(await page.getByRole("link", { name: "Nous écrire sur WhatsApp" }).getAttribute("href"));
+verifier(question.includes(`J'ai passé la commande ${reference} sur`) && (await page.getByText("Une question ?").isVisible()), "suivi : « Une question ? Nous écrire sur WhatsApp », en simple lien");
+verifier((await page.getByRole("link", { name: "Payer avec Bit" }).count()) === 0, "suivi : pas de bouton Bit tant que le gérant n'a pas donné son lien");
 verifier((await page.locator("main span", { hasText: /^\s*Express\s*$/ }).count()) === 1 && (await page.getByText("Livraison express").isVisible()), "suivi : express");
 await page.screenshot({ path: `${OUT}/v2-4-suivi.png`, fullPage: true });
 
 // 5. Mes commandes
 await page.goto(BASE + "/commandes");
-await page.getByText(/^Commande n°\d+$/).first().waitFor();
+await page.getByText(reference, { exact: false }).first().waitFor();
+verifier(!/n°\s?\d/.test(await page.locator("main").innerText()), "« Mes commandes » : la référence, pas le numéro");
 verifier(espaces(await page.locator("main").innerText()).includes("249,70"), "« Mes commandes » liste la commande");
 await page.screenshot({ path: `${OUT}/v2-5-mes-commandes.png` });
 
@@ -88,9 +98,25 @@ await admin.getByRole("button", { name: "Se connecter" }).click();
 await admin.waitForURL(BASE + "/admin");
 verifier(await admin.getByText("Express", { exact: true }).first().isVisible(), "liste admin : pastille express");
 verifier(espaces(await admin.locator("main").innerText()).includes("À payer · 249,70 ₪"), "liste admin : étiquette « à payer » avec le montant");
+// Le gérant voit le vrai numéro ET la référence ; il retrouve la commande par la référence que le client lui cite.
+const ligneAdmin = espaces(await admin.locator("a", { hasText: "Sarah Cohen" }).first().innerText());
+const numero = Number(ligneAdmin.match(/n°(\d+)/)[1]);
+verifier(ligneAdmin.includes(`réf. ${reference}`), `liste admin : n°${numero} et sa référence ${reference}`);
+verifier(Number([...reference.slice(5)].reverse().join("")) === numero, "la référence se relit : deux chiffres de côté, le reste à l'envers = le numéro");
+await admin.getByLabel("Retrouver une commande").fill(reference.toLowerCase());
+await admin.getByRole("button", { name: "Chercher" }).click();
+await admin.waitForURL(/\/admin\?q=/);
+verifier((await admin.locator("main ul.space-y-2 > li").count()) === 1 && (await admin.getByText(`réf. ${reference}`).isVisible()), "recherche par référence : la commande, et elle seule");
+await admin.getByLabel("Retrouver une commande").fill("ZZ-99999");
+await admin.getByRole("button", { name: "Chercher" }).click();
+await admin.getByText("Aucune commande pour « ZZ-99999 ».").waitFor();
+ok("recherche : une référence inconnue ne trouve rien");
+await admin.getByRole("link", { name: "Tout afficher" }).click();
+await admin.waitForURL(BASE + "/admin");
 await admin.getByText("Sarah Cohen").first().click();
 await admin.waitForURL(/\/admin\/commandes\//);
 verifier(await admin.getByText("Taille : 6").isVisible(), "admin : variante sur la liste de courses");
+verifier(await admin.getByText(`réf. client ${reference}`).isVisible() && (await admin.getByRole("heading", { name: `Commande n°${numero}` }).isVisible()), "admin : la commande affiche son numéro et la référence du client");
 verifier(await admin.getByText("Remplacer par un équivalent").isVisible(), "admin : consigne de remplacement");
 const ligneCouches = admin.locator("li", { hasText: "Couches Huggies" });
 await ligneCouches.getByRole("checkbox").check();

@@ -14,6 +14,8 @@ export function estJetonTelegram(t: string): boolean {
 
 export type AlerteCommande = {
   numero: number;
+  /** La référence que le client cite (« BC-58100 »). */
+  reference?: string;
   nomClient: string;
   ville: string;
   jour: string;
@@ -29,7 +31,7 @@ export type AlerteCommande = {
 export function texteDeLAlerte(c: AlerteCommande): string {
   const demande = c.demandeLibre.replace(/\s+/g, " ").trim();
   return [
-    `Nouvelle commande n°${c.numero}`,
+    `Nouvelle commande n°${c.numero}${c.reference ? ` · réf. ${c.reference}` : ""}`,
     `${c.nomClient} · ${c.ville}`,
     `${c.jour}, ${c.creneau}`,
     c.nombreArticles > 0

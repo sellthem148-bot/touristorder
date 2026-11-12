@@ -27,7 +27,7 @@ export default async function Panier({ searchParams }: PageProps<"/panier">) {
   const c = await clientConnecte();
   // Seulement ce que le formulaire affiche : jamais l'identifiant du compte.
   const client = c
-    ? { email: c.email, nom: c.nom, telephone: c.telephone, ville: c.ville, adresse: c.adresse, etage: c.etage, appartement: c.appartement, codeEntree: c.codeEntree }
+    ? { email: c.email, nom: c.nom, telephone: c.telephone, ville: c.ville, logement: c.logement, adresse: c.adresse, etage: c.etage, appartement: c.appartement, codeEntree: c.codeEntree }
     : null;
   // Les noms des villes et des tarifs dans la langue du client (ce qui est envoyé reste le nom du gérant).
   const affichage = {

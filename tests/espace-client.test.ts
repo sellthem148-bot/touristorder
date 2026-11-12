@@ -79,6 +79,7 @@ describe("adresse e-mail", () => {
 const commande: CommandePourCourriel = {
   site: "Courses Express",
   numero: 42,
+  reference: "SC-45240",
   nomClient: "Sarah Cohen",
   prenom: "Sarah",
   telephone: "+33 6 12 34 56 78",
@@ -105,7 +106,7 @@ describe("e-mail de confirmation", () => {
   it("contient la commande, la livraison, le total et les deux liens", () => {
     const c = courrielDeConfirmation(commande);
     const html = sansInsecable(c.html);
-    expect(c.sujet).toBe("Votre commande n°42 est enregistrée — livraison demain, 20:00 – 21:00");
+    expect(c.sujet).toBe("Votre commande SC-45240 est enregistrée — livraison demain, 20:00 – 21:00");
     expect(html).toContain("Merci Sarah !");
     expect(html).toContain("<strong>2 ×</strong> Couches Huggies");
     expect(html).toContain("Taille : 4");
@@ -146,7 +147,7 @@ describe("e-mail de confirmation", () => {
       ...commande, demandeLibre: "1 crème solaire", lignes: [], lienPaiement: null,
       totaux: { sousTotal: 0, majoration: 0, fraisService: 0, fraisLivraison: 0, pourboire: 0, total: 0 },
     });
-    expect(seule.sujet).toBe("Votre demande n°42 est enregistrée — livraison demain, 20:00 – 21:00");
+    expect(seule.sujet).toBe("Votre demande SC-45240 est enregistrée — livraison demain, 20:00 – 21:00");
     expect(seule.html).toContain("Demande enregistrée");
     expect(seule.html).toContain("avant tout paiement");
     expect(seule.html).not.toContain("Paiement à la commande");
@@ -179,7 +180,7 @@ describe("e-mail de confirmation", () => {
 describe("autres e-mails", () => {
   it("avis au gérant : client, total, lien vers la commande", () => {
     const c = courrielNouvelleCommande({ ...commande, lienAdmin: "https://exemple.test/admin/commandes/1" });
-    expect(sansInsecable(c.sujet)).toBe("Nouvelle commande n°42 — Herzliya, demain 20:00 – 21:00 — 234,70 ₪");
+    expect(sansInsecable(c.sujet)).toBe("Nouvelle commande n°42 (SC-45240) — Herzliya, demain 20:00 – 21:00 — 234,70 ₪");
     expect(c.html).toContain("Sarah Cohen");
     expect(c.html).toContain('href="https://exemple.test/admin/commandes/1"');
   });

@@ -41,7 +41,7 @@ try {
   const email = `nathan${Date.now() % 100000}@exemple.test`;
   await client.getByLabel("Votre adresse e-mail").fill(email);
   await client.getByLabel("Ville").selectOption("Netanya");
-  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Résidence Lagoon, appartement 14"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement ou de chambre").fill("12");
+  await client.getByText("Appartement", { exact: true }).click(); await client.getByLabel("Rue et numéro", { exact: true }).fill("Résidence Lagoon, appartement 14"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement", { exact: true }).fill("12");
   // Le 4e jour proposé : aucun autre parcours n'y commande.
   await client.locator('input[name="dateLivraison"]').nth(3).check({ force: true });
   await client.getByText("Virement", { exact: true }).click();
@@ -134,7 +134,7 @@ try {
 
   // 7. Le reçu : ce que le client a payé, sans rien de privé
   await admin.getByRole("link", { name: "Reçu à imprimer ou à envoyer" }).click();
-  await admin.getByRole("heading", { name: /^Reçu n°\d+$/ }).waitFor();
+  await admin.getByRole("heading", { name: /^Reçu [A-Z]{1,2}-\d{5,}$/ }).waitFor();
   const recu = await texte(admin);
   verifier(recu.includes(NOM) && recu.includes("Lestage de parasol") && !recu.includes("Parasol de plage 2 m"), "reçu : le client et les articles livrés seulement");
   verifier(!recu.includes("Decathlon") && !recu.includes("77,77"), "reçu : ni boutique ni prix d'achat");
@@ -208,7 +208,7 @@ try {
   await autre.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 01 02 03 04");
   await autre.getByLabel("Votre adresse e-mail").fill(`tardif${Date.now() % 100000}@exemple.test`);
   await autre.getByLabel("Ville").selectOption("Netanya");
-  await autre.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Blue Bay, chambre 3"); await autre.getByLabel("Étage", { exact: true }).fill("3"); await autre.getByLabel("N° d'appartement ou de chambre").fill("12");
+  await autre.getByText("Appartement", { exact: true }).click(); await autre.getByLabel("Rue et numéro", { exact: true }).fill("Hôtel Blue Bay, chambre 3"); await autre.getByLabel("Étage", { exact: true }).fill("3"); await autre.getByLabel("N° d'appartement", { exact: true }).fill("12");
   await pleins.first().locator("input").evaluate((i) => { i.disabled = false; });
   await pleins.first().locator("input").check({ force: true });
   await autre.getByRole("button", { name: /^Commander/ }).click();

@@ -28,9 +28,9 @@ try {
   await client.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 21 43 65 87");
   await client.getByLabel("Votre adresse e-mail").fill(`repere${Date.now() % 100000}@exemple.test`);
   await client.getByLabel("Ville").selectOption("Netanya");
-  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("12 rue Herzl");
+  await client.getByText("Appartement", { exact: true }).click(); await client.getByLabel("Rue et numéro", { exact: true }).fill("12 rue Herzl");
   await client.getByLabel("Étage", { exact: true }).fill("3");
-  await client.getByLabel("N° d'appartement ou de chambre").fill("12");
+  await client.getByLabel("N° d'appartement", { exact: true }).fill("12");
   await client.getByText("Bit", { exact: true }).click();
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);

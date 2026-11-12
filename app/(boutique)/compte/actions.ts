@@ -68,6 +68,7 @@ export async function enregistrerProfil(_avant: EtatProfil, form: FormData): Pro
     nom: String(form.get("nom") ?? ""),
     telephone: String(form.get("telephone") ?? ""),
     ville: String(form.get("ville") ?? ""),
+    logement: String(form.get("logement") ?? ""),
     adresse: String(form.get("adresse") ?? ""),
     etage: String(form.get("etage") ?? ""),
     appartement: String(form.get("appartement") ?? ""),

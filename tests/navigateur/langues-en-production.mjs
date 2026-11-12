@@ -26,12 +26,14 @@ await p.fill("#nomClient", "Dana Levi");
 await p.fill("#telephone", "+972 50 123 4567");
 await p.fill("#email", `prod.local.${Date.now() % 100000}@exemple.test`);
 await p.selectOption("#ville", { index: 1 });
+// Où le client loge : un appartement (étage et numéro obligatoires)
+await p.locator("label.pastille", { has: p.locator('input[name="logement"][value="APPARTEMENT"]') }).click();
 await p.fill("#adresse", "Herzl 12");
 // Changement de langue en pleine saisie : l'adresse change, rien n'est perdu, les articles se traduisent
 await p.selectOption("#langue-entete", "en");
 await p.waitForFunction(() => document.documentElement.lang === "en" && location.pathname === "/en/panier", null, { timeout: 20000 }).catch(() => {});
 ok((await etat(p)) === "/en/panier en/ltr", `passage à l'anglais dans le panier → ${await etat(p)}`);
-ok((await p.inputValue("#nomClient")) === "Dana Levi" && (await p.inputValue("#adresse")) === "Herzl 12", "la saisie en cours est gardée");
+ok((await p.inputValue("#nomClient")) === "Dana Levi" && (await p.inputValue("#adresse")) === "Herzl 12" && (await p.locator('input[name="logement"][value="APPARTEMENT"]').isChecked()), "la saisie en cours est gardée (nom, logement, rue)");
 await p.waitForFunction((he) => !document.querySelector("section[aria-labelledby=section-1]").innerText.includes(he), nomHe, { timeout: 15000 }).catch(() => {});
 const panierEn = await p.locator("section[aria-labelledby=section-1] li").first().innerText();
 ok(!panierEn.includes(nomHe) && !/[֐-׿]/.test(panierEn), `les articles du panier passent en anglais : « ${panierEn.split("\n")[0]} »`);

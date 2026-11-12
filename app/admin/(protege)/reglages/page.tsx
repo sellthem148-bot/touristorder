@@ -245,6 +245,14 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
         </div>
 
         <div>
+          <label htmlFor="lienBit" className="etiquette">Ton lien de paiement Bit (facultatif)</label>
+          <input id="lienBit" name="lienBit" type="url" inputMode="url" maxLength={300} defaultValue={r.lienBit} className="champ" placeholder="https://…" dir="ltr" />
+          <p className="mt-1 text-xs text-slate-500">
+            Si tu colles ici un lien de paiement Bit, le client qui a choisi Bit voit un bouton « Payer avec Bit » sur sa page de suivi tant qu&apos;il reste à régler, avec le montant et la référence à indiquer ; le lien part aussi dans ton message WhatsApp « Envoyer le montant ». Vide = pas de bouton : le client te demande les coordonnées sur WhatsApp, comme aujourd&apos;hui.
+          </p>
+        </div>
+
+        <div>
           <label htmlFor="whatsapp" className="etiquette">Ton numéro WhatsApp</label>
           <input id="whatsapp" name="whatsapp" defaultValue={r.whatsapp} type="tel" placeholder="+972 50 123 4567" className="champ" />
           <p className="mt-1 text-xs text-slate-500">Le bouton « Nous écrire sur WhatsApp » du client ouvre une conversation avec ce numéro.</p>

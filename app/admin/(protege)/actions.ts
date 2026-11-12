@@ -361,6 +361,7 @@ export async function enregistrerReglages(form: FormData) {
     commandesParCreneau: texte(form, "commandesParCreneau"),
     heureLimite: texte(form, "heureLimite"),
     coordonneesPaiement: texte(form, "coordonneesPaiement"),
+    lienBit: texte(form, "lienBit"),
     entrepriseNom: texte(form, "entrepriseNom"),
     entrepriseNumero: texte(form, "entrepriseNumero"),
     entrepriseAdresse: texte(form, "entrepriseAdresse"),

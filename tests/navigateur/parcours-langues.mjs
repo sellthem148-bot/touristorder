@@ -138,11 +138,11 @@ try {
   const panier = await p.locator("section[aria-labelledby=section-1]").innerText();
   verifier(panier.includes(nomHe) && panier.includes(groupeHe) && !panier.includes("Taille"), "panier en hébreu : noms d'articles et options dans la langue du client");
   await p.locator('button[type="submit"]').click();
-  await p.waitForSelector("#etage-erreur");
-  for (const champ of ["nomClient", "telephone", "email", "ville", "adresse", "etage", "appartement"]) {
+  await p.waitForSelector("#logement-erreur");
+  for (const champ of ["nomClient", "telephone", "email", "ville", "logement"]) {
     verifier((await p.locator(`#${champ}-erreur`).count()) === 1, `sans ${champ} : commande refusée, message sous le champ`);
   }
-  verifier(/[֐-׿]/.test(await p.locator("#etage-erreur").innerText()), "les messages d'erreur sont en hébreu");
+  verifier(/[֐-׿]/.test(await p.locator("#logement-erreur").innerText()), "les messages d'erreur sont en hébreu");
   await p.waitForFunction(() => document.activeElement?.id === "nomClient");
   ok("le premier champ à corriger reçoit le curseur");
 
@@ -152,6 +152,14 @@ try {
   await p.fill("#telephone", "+972 50 123 4567");
   await p.fill("#email", email);
   await p.selectOption("#ville", "Netanya");
+  // Où le client loge. À l'hôtel : l'avis « nous ne montons pas dans les chambres », en hébreu, et ni étage ni code.
+  const logement = (valeur) => p.locator("label.pastille", { has: p.locator(`input[name="logement"][value="${valeur}"]`) });
+  await logement("HOTEL").click();
+  const avisHotel = await p.locator("p[role=note]").innerText();
+  verifier(/[֐-׿]/.test(avisHotel) && !oubli(avisHotel) && (await p.locator("#etage").count()) === 0 && (await p.locator("#codeEntree").count()) === 0, "hôtel : l'avis est en hébreu, ni étage ni code d'entrée demandés");
+  await logement("MAISON").click();
+  verifier((await p.locator("#etage").count()) === 0 && (await p.locator("#appartement").count()) === 0 && (await p.locator("#adresse").count()) === 1, "maison : la rue seulement, ni étage ni appartement");
+  await logement("APPARTEMENT").click();
   await p.fill("#adresse", "Herzl 12");
   await p.fill("#appartement", "12");
   await p.locator('button[type="submit"]').click();
@@ -167,6 +175,9 @@ try {
   const suivi = await p.locator("main").innerText();
   verifier(suivi.includes("Herzl 12") && suivi.includes("1234#") && suivi.includes("+972 50 123 4567") && !oubli(suivi), "suivi : rue, étage, code et téléphone affichés");
   verifier(suivi.includes(nomHe) && suivi.includes(groupeHe) && suivi.includes("נתניה") && !suivi.includes("Taille"), "suivi : articles, options et ville en hébreu");
+  // La référence de la commande : les initiales de Dana Levi et un nombre — jamais « מס' 1 ».
+  const reference = (/DL-\d{5,}/.exec(suivi) ?? [""])[0];
+  verifier(reference !== "" && !/מס' ?\d/.test(suivi), `suivi : la commande porte sa référence (${reference}), pas son numéro`);
   verifier(!(await deborde(p)), "suivi en hébreu : pas de débordement");
   if (OUT) await p.screenshot({ path: `${OUT}/langues-he-suivi.png`, fullPage: true });
 
@@ -174,6 +185,7 @@ try {
   const confirmation = await courriel(email);
   verifier(confirmation.includes(nomHe) && confirmation.includes(groupeHe) && !confirmation.includes("Couches Huggies"), "e-mail de confirmation : articles et options en hébreu");
   verifier(/href="[^"]*\/he\/suivi\/[^"]+"/.test(confirmation), "e-mail de confirmation : le lien de suivi mène à l'adresse en hébreu");
+  verifier(confirmation.includes(reference) && !/מס' ?\d/.test(confirmation), "e-mail de confirmation : la même référence, pas de numéro");
   verifier(confirmation.includes('<html lang="he" dir="rtl">') && confirmation.includes("Herzl 12") && confirmation.includes("1234#") && !oubli(confirmation), "e-mail de confirmation en hébreu, avec l'adresse entière");
   if (process.env.EMAIL_GERANT || existsSync(BOITE)) {
     const avis = await courriel("gerant@exemple.test").catch(() => null);
@@ -183,7 +195,7 @@ try {
   // 6. L'espace client : étage et appartement enregistrés ; le client y change sa langue
   const lien = /href="([^"]*\/compte\/acces\?jeton=[^"]+)"/.exec(confirmation)[1].replace(/&amp;/g, "&");
   await p.goto(lien, { waitUntil: "networkidle" });
-  verifier(chemin(p) === "/he/compte" && (await p.inputValue("#profil-etage")) === "3" && (await p.inputValue("#profil-appartement")) === "12", "espace client : le lien de l'e-mail mène à /he/compte, avec l'étage et l'appartement de la commande");
+  verifier(chemin(p) === "/he/compte" && (await p.inputValue("#profil-logement")) === "APPARTEMENT" && (await p.inputValue("#profil-etage")) === "3" && (await p.inputValue("#profil-appartement")) === "12", "espace client : le lien de l'e-mail mène à /he/compte, avec le logement, l'étage et l'appartement de la commande");
   await p.fill("#profil-codeEntree", "9999");
   await p.selectOption("#langue-compte", "ru");
   await p.waitForFunction(() => document.documentElement.lang === "ru" && location.pathname === "/ru/compte");

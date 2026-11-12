@@ -50,11 +50,12 @@ async function remplirEtCommander(p, { nom, tel, email, adresse }) {
   if (tel) await p.getByLabel("Votre numéro de téléphone (WhatsApp)").fill(tel);
   if (email) await p.getByLabel("Votre adresse e-mail").fill(email);
   await p.getByLabel("Ville").selectOption("Netanya");
-  if (adresse) { await p.getByLabel("Rue et numéro, ou nom de l'hôtel").fill(adresse); await p.getByLabel("Étage", { exact: true }).fill("3"); await p.getByLabel("N° d'appartement ou de chambre").fill("12"); }
+  if (adresse) { await p.getByText("Appartement", { exact: true }).click(); await p.getByLabel("Rue et numéro", { exact: true }).fill(adresse); await p.getByLabel("Étage", { exact: true }).fill("3"); await p.getByLabel("N° d'appartement", { exact: true }).fill("12"); }
   await p.getByText("Bit", { exact: true }).click();
   await p.getByRole("button", { name: /^Commander/ }).click();
   await p.waitForURL(/\/suivi\//);
-  return Number((await p.getByText(/Commande n°\d+/).first().innerText()).match(/\d+/)[0]);
+  // Ce que le client lit : la référence de sa commande (« SC-58100 »), jamais son numéro.
+  return (await p.getByText(/^Commande [A-Z]{1,2}-\d{5,}$/).first().innerText()).replace("Commande ", "");
 }
 
 try {
@@ -72,7 +73,7 @@ try {
   await sarah.getByLabel("Votre nom").fill("Sarah Cohen");
   await sarah.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 12 34 56 78");
   await sarah.getByLabel("Ville").selectOption("Netanya");
-  await sarah.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Résidence Sea View, appartement 12"); await sarah.getByLabel("Étage", { exact: true }).fill("3"); await sarah.getByLabel("N° d'appartement ou de chambre").fill("12");
+  await sarah.getByText("Appartement", { exact: true }).click(); await sarah.getByLabel("Rue et numéro", { exact: true }).fill("Résidence Sea View, appartement 12"); await sarah.getByLabel("Étage", { exact: true }).fill("3"); await sarah.getByLabel("N° d'appartement", { exact: true }).fill("12");
   await sarah.getByRole("button", { name: /^Commander/ }).click();
   await sarah.getByText("Votre adresse e-mail est requise.").waitFor();
   ok("commande sans adresse e-mail : refusée, le champ le dit");
@@ -81,13 +82,13 @@ try {
   });
 
   // 2. Les deux e-mails sont partis
-  const [confirmation] = await courriels(SARAH, `Votre commande n°${numero1} est enregistrée`);
+  const [confirmation] = await courriels(SARAH, `Votre commande ${numero1} est enregistrée`);
   verifier(!!confirmation, "e-mail de confirmation envoyé à l'adresse nettoyée (minuscules, sans espaces)");
   const texteConfirmation = espaces(confirmation.html.replace(/<[^>]+>/g, " "));
   verifier(texteConfirmation.includes("Merci Sarah !") && texteConfirmation.includes("Couches Huggies") && texteConfirmation.includes("Taille : 4"), "confirmation : prénom, articles et option");
   verifier(texteConfirmation.includes("139,80 ₪") && texteConfirmation.includes("Demain, 19:00 – 20:00"), "confirmation : total 139,80 ₪ et créneau");
   verifier(!/Super-Pharm|Wolt Market|prixAchat/.test(confirmation.html), "confirmation : ni boutique ni prix d'achat");
-  const [avis] = await courriels("gerant@exemple.test", `Nouvelle commande n°${numero1}`);
+  const [avis] = await courriels("gerant@exemple.test", `(${numero1})`);
   verifier(!!avis && avis.html.includes("/admin/commandes/"), "avis de nouvelle commande envoyé au gérant, avec le lien admin");
 
   // Aperçu de l'e-mail, comme dans une boîte mail
@@ -104,7 +105,7 @@ try {
   let page = espaces(await sarah.locator("main").innerText());
   verifier(page.includes("Bonjour Sarah") && page.includes(SARAH), "tableau de bord : « Bonjour Sarah » et son adresse");
   verifier(page.includes("Commandes 1 En cours 1"), "tableau de bord : 1 commande, 1 en cours");
-  verifier(page.includes(`Commande n°${numero1}`) && page.includes("Nous avons bien reçu votre commande"), "commande en cours avec son avancement");
+  verifier(page.includes(`Commande ${numero1}`) && page.includes("Nous avons bien reçu votre commande"), "commande en cours avec son avancement");
   verifier(page.includes("Vos articles préférés"), "articles préférés");
   verifier(!/Super-Pharm|Wolt Market/.test(await sarah.content()), "espace client : aucune boutique affichée");
   await sarah.screenshot({ path: `${OUT}/v7-2-espace-client.png`, fullPage: true });
@@ -118,17 +119,17 @@ try {
   ok("profil enregistré");
 
   // 5. Commander à nouveau : panier rempli, formulaire pré-rempli, adresse e-mail verrouillée
-  await sarah.locator("details", { hasText: `n°${numero1}` }).locator("summary").click();
+  await sarah.locator("details", { hasText: `${numero1}` }).locator("summary").click();
   await sarah.getByRole("button", { name: "Commander à nouveau" }).click();
   await sarah.waitForURL(BASE + "/panier");
   await sarah.getByText("Taille : 4").waitFor();
   verifier(await sarah.getByRole("link", { name: "Panier, 2 articles" }).isVisible(), "commander à nouveau : les 2 articles sont dans le panier");
-  verifier((await sarah.getByLabel("Votre nom").inputValue()) === "Sarah Cohen" && (await sarah.getByLabel("Rue et numéro, ou nom de l'hôtel").inputValue()).endsWith("appartement 14"), "commande pré-remplie avec le profil");
+  verifier((await sarah.getByLabel("Votre nom").inputValue()) === "Sarah Cohen" && (await sarah.getByLabel("Rue et numéro", { exact: true }).inputValue()).endsWith("appartement 14"), "commande pré-remplie avec le profil");
   verifier((await sarah.getByLabel("Votre adresse e-mail").inputValue()) === SARAH && (await sarah.getByLabel("Votre adresse e-mail").getAttribute("readonly")) !== null, "adresse e-mail du compte, non modifiable");
   const numero2 = await remplirEtCommander(sarah, {});
   await sarah.goto(BASE + "/compte");
   page = espaces(await sarah.locator("main").innerText());
-  verifier(page.includes(`n°${numero2}`) && page.includes(`n°${numero1}`), "les deux commandes sont dans l'historique");
+  verifier(page.includes(`${numero2}`) && page.includes(`${numero1}`), "les deux commandes sont dans l'historique");
 
   // 6. Sans session : pas d'accès ; lien falsifié refusé ; adresse inconnue = même réponse, aucun e-mail
   const inconnu = await nouveau();
@@ -148,11 +149,11 @@ try {
   await david.goto(BASE + "/");
   await david.getByRole("button", { name: "Ajouter Pack d'eau 6 × 1,5 L au panier" }).first().click();
   const numero3 = await remplirEtCommander(david, { nom: "David Lévy", tel: "+33 6 99 88 77 66", email: DAVID, adresse: "Hôtel Carmel, chambre 7" });
-  const [confirmationDavid] = await courriels(DAVID, `Votre commande n°${numero3}`);
+  const [confirmationDavid] = await courriels(DAVID, `Votre commande ${numero3}`);
   await david.goto(lienDAcces(confirmationDavid.html));
   await david.waitForURL(BASE + "/compte");
   page = espaces(await david.locator("main").innerText());
-  verifier(page.includes(`n°${numero3}`) && !page.includes(`n°${numero1}`) && !page.includes(`n°${numero2}`) && !page.includes("Sarah"), "David ne voit que sa commande");
+  verifier(page.includes(`${numero3}`) && !page.includes(`${numero1}`) && !page.includes(`${numero2}`) && !page.includes("Sarah"), "David ne voit que sa commande");
 
   // 8. Admin : l'adresse sur la commande, la page Clients, et « Livrée » met à jour le total dépensé
   const admin = await nouveau();
@@ -165,7 +166,7 @@ try {
   verifier(ligneSarah.includes("Sarah Cohen") && ligneSarah.includes("2 commandes"), "admin → Clients : Sarah, 2 commandes");
   await admin.screenshot({ path: `${OUT}/v7-3-admin-clients.png` });
   await admin.goto(BASE + "/admin?filtre=en-cours");
-  await admin.locator("a", { hasText: `n°${numero1}` }).first().click();
+  await admin.locator("a", { hasText: `réf. ${numero1}` }).first().click();
   await admin.waitForURL(/\/admin\/commandes\//);
   verifier(await admin.getByText(SARAH).isVisible(), "admin : l'adresse e-mail du client sur la commande");
   await admin.getByText("Changer l'étape à la main").click();
@@ -202,7 +203,7 @@ try {
   await admin.goto(BASE + "/admin/clients?q=" + encodeURIComponent(SARAH));
   verifier(await admin.getByText("Aucun client trouvé.").isVisible(), "espace supprimé : Sarah n'est plus dans les clients");
   await admin.goto(BASE + "/admin?filtre=livrees");
-  verifier(await admin.locator("a", { hasText: `n°${numero1}` }).first().isVisible(), "ses commandes restent dans l'admin");
+  verifier(await admin.locator("a", { hasText: `réf. ${numero1}` }).first().isVisible(), "ses commandes restent dans l'admin");
 } finally {
   writeFileSync(`${OUT}/resultat-espace-client.txt`, etapes.join("\n") + "\n\nErreurs JS : " + (erreurs.length ? "\n" + erreurs.join("\n") : "aucune") + "\n");
   console.log("Erreurs JS :", erreurs.length ? erreurs : "aucune");

@@ -82,6 +82,9 @@ model Commande {
   // La rue et le numéro, ou le nom de l'hôtel. Le reste de l'adresse est dans les trois champs suivants
   // (lib/adresse.ts les assemble) ; vides sur les commandes d'avant ces champs.
   adresse        String
+  // Où le client loge : APPARTEMENT (étage et appartement exigés), MAISON (ni l'un ni l'autre) ou HOTEL
+  // (on ne monte pas dans les chambres : le client descend). Vide = une commande d'avant ce choix.
+  logement       String          @default("")
   etage          String          @default("")
   appartement    String          @default("") // numéro d'appartement ou de chambre
   codeEntree     String          @default("") // code d'entrée ou interphone (facultatif)
@@ -136,6 +139,7 @@ model Client {
   telephone String     @default("")
   ville     String     @default("")
   adresse   String     @default("")
+  logement    String   @default("") // APPARTEMENT | MAISON | HOTEL ; vide = pas encore choisi
   etage       String   @default("")
   appartement String   @default("")
   codeEntree  String   @default("")
@@ -184,6 +188,9 @@ model Reglages {
   // Réservé au gérant : les coordonnées de paiement (numéro Bit / PayBox, RIB). Jamais sur le site :
   // elles ne partent que dans le message WhatsApp que le gérant envoie au client.
   coordonneesPaiement String @default("")
+  // Le lien de paiement Bit du gérant (facultatif). Lui, il est montré au client — sur sa page de suivi
+  // seulement, tant qu'il reste à régler et qu'il a choisi Bit — et glissé dans le message WhatsApp.
+  lienBit         String   @default("")
   minimumCommande Int      @default(0)
   creneaux        String[] @default([])
   joursLivres     Int[]    @default([0, 1, 2, 3, 4, 5, 6]) // 0 = dimanche … 6 = samedi

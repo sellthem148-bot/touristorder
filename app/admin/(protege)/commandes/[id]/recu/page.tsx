@@ -11,6 +11,8 @@ import { lireReglages } from "@/lib/reglages";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { Sigle } from "@/components/Sigle";
 import { BoutonImprimer } from "@/components/admin/BoutonImprimer";
+import { referenceDeCommande } from "@/lib/reference";
+import { dictionnaire } from "@/lib/i18n";
 
 export const metadata = { title: "Reçu" };
 
@@ -23,7 +25,7 @@ export default async function PageRecu({ params }: PageProps<"/admin/commandes/[
       where: { id },
       // Seulement ce que le client a le droit de lire : ni prix d'achat, ni boutique.
       select: {
-        id: true, numero: true, statut: true, createdAt: true, nomClient: true, adresse: true, etage: true, appartement: true, codeEntree: true, ville: true, dateLivraison: true, creneau: true,
+        id: true, numero: true, statut: true, createdAt: true, nomClient: true, logement: true, adresse: true, etage: true, appartement: true, codeEntree: true, ville: true, dateLivraison: true, creneau: true,
         paiement: true, montantPaye: true, payeLe: true, express: true, tarifNom: true, majorationPct: true,
         sousTotal: true, majoration: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
         lignes: { where: { indisponible: false }, orderBy: { nom: "asc" }, select: { id: true, nom: true, options: true, quantite: true, prixUnitaire: true } },
@@ -59,7 +61,7 @@ export default async function PageRecu({ params }: PageProps<"/admin/commandes/[
             </div>
           </div>
           <div className="text-right">
-            <h1 className="text-xl font-extrabold">Reçu n°{c.numero}</h1>
+            <h1 className="text-xl font-extrabold">Reçu {referenceDeCommande(c.numero, c.nomClient)}</h1>
             <p className="text-slate-600">Commande du {formatDateHeure(c.createdAt)}</p>
           </div>
         </header>
@@ -68,7 +70,8 @@ export default async function PageRecu({ params }: PageProps<"/admin/commandes/[
           <div>
             <h2 className="surtitre mb-1">Client</h2>
             <p className="font-semibold">{c.nomClient}</p>
-            <p className="whitespace-pre-line">{adresseComplete(c)}</p>
+            {/* Le reçu est remis au client : les mots du site, pas la consigne du livreur. */}
+            <p className="whitespace-pre-line">{adresseComplete(c, dictionnaire("fr").adresse)}</p>
             <p>{c.ville}</p>
           </div>
           <div>

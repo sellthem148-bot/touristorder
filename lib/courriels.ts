@@ -5,7 +5,6 @@ import { formatPrix } from "./argent";
 import type { Totaux } from "./calcul";
 import { LIBELLES_MONTANTS_FR, lignesDeMontants, type LibellesMontants, type PresentationMontants } from "./montants";
 import { jourDansPhrase, LOCALE, NOM_DE_LA_LANGUE, remplir, sens, type Langue } from "./langues";
-import frSite from "./i18n/fr";
 import frServeur, { type DictionnaireServeur } from "./i18n/serveur/fr";
 
 export type CourrielPret = { sujet: string; html: string; texte: string };
@@ -56,16 +55,15 @@ function bandeau(site: string, logo?: string | null, droiteAGauche = false): str
   </tr></table>`;
 }
 
-/** La langue d'un e-mail au client : ses textes, les libellés des montants, l'écriture d'un numéro. */
+/** La langue d'un e-mail au client : ses textes et les libellés des montants. */
 export type LangueDuCourriel = {
   langue: Langue;
   c: DictionnaireServeur["courriel"];
   montants: LibellesMontants;
-  numero: string; // « n°{numero} »
 };
 
 // Le français : la langue du gérant (son avis de commande) et celle par défaut.
-export const COURRIEL_FR: LangueDuCourriel = { langue: "fr", c: frServeur.courriel, montants: LIBELLES_MONTANTS_FR, numero: frSite.commun.numero };
+export const COURRIEL_FR: LangueDuCourriel = { langue: "fr", c: frServeur.courriel, montants: LIBELLES_MONTANTS_FR };
 
 /** « : » — avec une espace devant en français seulement. */
 const deuxPoints = (langue: Langue) => (langue === "fr" ? " : " : ": ");
@@ -99,7 +97,8 @@ function gabarit(o: { site: string; logo?: string | null; apercu: string; titre:
 export type CommandePourCourriel = {
   site: string;
   logo?: string | null; // adresse de l'image du logo (adresseDuLogo) ; absente = nom seul
-  numero: number;
+  numero: number; // pour le gérant seulement
+  reference: string; // ce que le client lit : « BC-58100 » (lib/reference.ts)
   nomClient: string;
   prenom: string;
   telephone: string;
@@ -161,7 +160,6 @@ export function courrielDeConfirmation(c: CommandePourCourriel, l: LangueDuCourr
   const t = l.c;
   const dp = deuxPoints(l.langue);
   const quand = `${c.jour}, ${c.creneau}`;
-  const numero = remplir(l.numero, { numero: c.numero });
   const total = formatPrix(c.totaux.total, l.langue);
   // Une demande d'article hors catalogue, sans article du catalogue : rien à régler pour l'instant.
   const demandeSeule = c.lignes.length === 0;
@@ -171,7 +169,7 @@ export function courrielDeConfirmation(c: CommandePourCourriel, l: LangueDuCourr
   const merci = demandeSeule ? t.merciDemande : t.merciCommande;
   const suivre = demandeSeule ? t.suivreDemande : t.suivreCommande;
   const corps = `
-  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">${echapper(remplir(merci, { prenom: c.prenom, numero: PLACE })).replace(PLACE, `<strong>${echapper(numero)}</strong>`)} ${echapper(suite)}</p>
+  <p style="margin:0 0 20px;font-size:16px;line-height:1.5;">${echapper(remplir(merci, { prenom: c.prenom, reference: PLACE })).replace(PLACE, `<strong>${echapper(c.reference)}</strong>`)} ${echapper(suite)}</p>
   ${
     demandeSeule
       ? ""
@@ -212,7 +210,7 @@ export function courrielDeConfirmation(c: CommandePourCourriel, l: LangueDuCourr
   }`;
   const pied = `${c.lienWhatsapp ? `${echapper(t.question)} <a href="${echapper(c.lienWhatsapp)}" style="color:${BLEU};font-weight:700;">${echapper(t.ecrivezNous)}</a>.<br>` : ""}${echapper(remplir(t.raisonCommande, { site: c.site }))}`;
   const texte = [
-    `${remplir(merci, { prenom: c.prenom, numero })} ${suite}`,
+    `${remplir(merci, { prenom: c.prenom, reference: c.reference })} ${suite}`,
     "",
     ...(demandeSeule ? [] : [reglement, ...(c.lienPaiement ? [`${t.recevoirCoordonnees}${dp}${c.lienPaiement}`] : []), ""]),
     `${t.livraisonTitre}${dp}${quand}`,
@@ -226,7 +224,7 @@ export function courrielDeConfirmation(c: CommandePourCourriel, l: LangueDuCourr
   ].join("\n");
   const jour = jourDansPhrase(c.jour, l.langue);
   return {
-    sujet: remplir(demandeSeule ? t.sujetDemande : t.sujetCommande, { numero, jour, creneau: c.creneau }),
+    sujet: remplir(demandeSeule ? t.sujetDemande : t.sujetCommande, { reference: c.reference, jour, creneau: c.creneau }),
     html: gabarit({
       site: c.site,
       logo: c.logo,
@@ -260,10 +258,10 @@ export function courrielNouvelleCommande(c: CommandePourCourriel & { lienAdmin: 
   ${c.lignes.length > 0 ? tableauDesArticles(c, COURRIEL_FR) : ""}
   ${c.notes ? `<p style="margin:18px 0 0;font-size:14px;color:${DOUX};">Note du client : ${multiligne(c.notes)}</p>` : ""}`;
   return {
-    sujet: `Nouvelle commande n°${c.numero} — ${c.ville}, ${c.jour.toLowerCase()} ${c.creneau} — ${formatPrix(c.totaux.total)}`,
-    html: gabarit({ site: c.site, logo: c.logo, apercu: `${c.nomClient}, ${c.ville}, ${quand}`, titre: `Nouvelle commande n°${c.numero}`, corps, pied: "E-mail envoyé au gérant à chaque nouvelle commande." }),
+    sujet: `Nouvelle commande n°${c.numero} (${c.reference}) — ${c.ville}, ${c.jour.toLowerCase()} ${c.creneau} — ${formatPrix(c.totaux.total)}`,
+    html: gabarit({ site: c.site, logo: c.logo, apercu: `${c.nomClient}, ${c.ville}, ${quand}`, titre: `Nouvelle commande n°${c.numero} · réf. ${c.reference}`, corps, pied: "E-mail envoyé au gérant à chaque nouvelle commande." }),
     texte: [
-      `Nouvelle commande n°${c.numero}`,
+      `Nouvelle commande n°${c.numero} · réf. ${c.reference}`,
       `${c.nomClient} · ${c.telephone}`,
       `${quand}`,
       `${c.adresse.replace(/\s+/g, " ")}, ${c.ville}`,

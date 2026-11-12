@@ -21,6 +21,7 @@ import { RecapMontants } from "@/components/RecapMontants";
 import { BoutonRecommander } from "./BoutonRecommander";
 import { FormulaireProfil } from "./FormulaireProfil";
 import { seDeconnecterClient, supprimerMonEspace } from "./actions";
+import { referenceDeCommande } from "@/lib/reference";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -43,7 +44,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
       orderBy: { createdAt: "desc" },
       take: 100,
       select: {
-        id: true, numero: true, jeton: true, statut: true, ville: true, adresse: true, etage: true, appartement: true, codeEntree: true, dateLivraison: true, creneau: true,
+        id: true, numero: true, jeton: true, statut: true, nomClient: true, ville: true, logement: true, adresse: true, etage: true, appartement: true, codeEntree: true, dateLivraison: true, creneau: true,
         express: true, paiement: true, tarifNom: true, majorationPct: true, createdAt: true,
         sousTotal: true, majoration: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
         lignes: { orderBy: { nom: "asc" }, select: { id: true, produitId: true, nom: true, options: true, quantite: true, prixUnitaire: true, indisponible: true } },
@@ -88,7 +89,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
               <article key={c.id} className="carte space-y-4 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-semibold text-slate-500">{remplir(c0.ligneCommande, { numero: c.numero, jour: jour(c.dateLivraison), creneau: c.creneau })}</p>
+                    <p className="text-sm font-semibold text-slate-500">{remplir(c0.ligneCommande, { reference: referenceDeCommande(c.numero, c.nomClient), jour: jour(c.dateLivraison), creneau: c.creneau })}</p>
                     <p className="font-semibold leading-snug">{t.statuts.explication[c.statut]}</p>
                   </div>
                   <span className="text-lg font-extrabold tabular-nums">{prix(c.total)}</span>
@@ -131,7 +132,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                 <li key={c.id}>
                   <details className="carte group">
                     <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 p-4">
-                      <span className="font-extrabold">{remplir(t.commun.numero, { numero: c.numero })}</span>
+                      <span className="font-extrabold"><bdi dir="ltr">{referenceDeCommande(c.numero, c.nomClient)}</bdi></span>
                       <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${COULEUR_STATUT[c.statut]}`}>{t.statuts.libelle[c.statut]}</span>
                       <span className="text-sm text-slate-600">{dateLongue(c.createdAt, langue)} · {compter(langue, nombre, t.commun.articles)}</span>
                       <span className="ms-auto font-extrabold tabular-nums">{prix(c.total)}</span>
@@ -185,7 +186,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           <p className="text-sm text-slate-600">{c0.infosAide.split("{email}")[0]}<bdi dir="ltr" className="break-all">{client.email}</bdi>{c0.infosAide.split("{email}")[1] ?? ""}</p>
         </div>
         <FormulaireProfil
-          client={{ nom: client.nom, telephone: client.telephone, ville: client.ville, adresse: client.adresse, etage: client.etage, appartement: client.appartement, codeEntree: client.codeEntree }}
+          client={{ nom: client.nom, telephone: client.telephone, ville: client.ville, logement: client.logement, adresse: client.adresse, etage: client.etage, appartement: client.appartement, codeEntree: client.codeEntree }}
           villes={villes.map((v) => ({ nom: v.nom, affiche: nomVille(v.nom, langue) }))}
         />
       </section>

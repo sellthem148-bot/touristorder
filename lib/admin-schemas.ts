@@ -3,6 +3,7 @@ import { lirePrix } from "./argent";
 import { QUANTITE_MAX } from "./calcul";
 import { lireOptionsSaisies } from "./options";
 import { BADGES } from "./choix-commande";
+import { lienDePaiementValide } from "./paiement";
 
 const prixFacultatif = z.string().transform((t, ctx) => {
   if (t.trim() === "") return null;
@@ -135,6 +136,9 @@ export const reglagesSchema = z.object({
     .refine((t) => t === "" || /^([01]\d|2[0-3]):([0-5]\d)$/.test(t), { error: "Heure limite au format HH:MM (ex. 17:00), ou vide." }),
   // Privé : glissé dans le message WhatsApp envoyé au client, jamais affiché sur le site.
   coordonneesPaiement: z.string().trim().max(600, { error: "600 caractères maximum." }),
+  // Le lien de paiement Bit : le seul moyen de paiement montré sur la page de suivi (bouton « Payer avec Bit »), à la demande du gérant.
+  lienBit: z.string().trim().max(300, { error: "300 caractères maximum." })
+    .refine((l) => l === "" || lienDePaiementValide(l), { error: "Colle le lien entier, il commence par https://" }),
   // L'entreprise (pages légales, reçu) : chaque champ peut rester vide.
   entrepriseNom: z.string().trim().max(120, { error: "120 caractères maximum." }),
   entrepriseNumero: z.string().trim().max(60, { error: "60 caractères maximum." }),

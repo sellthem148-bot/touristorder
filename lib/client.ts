@@ -7,7 +7,7 @@ import { lienPour } from "./langues";
 import { langueActuelle } from "./traduction";
 
 // Ce que les pages lisent du client connecté.
-const CHAMPS = { id: true, email: true, nom: true, telephone: true, ville: true, adresse: true, etage: true, appartement: true, codeEntree: true, langue: true, createdAt: true } as const;
+const CHAMPS = { id: true, email: true, nom: true, telephone: true, ville: true, logement: true, adresse: true, etage: true, appartement: true, codeEntree: true, langue: true, createdAt: true } as const;
 
 /** Le client connecté (cookie signé + compte toujours existant), ou null. */
 export async function clientConnecte() {

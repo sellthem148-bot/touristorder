@@ -119,11 +119,15 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
   // L'espace client de cette adresse : créé à la première commande. Les coordonnées
   // enregistrées ne sont remplacées que si c'est bien ce client qui est connecté —
   // quelqu'un qui tape l'adresse d'un autre ne réécrit pas son profil.
-  const coordonnees = {
-    nom: saisie.nomClient, telephone: saisie.telephone, ville: saisie.ville,
-    adresse: saisie.adresse, etage: saisie.etage, appartement: saisie.appartement, codeEntree: saisie.codeEntree,
-    langue,
+  // Une maison n'a ni étage ni appartement ; à l'hôtel, seul le numéro de chambre peut être donné.
+  const lieu = {
+    logement: saisie.logement,
+    adresse: saisie.adresse,
+    etage: saisie.logement === "APPARTEMENT" ? saisie.etage : "",
+    appartement: saisie.logement === "MAISON" ? "" : saisie.appartement,
+    codeEntree: saisie.logement === "HOTEL" ? "" : saisie.codeEntree,
   };
+  const coordonnees = { nom: saisie.nomClient, telephone: saisie.telephone, ville: saisie.ville, ...lieu, langue };
   const existant = await prisma.client.findUnique({ where: { email: saisie.email }, select: { id: true, nom: true } });
   const client = existant
     ? existant.id === options.clientConnecteId
@@ -140,10 +144,7 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
       nomClient: saisie.nomClient,
       telephone: saisie.telephone,
       ville: saisie.ville,
-      adresse: saisie.adresse,
-      etage: saisie.etage,
-      appartement: saisie.appartement,
-      codeEntree: saisie.codeEntree,
+      ...lieu,
       langue,
       dateLivraison: saisie.dateLivraison,
       creneau: saisie.creneau,

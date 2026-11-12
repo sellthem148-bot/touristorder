@@ -2,6 +2,7 @@ import { z } from "zod";
 import { LIGNES_MAX, QUANTITE_MAX } from "./calcul";
 import { cleDeVariante, type Selection } from "./options";
 import { REMPLACEMENTS } from "./choix-commande";
+import { LOGEMENTS } from "./adresse";
 import frServeur, { type DictionnaireServeur } from "./i18n/serveur/fr";
 
 export const ligneSchema = z.object({
@@ -14,8 +15,10 @@ type MessagesErreur = DictionnaireServeur["erreurs"];
 
 /**
  * Les schémas de saisie, avec leurs messages dans une langue (les erreurs s'affichent sous les champs).
- * Le client doit donner son nom, son téléphone, son e-mail et son adresse entière (rue ou hôtel,
- * étage, numéro d'appartement ou de chambre) AVANT que la commande soit enregistrée.
+ * Le client doit donner son nom, son téléphone, son e-mail et son adresse AVANT que la commande soit
+ * enregistrée : où il loge (appartement, maison ou hôtel), la rue ou le nom de l'hôtel, et — pour un
+ * appartement seulement — l'étage et le numéro d'appartement. À l'hôtel, la chambre est facultative :
+ * on ne monte pas, le client descend chercher sa commande.
  */
 export function schemasPour(m: MessagesErreur) {
   const max = (n: number) => m.maxCaracteres.replace("{max}", String(n));
@@ -46,9 +49,11 @@ export function schemasPour(m: MessagesErreur) {
     telephone: telephoneSchema,
     email: emailSchema,
     ville: texte(1, 80, m.villeRequise),
+    // Sans ce champ (une page ouverte avant ce choix) : un appartement, comme avant. Vide : le client doit choisir.
+    logement: z.enum(LOGEMENTS, { error: m.logementRequis }).default("APPARTEMENT"),
     adresse: texte(5, 200, m.adresseRequise),
-    etage: texte(1, 20, m.etageRequis),
-    appartement: texte(1, 20, m.appartementRequis),
+    etage: z.string({ error: m.etageRequis }).trim().max(20, { error: max(20) }).default(""),
+    appartement: z.string({ error: m.appartementRequis }).trim().max(20, { error: max(20) }).default(""),
     codeEntree: z.string().trim().max(40, { error: max(40) }).default(""),
     dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: m.jourRequis }),
     creneau: texte(1, 60, m.creneauRequis),
@@ -63,6 +68,11 @@ export function schemasPour(m: MessagesErreur) {
     pourboire: z.number().int().min(0).max(1_000_000).default(0),
     lignes: z.array(ligneSchema).max(LIGNES_MAX, { error: m.tropArticles }),
   }).superRefine((c, ctx) => {
+    // Un appartement : l'étage et le numéro sont indispensables au livreur. Une maison n'en a pas ; à l'hôtel, il ne monte pas.
+    if (c.logement === "APPARTEMENT") {
+      if (c.etage === "") ctx.addIssue({ code: "custom", path: ["etage"], message: m.etageRequis });
+      if (c.appartement === "") ctx.addIssue({ code: "custom", path: ["appartement"], message: m.appartementRequis });
+    }
     // Un panier vide n'est une commande que s'il porte une demande d'article hors catalogue.
     if (c.lignes.length === 0 && c.demandeLibre === "") {
       ctx.addIssue({ code: "custom", path: ["lignes"], message: m.panierVide });
@@ -74,6 +84,7 @@ export function schemasPour(m: MessagesErreur) {
     nom: texte(2, 80, m.nomRequis),
     telephone: telephoneSchema,
     ville: z.string().trim().max(80),
+    logement: z.union([z.enum(LOGEMENTS), z.literal("")]).default(""),
     adresse: z.string().trim().max(200, { error: max(200) }),
     etage: z.string().trim().max(20, { error: max(20) }),
     appartement: z.string().trim().max(20, { error: max(20) }),

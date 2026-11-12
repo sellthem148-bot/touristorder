@@ -1,7 +1,9 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { estReglee, etatDuPaiement, libelleDuSolde, libellePaiement, messageDeReglement, paiementPourLeClient, resteAPayer } from "@/lib/paiement";
+import { estReglee, etatDuPaiement, libelleDuSolde, libellePaiement, lienDePaiementValide, messageDeReglement, paiementPourLeClient, paieParBit, resteAPayer } from "@/lib/paiement";
+import { messagePourLeClient } from "@/lib/messages-client";
+import { reglagesSchema } from "@/lib/admin-schemas";
 import { cellule, csv, derniersMois, exportDesAchats, exportDesVentes, moisValide, montantCsv, type CommandeAExporter } from "@/lib/export";
 import { estJetonTelegram, texteDeLAlerte } from "@/lib/telegram";
 import { commandeSchema } from "@/lib/validation";
@@ -61,10 +63,49 @@ describe("paiement d'une commande (avant les achats)", () => {
       expect(`${p.titre} ${p.texte}`).not.toMatch(/\b(tu|ta|ton|tes|toi|te)\b/i);
     }
   });
-  it("le message du client pour régler : numéro, montant, mode", () => {
-    expect(nbsp(messageDeReglement({ numero: 42, montant: 17790, mode: "PayBox", site: "Tourist Order" }))).toBe(
-      "Bonjour ! Je souhaite régler ma commande n°42 sur Tourist Order (177,90 ₪) par PayBox.",
+  it("le message du client pour régler : référence, montant, mode", () => {
+    expect(nbsp(messageDeReglement({ reference: "SC-45240", montant: 17790, mode: "PayBox", site: "Tourist Order" }))).toBe(
+      "Bonjour ! Je souhaite régler ma commande SC-45240 sur Tourist Order (177,90 ₪) par PayBox.",
     );
+  });
+});
+
+describe("lien de paiement Bit", () => {
+  it("proposé seulement au client qui a choisi Bit", () => {
+    for (const mode of ["Bit", "bit", "Bit / PayBox", "Paiement par Bit"]) expect(paieParBit(mode), mode).toBe(true);
+    for (const mode of ["PayBox", "Virement", "Espèces", "Bitcoin", "", "Habit"]) expect(paieParBit(mode), mode).toBe(false);
+  });
+  it("avec le bouton Bit, la page ne dit plus que les coordonnées arrivent sur WhatsApp", () => {
+    const sans = paiementPourLeClient({ etat: "A_PAYER", montant: 6990 }, "Bit")!;
+    const avec = paiementPourLeClient({ etat: "A_PAYER", montant: 6990 }, "Bit", undefined, "fr", true)!;
+    expect(sans.texte).toContain("WhatsApp");
+    expect(avec.texte).toBe("Votre commande est préparée dès réception de votre paiement par Bit.");
+    expect(avec.titre).toBe(sans.titre);
+  });
+  it("un lien https entier, rien d'autre", () => {
+    expect(lienDePaiementValide("https://exemple.test/payer/abc?x=1")).toBe(true);
+    expect(lienDePaiementValide("  https://exemple.test/p  ")).toBe(true);
+    for (const mauvais of ["", "http://exemple.test", "javascript:alert(1)", "exemple.test/payer", "https://exemple.test/a b", 'https://x.test/"onclick', "050 000 0000"]) {
+      expect(lienDePaiementValide(mauvais), mauvais).toBe(false);
+    }
+    const base = {
+      fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "", creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "",
+      ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "", heureLimite: "",
+      coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
+    };
+    expect(reglagesSchema.parse({ ...base, lienBit: "" }).lienBit).toBe("");
+    expect(reglagesSchema.parse({ ...base, lienBit: " https://exemple.test/p " }).lienBit).toBe("https://exemple.test/p");
+    expect(reglagesSchema.safeParse({ ...base, lienBit: "050 000 0000" }).success).toBe(false);
+  });
+  it("dans le message du gérant : après ses coordonnées, tant qu'il reste à régler et que le client paie par Bit", () => {
+    const infos = {
+      prenom: "Sarah", reference: "SC-45240", total: 17790, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
+      paiement: { etat: "A_PAYER" as const, montant: 17790 }, mode: "Bit", coordonnees: "Bit : 050 000 0000", lienBit: "https://exemple.test/payer/abc",
+    };
+    expect(messagePourLeClient("RECUE", infos)).toContain("Bit : 050 000 0000\nhttps://exemple.test/payer/abc\n");
+    expect(messagePourLeClient("RECUE", { ...infos, mode: "Virement" })).not.toContain("exemple.test");
+    expect(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "PAYEE", montant: 0 } })).not.toContain("exemple.test");
+    expect(messagePourLeClient("RECUE", { ...infos, lienBit: "" })).toContain("Bit : 050 000 0000\nDès réception");
   });
 });
 
@@ -162,6 +203,10 @@ describe("export comptable", () => {
 });
 
 describe("alerte Telegram", () => {
+  it("porte le numéro et la référence que le client cite", () => {
+    const alerte = texteDeLAlerte({ numero: 42, reference: "SC-45240", nomClient: "Sarah Cohen", ville: "Netanya", jour: "Demain", creneau: "20:00 – 21:00", total: 17790, paiement: "Bit", nombreArticles: 3, demandeLibre: "", lienAdmin: "https://x.test/admin/commandes/abc" });
+    expect(alerte.split("\n")[0]).toBe("Nouvelle commande n°42 · réf. SC-45240");
+  });
   it("reconnaît la forme d'un jeton de robot", () => {
     expect(estJetonTelegram("123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw")).toBe(true);
     for (const mauvais of ["", "123456789", "abc:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw", "123456789:court", "123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw/../x"]) {
@@ -204,6 +249,14 @@ describe("ce qui reste privé", () => {
     expect(publics).not.toMatch(/coordonneesPaiement|telegram/);
     const legales = source.slice(source.indexOf("export async function infosLegales"));
     expect(legales.slice(0, legales.indexOf("\n}\n"))).not.toMatch(/coordonneesPaiement|telegram/);
+  });
+  it("le lien Bit : la seule exception, sur la page de suivi et dans le message du gérant — jamais ailleurs", () => {
+    const publics = [...fichiers(join(racine, "app", "(boutique)")), ...fichiers(join(racine, "components")).filter((f) => !f.includes(`${join("components", "admin")}`))];
+    const lecteurs = publics.filter((f) => /lienBit/.test(readFileSync(f, "utf8"))).map((f) => f.slice(racine.length + 1));
+    expect(lecteurs).toEqual([join("app", "(boutique)", "suivi", "[jeton]", "page.tsx")]);
+    const reglages = readFileSync(join(racine, "lib", "reglages.ts"), "utf8");
+    expect(reglages.slice(reglages.indexOf("export async function reglagesPublics"))).not.toContain("lienBit");
+    for (const f of ["courriels.ts", "commande-courriels.ts", "telegram.ts"]) expect(readFileSync(join(racine, "lib", f), "utf8"), f).not.toContain("lienBit");
   });
   it("les e-mails ne portent jamais les coordonnées de paiement", () => {
     expect(readFileSync(join(racine, "lib", "courriels.ts"), "utf8")).not.toMatch(/coordonneesPaiement|coordonnees\b/);

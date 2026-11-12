@@ -21,6 +21,7 @@ import { RepereWolt } from "@/components/admin/RepereWolt";
 import { repereWolt, type RepereWolt as Repere } from "@/lib/repere-wolt";
 import { IconeWhatsapp } from "@/components/Icones";
 import { changerStatut, marquerCommandees, solderCommande } from "../actions";
+import { referenceDeCommande } from "@/lib/reference";
 
 export const metadata = { title: "Ma journée" };
 
@@ -141,8 +142,8 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
               const message = lienWhatsapp(
                 c.telephone,
                 messagePourLeClient(c.statut, {
-                  prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi: `${site}${prefixeDe(langueClient.langue)}/suivi/${c.jeton}`, site: NOM_DU_SITE,
-                  paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement,
+                  prenom: prenomDe(c.nomClient), reference: referenceDeCommande(c.numero, c.nomClient), total: c.total, lienSuivi: `${site}${prefixeDe(langueClient.langue)}/suivi/${c.jeton}`, site: NOM_DU_SITE,
+                  paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement, lienBit: reglages.lienBit, hotel: c.logement === "HOTEL",
                 }, langueClient),
               );
               return (
@@ -260,7 +261,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                   const paiement = etatDuPaiement(c);
                   const jArrive = lienWhatsapp(
                     c.telephone,
-                    messageJArrive({ prenom: prenomDe(c.nomClient), numero: c.numero, reste: resteAPayer(c), mode: langueDesMessages(c.langue).mode(c.paiement), site: NOM_DU_SITE }, langueDesMessages(c.langue)),
+                    messageJArrive({ prenom: prenomDe(c.nomClient), reference: referenceDeCommande(c.numero, c.nomClient), hotel: c.logement === "HOTEL", reste: resteAPayer(c), mode: langueDesMessages(c.langue).mode(c.paiement), site: NOM_DU_SITE }, langueDesMessages(c.langue)),
                   );
                   const precisions = precisionsAdresse(c);
                   return (

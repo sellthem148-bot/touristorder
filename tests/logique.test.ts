@@ -94,10 +94,11 @@ describe("whatsapp", () => {
     expect(lienWhatsapp("+972501234567", "Bonjour & merci")).toBe("https://wa.me/972501234567?text=Bonjour%20%26%20merci");
     expect(lienWhatsapp("", "x")).toBeNull();
   });
-  const infos = { prenom: "Sarah", numero: 12, total: 8970, lienSuivi: "https://x/suivi/a", site: "Site", mode: "Bit", coordonnees: "Bit : 050 000 0000" };
+  const infos = { prenom: "Sarah", reference: "SA-15210", total: 8970, lienSuivi: "https://x/suivi/a", site: "Site", mode: "Bit", coordonnees: "Bit : 050 000 0000" };
   it("commande reçue, pas encore payée : le montant, le mode et les coordonnées de paiement", () => {
     const m = nbsp(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "A_PAYER", montant: 8970 } }));
-    expect(m).toContain("votre commande n°12");
+    expect(m).toContain("votre commande SA-15210");
+    expect(m).not.toContain("n°");
     expect(m).toContain("Montant à régler : 89,70 ₪ par Bit.");
     expect(m).toContain("Bit : 050 000 0000");
     expect(m).toContain("Dès réception de votre paiement, nous lançons vos achats.");
@@ -112,7 +113,7 @@ describe("whatsapp", () => {
       const m = messagePourLeClient(statut, { ...infos, paiement: { etat: "PAYEE", montant: 0 } });
       expect(m, statut).not.toContain("050 000 0000");
       expect(m, statut).not.toContain("₪");
-      expect(m, statut).toContain("n°12");
+      expect(m, statut).toContain("SA-15210");
     }
     expect(messagePourLeClient("RECUE", { ...infos, paiement: { etat: "PAYEE", montant: 0 } })).toContain("votre paiement");
   });
@@ -214,9 +215,10 @@ describe("formulaires admin", () => {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "Espèces",
       creneaux: "Dès que possible\n\n 09:00 – 12:00 \nDès que possible",
       whatsapp: "+972 50 123 4567", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["0", "5"], delaiPreparation: "45", commandesParCreneau: "", heureLimite: "16:30",
-      coordonneesPaiement: "  Bit : 050 000 0000  ", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: " Contact@Exemple.FR ",
+      coordonneesPaiement: "  Bit : 050 000 0000  ", lienBit: " https://exemple.test/payer/abc ", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: " Contact@Exemple.FR ",
     });
     expect(r.coordonneesPaiement).toBe("Bit : 050 000 0000");
+    expect(r.lienBit).toBe("https://exemple.test/payer/abc");
     expect(r.emailContact).toBe("contact@exemple.fr");
     expect(r.creneaux).toEqual(["Dès que possible", "09:00 – 12:00"]);
     expect(r.joursLivres).toEqual([0, 5]);

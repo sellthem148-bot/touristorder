@@ -12,13 +12,14 @@ import { RecapMontants } from "@/components/RecapMontants";
 import { fraisDeLivraison, minimumPour } from "@/lib/villes";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { REMPLACEMENTS, type Remplacement } from "@/lib/choix-commande";
+import { estLogement, LOGEMENTS, type Logement } from "@/lib/adresse";
 import { compter, heureLisible, jourDansPhrase, remplir } from "@/lib/langues";
 import { libelleDuMode } from "@/lib/i18n/rayons";
 import type { ReglagesPublics } from "@/lib/reglages";
 import type { JourDeLivraison } from "@/lib/creneaux";
 import { actualiserPanier, passerCommande, type EtatCommande } from "../actions";
 
-type Coordonnees = { email: string; nom: string; telephone: string; ville: string; adresse: string; etage: string; appartement: string; codeEntree: string };
+type Coordonnees = { email: string; nom: string; telephone: string; ville: string; logement: string; adresse: string; etage: string; appartement: string; codeEntree: string };
 
 type Props = {
   reglages: ReglagesPublics;
@@ -36,6 +37,7 @@ type Valeurs = {
   telephone: string;
   email: string;
   ville: string;
+  logement: Logement | ""; // rien tant que le client n'a pas choisi
   adresse: string;
   etage: string;
   appartement: string;
@@ -53,7 +55,7 @@ type Valeurs = {
 type ChampTexte = "nomClient" | "telephone" | "email" | "adresse" | "etage" | "appartement" | "codeEntree" | "notes" | "demandeLibre";
 
 // L'ordre des champs à l'écran : après un refus, on amène le client sur le premier à corriger.
-const ORDRE_DES_CHAMPS = ["demandeLibre", "nomClient", "telephone", "email", "ville", "adresse", "etage", "appartement", "codeEntree", "dateLivraison", "creneau", "express", "remplacement", "paiement", "pourboire", "notes"];
+const ORDRE_DES_CHAMPS = ["demandeLibre", "nomClient", "telephone", "email", "ville", "logement", "adresse", "etage", "appartement", "codeEntree", "dateLivraison", "creneau", "express", "remplacement", "paiement", "pourboire", "notes"];
 
 function Section({ titre, numero, children }: { titre: string; numero: number; children: React.ReactNode }) {
   return (
@@ -78,6 +80,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
     telephone: client?.telephone ?? "",
     email: client?.email ?? "",
     ville: client && reglages.villes.some((x) => x.nom === client.ville) ? client.ville : reglages.villes.length === 1 ? reglages.villes[0].nom : "",
+    logement: estLogement(client?.logement) ? client.logement : "",
     adresse: client?.adresse ?? "",
     etage: client?.etage ?? "",
     appartement: client?.appartement ?? "",
@@ -306,29 +309,61 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             </select>
             {messageErreur("ville")}
           </div>
-          <div>
-            <label htmlFor="adresse" className="etiquette">{p.adresse}</label>
-            <input {...texte("adresse")} autoComplete="address-line1" maxLength={200} placeholder={p.adressePlaceholder} required />
-            {messageErreur("adresse")}
-          </div>
-          <div className="grid grid-cols-2 items-end gap-4">
-            <div>
-              <label htmlFor="etage" className="etiquette">{p.etage}</label>
-              <input {...texte("etage")} autoComplete="off" maxLength={20} placeholder={p.etagePlaceholder} required />
+          <fieldset>
+            <legend className="etiquette">{p.logement}</legend>
+            <div className="flex flex-wrap gap-2">
+              {LOGEMENTS.map((x) => (
+                <label key={x} className="pastille">
+                  <input type="radio" name="logement" value={x} checked={v.logement === x} onChange={() => changer("logement", x)} className="sr-only" />
+                  {p.logements[x]}
+                </label>
+              ))}
             </div>
+            {/* Rien de choisi : le serveur le demande (un champ absent vaudrait « appartement »). */}
+            {v.logement === "" && <input type="hidden" name="logement" value="" />}
+            {messageErreur("logement")}
+          </fieldset>
+          {v.logement === "HOTEL" && (
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="note">{p.hotelAvis}</p>
+          )}
+          {v.logement !== "" && (
             <div>
-              <label htmlFor="appartement" className="etiquette">{p.appartement}</label>
-              <input {...texte("appartement")} autoComplete="address-line2" maxLength={20} placeholder={p.appartementPlaceholder} required />
+              <label htmlFor="adresse" className="etiquette">{v.logement === "HOTEL" ? p.hotelNom : p.adresse}</label>
+              <input {...texte("adresse")} autoComplete={v.logement === "HOTEL" ? "organization" : "address-line1"} maxLength={200} placeholder={v.logement === "HOTEL" ? p.hotelNomPlaceholder : p.adressePlaceholder} required />
+              {messageErreur("adresse")}
             </div>
-          </div>
-          {messageErreur("etage")}
-          {messageErreur("appartement")}
-          <p className="-mt-2 text-xs text-slate-500">{p.etageAide}</p>
-          <div>
-            <label htmlFor="codeEntree" className="etiquette">{p.codeEntree}</label>
-            <input {...texte("codeEntree")} autoComplete="off" maxLength={40} placeholder={p.codeEntreePlaceholder} />
-            {messageErreur("codeEntree")}
-          </div>
+          )}
+          {v.logement === "APPARTEMENT" && (
+            <>
+              <div className="grid grid-cols-2 items-end gap-4">
+                <div>
+                  <label htmlFor="etage" className="etiquette">{p.etage}</label>
+                  <input {...texte("etage")} autoComplete="off" maxLength={20} placeholder={p.etagePlaceholder} required />
+                </div>
+                <div>
+                  <label htmlFor="appartement" className="etiquette">{p.appartement}</label>
+                  <input {...texte("appartement")} autoComplete="address-line2" maxLength={20} placeholder={p.appartementPlaceholder} required />
+                </div>
+              </div>
+              {messageErreur("etage")}
+              {messageErreur("appartement")}
+              <p className="-mt-2 text-xs text-slate-500">{p.etageAide}</p>
+            </>
+          )}
+          {v.logement === "HOTEL" && (
+            <div>
+              <label htmlFor="appartement" className="etiquette">{p.chambre}</label>
+              <input {...texte("appartement")} autoComplete="off" maxLength={20} placeholder={p.appartementPlaceholder} />
+              {messageErreur("appartement")}
+            </div>
+          )}
+          {(v.logement === "APPARTEMENT" || v.logement === "MAISON") && (
+            <div>
+              <label htmlFor="codeEntree" className="etiquette">{p.codeEntree}</label>
+              <input {...texte("codeEntree")} autoComplete="off" maxLength={40} placeholder={p.codeEntreePlaceholder} />
+              {messageErreur("codeEntree")}
+            </div>
+          )}
         </Section>
 
         <Section titre={p.sectionMoment} numero={4}>

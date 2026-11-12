@@ -74,6 +74,7 @@ export type TextesPaiement = {
   par: string; // « par {mode} », espace devant compris
   enAttente: string;
   enAttenteTexte: string;
+  enAttenteTexteLien: string;
   reste: string;
   resteTexte: string;
   recu: string;
@@ -87,6 +88,7 @@ export const TEXTES_PAIEMENT_FR: TextesPaiement = {
   par: " par {mode}",
   enAttente: "Paiement en attente · {montant}",
   enAttenteTexte: "Votre commande est préparée dès réception de votre paiement{par}. Les coordonnées de paiement vous sont envoyées sur WhatsApp.",
+  enAttenteTexteLien: "Votre commande est préparée dès réception de votre paiement{par}.",
   reste: "Reste à régler · {montant}",
   resteTexte: "Votre commande a été complétée : il reste ce montant à régler{par}.",
   recu: "Paiement reçu",
@@ -101,6 +103,8 @@ export function paiementPourLeClient(
   mode: string,
   textes: TextesPaiement = TEXTES_PAIEMENT_FR,
   langue: Langue = "fr",
+  /** La page montre un bouton de paiement (lien Bit) : les coordonnées ne sont pas à attendre sur WhatsApp. */
+  avecLien = false,
 ): { ton: "attente" | "recu" | "info"; titre: string; texte: string } | null {
   const par = mode ? textes.par.replace("{mode}", mode) : "";
   const montant = formatPrix(e.montant, langue);
@@ -108,7 +112,7 @@ export function paiementPourLeClient(
     case "RIEN":
       return null;
     case "A_PAYER":
-      return { ton: "attente", titre: textes.enAttente.replace("{montant}", montant), texte: textes.enAttenteTexte.replace("{par}", par) };
+      return { ton: "attente", titre: textes.enAttente.replace("{montant}", montant), texte: (avecLien ? textes.enAttenteTexteLien : textes.enAttenteTexte).replace("{par}", par) };
     case "COMPLEMENT":
       return { ton: "attente", titre: textes.reste.replace("{montant}", montant), texte: textes.resteTexte.replace("{par}", par) };
     case "PAYEE":
@@ -118,16 +122,22 @@ export function paiementPourLeClient(
   }
 }
 
-export const MESSAGE_DE_REGLEMENT_FR = "Bonjour ! Je souhaite régler ma commande n°{numero} sur {site} ({montant}){par}.";
+/** Le client a choisi Bit (« Bit », « bit », « Bit / PayBox »…) : seul cas où le lien de paiement Bit du gérant est proposé. */
+export const paieParBit = (mode: string) => /\bbit\b/i.test(mode);
+
+/** Un lien de paiement n'est accepté que s'il est en https (Réglages) : jamais autre chose derrière un bouton « Payer ». */
+export const lienDePaiementValide = (lien: string) => /^https:\/\/[^\s"'<>]+$/.test(lien.trim());
+
+export const MESSAGE_DE_REGLEMENT_FR = "Bonjour ! Je souhaite régler ma commande {reference} sur {site} ({montant}){par}.";
 
 /** Le message WhatsApp que le client envoie au gérant pour régler (dans la langue du client). */
 export function messageDeReglement(
-  i: { numero: number; montant: number; mode: string; site: string },
+  i: { reference: string; montant: number; mode: string; site: string },
   textes: { reglement: string; par: string } = { reglement: MESSAGE_DE_REGLEMENT_FR, par: TEXTES_PAIEMENT_FR.par },
   langue: Langue = "fr",
 ): string {
   return textes.reglement
-    .replace("{numero}", String(i.numero))
+    .replace("{reference}", i.reference)
     .replace("{site}", i.site)
     .replace("{montant}", formatPrix(i.montant, langue))
     .replace("{par}", i.mode ? textes.par.replace("{mode}", i.mode) : "");

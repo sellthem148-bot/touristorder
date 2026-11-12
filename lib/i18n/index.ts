@@ -29,7 +29,7 @@ export function dictionnaireServeur(langue: Langue): DictionnaireServeur {
 /** Ce qu'il faut pour écrire un e-mail au client dans sa langue (lib/courriels.ts). */
 export function langueDuCourriel(langue: Langue) {
   const t = dictionnaire(langue);
-  return { langue, c: dictionnaireServeur(langue).courriel, montants: t.montants, numero: t.commun.numero };
+  return { langue, c: dictionnaireServeur(langue).courriel, montants: t.montants };
 }
 
 /** La langue enregistrée sur une commande ou un compte ; le français si elle manque ou n'est plus proposée. */

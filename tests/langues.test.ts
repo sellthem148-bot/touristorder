@@ -248,6 +248,53 @@ describe("adresse de livraison", () => {
     }
     expect(dictionnaireServeur("en").erreurs.etageRequis).not.toBe(dictionnaireServeur("fr").erreurs.etageRequis);
   });
+  it("maison : ni étage ni appartement à donner ; hôtel : le nom de l'hôtel suffit, la chambre est facultative", () => {
+    const maison = commandeSchema.parse({ ...base, logement: "MAISON", etage: "", appartement: "", codeEntree: "12" });
+    expect([maison.logement, maison.etage, maison.appartement]).toEqual(["MAISON", "", ""]);
+    const hotel = commandeSchema.parse({ ...base, logement: "HOTEL", adresse: "Hôtel Dan", etage: undefined, appartement: "512" });
+    expect([hotel.logement, hotel.appartement]).toEqual(["HOTEL", "512"]);
+    expect(commandeSchema.safeParse({ ...base, logement: "HOTEL", adresse: "Hôtel Dan", etage: "", appartement: "" }).success).toBe(true);
+    // Un appartement garde son étage et son numéro obligatoires ; sans choix, ou avec un choix inconnu, rien ne passe.
+    const appartement = commandeSchema.safeParse({ ...base, logement: "APPARTEMENT", etage: "", appartement: "" });
+    expect(Object.keys(erreursParChamp(appartement.error!)).sort()).toEqual(["appartement", "etage"]);
+    for (const mauvais of ["", "VILLA", "maison"]) {
+      const r = commandeSchema.safeParse({ ...base, logement: mauvais });
+      expect(r.success, mauvais).toBe(false);
+      expect(Object.keys(erreursParChamp(r.error!)), mauvais).toEqual(["logement"]);
+    }
+    for (const langue of LANGUES) {
+      const m = dictionnaireServeur(langue).erreurs;
+      expect(erreursParChamp(schemasPour(m).commandeSchema.safeParse({ ...base, logement: "" }).error!)).toEqual({ logement: m.logementRequis });
+    }
+  });
+  it("hôtel : on ne monte pas dans les chambres — écrit pour le livreur, pour le client et dans les messages du gérant", () => {
+    const hotel = { adresse: "Hôtel Dan", logement: "HOTEL", etage: "", appartement: "512", codeEntree: "" };
+    expect(adresseComplete(hotel)).toBe("Hôtel Dan\nHôtel · Chambre 512 · Ne pas monter : appeler le client, il descend chercher sa commande");
+    expect(precisionsAdresse({ ...hotel, appartement: "" })).toBe("Hôtel · Ne pas monter : appeler le client, il descend chercher sa commande");
+    expect(precisionsAdresse({ adresse: "Rue des Fleurs 4", logement: "MAISON", codeEntree: "12" })).toBe("Maison · Code 12");
+    expect(precisionsAdresse({ adresse: "Rue des Fleurs 4", logement: "MAISON" })).toBe("Maison");
+    for (const langue of LANGUES) {
+      const t = dictionnaire(langue);
+      const l = langueDesMessages(langue);
+      // Ce que le client lit : sa chambre, et la remise à la réception (jamais la consigne du livreur).
+      const lu = precisionsAdresse(hotel, t.adresse);
+      expect(lu, langue).toContain("512");
+      expect(lu, langue).toContain(t.adresse.remiseHotel);
+      expect(lu, langue).not.toContain("Ne pas monter");
+      expect(t.panier.hotelAvis.length, langue).toBeGreaterThan(30);
+      const infos = {
+        prenom: "Anna", reference: "AN-15210", total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
+        paiement: { etat: "PAYEE" as const, montant: 0 as const }, mode: "Bit", coordonnees: "",
+      };
+      // « En route » et « j'arrive » : la consigne de l'hôtel, seulement pour une commande à l'hôtel.
+      expect(messagePourLeClient("EN_LIVRAISON", { ...infos, hotel: true }, l), langue).toContain(l.m.hotel);
+      expect(messagePourLeClient("EN_LIVRAISON", infos, l), langue).not.toContain(l.m.hotel);
+      expect(messagePourLeClient("RECUE", { ...infos, hotel: true }, l), langue).not.toContain(l.m.hotel);
+      const arrive = { prenom: "Anna", reference: "AN-15210", reste: 0, mode: "Bit", site: "Tourist Order" };
+      expect(messageJArrive({ ...arrive, hotel: true }, l), langue).toContain(l.m.hotel);
+      expect(messageJArrive(arrive, l), langue).not.toContain(l.m.hotel);
+    }
+  });
   it("adresse entière : la rue, puis étage, appartement et code ; une ancienne commande n'a que la rue", () => {
     expect(adresseComplete({ adresse: "Rue Herzl 12", etage: "3", appartement: "12", codeEntree: "1234#" })).toBe("Rue Herzl 12\nÉtage 3 · Appt / chambre 12 · Code 1234#");
     expect(adresseComplete({ adresse: "Rue Herzl 12", etage: "0", appartement: "2", codeEntree: "" })).toBe("Rue Herzl 12\nÉtage 0 · Appt / chambre 2");
@@ -258,7 +305,7 @@ describe("adresse de livraison", () => {
 
 describe("e-mails et messages dans la langue du client", () => {
   const commande: CommandePourCourriel = {
-    site: "Tourist Order", numero: 42, nomClient: "Anna Petrova", prenom: "Anna", telephone: "+7 912 345-67-89", ville: "Netanya",
+    site: "Tourist Order", numero: 42, reference: "AP-45240", nomClient: "Anna Petrova", prenom: "Anna", telephone: "+7 912 345-67-89", ville: "Netanya",
     adresse: "Rue Herzl 12\nÉtage 3", jour: "Demain", creneau: "20:00 – 21:00", paiement: "Bit", notes: "", demandeLibre: "",
     lignes: [{ nom: "Lait 3 % 1 L", options: "", quantite: 2, prixUnitaire: 990 }],
     totaux: { sousTotal: 1980, majoration: 0, fraisService: 1500, fraisLivraison: 3000, pourboire: 0, total: 6480 },
@@ -271,7 +318,10 @@ describe("e-mails et messages dans la langue du client", () => {
     for (const texte of [c.sujet, c.texte, c.html]) expect(texte).not.toMatch(/\{\w+\}/);
     expect(c.html).toContain(`<html lang="${langue}" dir="${sens(langue)}">`);
     expect(c.html).toContain('href="https://exemple.test/suivi/abc"');
-    expect(c.html).toContain("42");
+    // Le client lit sa référence, jamais le numéro d'ordre de la commande.
+    expect(c.html).toContain("AP-45240");
+    expect(`${c.sujet} ${c.texte}`).toContain("AP-45240");
+    expect(`${c.sujet} ${c.html} ${c.texte}`).not.toMatch(/(n°|#|№|n\.º|מס')\s?42\b/);
     expect(c.texte).toContain("Lait 3 % 1 L");
     expect(c.html).toContain(formatPrix(6480, langue));
     const lien = courrielDeConnexion({ site: "Tourist Order", lien: "https://exemple.test/x", minutes: 30 }, dictionnaireServeur(langue).courriel, langue);
@@ -286,23 +336,23 @@ describe("e-mails et messages dans la langue du client", () => {
     expect(courrielDeConfirmation(commande, langueDuCourriel("he")).html).toContain('align="left"');
     expect(courrielDeConfirmation(commande).html).not.toContain('align="left"');
   });
-  it.each(LANGUES)("%s : les messages WhatsApp du gérant portent le numéro, le montant et ses coordonnées de paiement", (langue) => {
+  it.each(LANGUES)("%s : les messages WhatsApp du gérant portent la référence, le montant et ses coordonnées de paiement", (langue) => {
     const l = langueDesMessages(langue);
     const infos = {
-      prenom: "Anna", numero: 12, total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
+      prenom: "Anna", reference: "AN-15210", total: 8970, lienSuivi: "https://x/suivi/a", site: "Tourist Order",
       paiement: { etat: "A_PAYER" as const, montant: 8970 }, mode: l.mode("Virement"), coordonnees: "IBAN IL00 0000",
     };
     for (const statut of ["RECUE", "COMMANDEE", "EN_LIVRAISON", "LIVREE", "ANNULEE"] as const) {
       const m = messagePourLeClient(statut, infos, l);
       expect(m, statut).not.toMatch(/\{\w+\}/);
-      expect(m, statut).toContain("12");
+      expect(m, statut).toContain("AN-15210");
       expect(m, statut).toContain("Anna");
     }
     const recue = messagePourLeClient("RECUE", infos, l);
     expect(recue).toContain(formatPrix(8970, langue));
     expect(recue).toContain("IBAN IL00 0000");
     expect(recue).toContain("https://x/suivi/a");
-    const arrive = messageJArrive({ prenom: "Anna", numero: 12, reste: 8970, mode: "Bit", site: "Tourist Order" }, l);
+    const arrive = messageJArrive({ prenom: "Anna", reference: "AN-15210", reste: 8970, mode: "Bit", site: "Tourist Order" }, l);
     expect(arrive).not.toMatch(/\{\w+\}/);
     expect(arrive).toContain("(Bit)");
   });

@@ -52,7 +52,7 @@ export function MesCommandes() {
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700" aria-hidden="true"><ShoppingBag className="h-5 w-5" strokeWidth={1.6} /></span>
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-2">
-                <span className="font-extrabold">{remplir(t.suivi.commande, { numero: c.numero })}</span>
+                <span className="font-extrabold">{remplir(t.suivi.commande, { reference: c.reference })}</span>
                 <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${COULEUR_STATUT[c.statut]}`}>{t.statuts.libelle[c.statut]}</span>
               </span>
               <span className="block text-sm text-slate-600">

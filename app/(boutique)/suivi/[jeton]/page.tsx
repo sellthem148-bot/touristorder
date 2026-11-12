@@ -15,8 +15,9 @@ import { lireReglages } from "@/lib/reglages";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { Actualiser } from "@/components/Actualiser";
-import { Bike, Check, CircleCheck, Clock, House, ReceiptText, ShoppingBag, Zap } from "lucide-react";
-import { etatDuPaiement, messageDeReglement, paiementPourLeClient } from "@/lib/paiement";
+import { Bike, Check, CircleCheck, Clock, House, ReceiptText, ShoppingBag, Wallet, Zap } from "lucide-react";
+import { etatDuPaiement, lienDePaiementValide, messageDeReglement, paiementPourLeClient, paieParBit } from "@/lib/paiement";
+import { referenceDeCommande } from "@/lib/reference";
 import { IconeWhatsapp } from "@/components/Icones";
 import { ViderPanier } from "./ViderPanier";
 import { RecapMontants } from "@/components/RecapMontants";
@@ -38,7 +39,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
   const commande = await prisma.commande.findUnique({
     where: { jeton },
     select: {
-      numero: true, statut: true, nomClient: true, telephone: true, ville: true, adresse: true, etage: true, appartement: true, codeEntree: true,
+      numero: true, statut: true, nomClient: true, telephone: true, ville: true, logement: true, adresse: true, etage: true, appartement: true, codeEntree: true,
       dateLivraison: true, creneau: true, notes: true, demandeLibre: true, express: true, remplacement: true, paiement: true,
       montantPaye: true, payeLe: true,
       sousTotal: true, majoration: true, majorationPct: true, tarifNom: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
@@ -55,18 +56,27 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
   const mode = libelleDuMode(commande.paiement, t);
   const precisions = precisionsAdresse(commande, t.adresse);
 
+  // Ce que le client lit et cite : une référence (« BC-58100 »), jamais le numéro d'ordre de la commande.
+  const reference = referenceDeCommande(commande.numero, commande.nomClient);
+
   const etapeActuelle = ETAPES.indexOf(commande.statut);
   const messageGerant = lienWhatsapp(
     reglages.whatsapp,
-    remplir(t.whatsapp.commande, { numero: commande.numero, site: NOM_DU_SITE, nom: commande.nomClient, ville: commande.ville }),
+    remplir(t.whatsapp.commande, { reference, site: NOM_DU_SITE, nom: commande.nomClient, ville: commande.ville }),
   );
   // Le paiement se fait avant la préparation : les coordonnées ne sont données que sur WhatsApp.
   const etat = etatDuPaiement(commande);
-  const paiement = paiementPourLeClient(etat, mode, t.paiement, langue);
   const resteARegler = etat.etat === "A_PAYER" || etat.etat === "COMPLEMENT";
-  const lienReglement = resteARegler
-    ? lienWhatsapp(reglages.whatsapp, messageDeReglement({ numero: commande.numero, montant: etat.montant, mode, site: NOM_DU_SITE }, { reglement: t.whatsapp.reglement, par: t.paiement.par }, langue))
+  // Le client qui paie par Bit a un bouton vers le lien de paiement du gérant, s'il en a donné un (Réglages) :
+  // c'est le seul moyen de paiement montré ici, et seulement tant qu'il reste à régler.
+  const lienBit = resteARegler && commande.statut !== "ANNULEE" && paieParBit(commande.paiement) && lienDePaiementValide(reglages.lienBit) ? reglages.lienBit.trim() : null;
+  // Sinon, les coordonnées ne sont données que sur WhatsApp.
+  const paiement = paiementPourLeClient(etat, mode, t.paiement, langue, Boolean(lienBit));
+  const lienReglement = resteARegler && !lienBit
+    ? lienWhatsapp(reglages.whatsapp, messageDeReglement({ reference, montant: etat.montant, mode, site: NOM_DU_SITE }, { reglement: t.whatsapp.reglement, par: t.paiement.par }, langue))
     : null;
+  // Un seul gros bouton à la fois : quand le paiement en a un, « nous écrire » devient un simple lien.
+  const paiementAUnBouton = commande.statut !== "ANNULEE" && Boolean(lienBit || lienReglement);
   // Une demande d'article hors catalogue, pas encore chiffrée par le gérant.
   const demandeEnCours = commande.demandeLibre !== "" && etat.etat === "RIEN" && commande.statut === "RECUE";
   const explication =
@@ -103,7 +113,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
       <section className="carte space-y-5 p-5 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold text-slate-500">{remplir(s.commande, { numero: commande.numero })}</p>
+            <p className="text-sm font-semibold text-slate-500">{remplir(s.commande, { reference })}</p>
             <h2 className="text-xl font-extrabold">{t.statuts.libelle[commande.statut]}</h2>
           </div>
           {commande.express && (
@@ -127,6 +137,14 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
                 <p className="text-sm">{paiement.texte}</p>
               </div>
             </div>
+            {lienBit && (
+              <>
+                <a href={lienBit} target="_blank" rel="noopener noreferrer" className="bouton w-full text-sm">
+                  <Wallet className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> {s.payerBit}
+                </a>
+                <p className="text-sm">{remplir(s.bitAide, { montant: prix(etat.montant), reference })}</p>
+              </>
+            )}
             {lienReglement && (
               <a href={lienReglement} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full text-sm">
                 <IconeWhatsapp /> {s.recevoirCoordonnees}
@@ -167,10 +185,18 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           </ol>
         )}
 
-        {messageGerant && (
+        {messageGerant && !paiementAUnBouton && (
           <a href={messageGerant} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full">
             <IconeWhatsapp /> {s.ecrire}
           </a>
+        )}
+        {messageGerant && paiementAUnBouton && (
+          <p className="text-center text-sm text-slate-600">
+            {s.question}{" "}
+            <a href={messageGerant} target="_blank" rel="noopener noreferrer" className="font-bold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">
+              {s.ecrire}
+            </a>
+          </p>
         )}
       </section>
 

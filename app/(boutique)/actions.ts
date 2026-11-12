@@ -11,6 +11,7 @@ import { clientConnecte } from "@/lib/client";
 import { envoyerCourrielsDeCommande } from "@/lib/commande-courriels";
 import { adresseDuSite } from "@/lib/site";
 import { langueActuelle, traduction } from "@/lib/traduction";
+import { referenceDeCommande } from "@/lib/reference";
 
 export type EtatCommande = {
   erreur?: string;
@@ -49,6 +50,7 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     telephone: form.get("telephone") ?? "",
     email: client?.email ?? form.get("email") ?? "",
     ville: form.get("ville") ?? "",
+    logement: form.get("logement") ?? undefined,
     adresse: form.get("adresse") ?? "",
     etage: form.get("etage") ?? "",
     appartement: form.get("appartement") ?? "",
@@ -82,12 +84,14 @@ export async function mesCommandes(jetons: string[]) {
   if (!Array.isArray(jetons)) return [];
   const valides = jetons.filter((j) => typeof j === "string" && /^[A-Za-z0-9_-]{20,40}$/.test(j)).slice(0, 20);
   if (valides.length === 0) return [];
-  return prisma.commande.findMany({
+  const commandes = await prisma.commande.findMany({
     where: { jeton: { in: valides } },
     orderBy: { createdAt: "desc" },
     select: {
-      jeton: true, numero: true, statut: true, total: true, dateLivraison: true, creneau: true, createdAt: true,
+      jeton: true, numero: true, nomClient: true, statut: true, total: true, dateLivraison: true, creneau: true, createdAt: true,
       _count: { select: { lignes: true } },
     },
   });
+  // Le navigateur reçoit la référence (« BC-58100 »), jamais le numéro d'ordre de la commande.
+  return commandes.map(({ numero, nomClient, ...c }) => ({ ...c, reference: referenceDeCommande(numero, nomClient) }));
 }

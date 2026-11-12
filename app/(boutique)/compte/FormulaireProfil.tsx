@@ -2,10 +2,11 @@
 
 import { useActionState, useState } from "react";
 import { useTraduction } from "@/components/LangueProvider";
+import { LOGEMENTS } from "@/lib/adresse";
 import { enregistrerProfil, type EtatProfil } from "./actions";
 
 type Props = {
-  client: { nom: string; telephone: string; ville: string; adresse: string; etage: string; appartement: string; codeEntree: string };
+  client: { nom: string; telephone: string; ville: string; logement: string; adresse: string; etage: string; appartement: string; codeEntree: string };
   villes: { nom: string; affiche: string }[]; // `affiche` : le nom de la ville dans la langue du client
 };
 
@@ -58,27 +59,49 @@ export function FormulaireProfil({ client, villes }: Props) {
         {erreur("ville")}
       </div>
       <div>
-        <label htmlFor="profil-adresse" className="etiquette">{t.compte.profilAdresse}</label>
-        <input {...champ("adresse")} autoComplete="address-line1" maxLength={200} placeholder={t.compte.profilAdressePlaceholder} />
+        <label htmlFor="profil-logement" className="etiquette">{t.panier.logement}</label>
+        <select {...champ("logement")}>
+          <option value="">{t.panier.choisir}</option>
+          {LOGEMENTS.map((x) => <option key={x} value={x}>{t.panier.logements[x]}</option>)}
+        </select>
+        {erreur("logement")}
+      </div>
+      {v.logement === "HOTEL" && <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">{t.panier.hotelAvis}</p>}
+      <div>
+        <label htmlFor="profil-adresse" className="etiquette">{v.logement === "HOTEL" ? t.panier.hotelNom : t.compte.profilAdresse}</label>
+        <input {...champ("adresse")} autoComplete="address-line1" maxLength={200} placeholder={v.logement === "HOTEL" ? t.panier.hotelNomPlaceholder : t.compte.profilAdressePlaceholder} />
         {erreur("adresse")}
       </div>
-      <div className="grid grid-cols-2 items-end gap-4">
+      {(v.logement === "APPARTEMENT" || v.logement === "") && (
+        <>
+          <div className="grid grid-cols-2 items-end gap-4">
+            <div>
+              <label htmlFor="profil-etage" className="etiquette">{t.panier.etage}</label>
+              <input {...champ("etage")} autoComplete="off" maxLength={20} placeholder={t.panier.etagePlaceholder} />
+            </div>
+            <div>
+              <label htmlFor="profil-appartement" className="etiquette">{t.panier.appartement}</label>
+              <input {...champ("appartement")} autoComplete="address-line2" maxLength={20} placeholder={t.panier.appartementPlaceholder} />
+            </div>
+          </div>
+          {erreur("etage")}
+          {erreur("appartement")}
+        </>
+      )}
+      {v.logement === "HOTEL" && (
         <div>
-          <label htmlFor="profil-etage" className="etiquette">{t.panier.etage}</label>
-          <input {...champ("etage")} autoComplete="off" maxLength={20} placeholder={t.panier.etagePlaceholder} />
+          <label htmlFor="profil-appartement" className="etiquette">{t.panier.chambre}</label>
+          <input {...champ("appartement")} autoComplete="off" maxLength={20} placeholder={t.panier.appartementPlaceholder} />
+          {erreur("appartement")}
         </div>
+      )}
+      {v.logement !== "HOTEL" && (
         <div>
-          <label htmlFor="profil-appartement" className="etiquette">{t.panier.appartement}</label>
-          <input {...champ("appartement")} autoComplete="address-line2" maxLength={20} placeholder={t.panier.appartementPlaceholder} />
+          <label htmlFor="profil-codeEntree" className="etiquette">{t.panier.codeEntree}</label>
+          <input {...champ("codeEntree")} autoComplete="off" maxLength={40} placeholder={t.panier.codeEntreePlaceholder} />
+          {erreur("codeEntree")}
         </div>
-      </div>
-      {erreur("etage")}
-      {erreur("appartement")}
-      <div>
-        <label htmlFor="profil-codeEntree" className="etiquette">{t.panier.codeEntree}</label>
-        <input {...champ("codeEntree")} autoComplete="off" maxLength={40} placeholder={t.panier.codeEntreePlaceholder} />
-        {erreur("codeEntree")}
-      </div>
+      )}
       <div className="flex flex-wrap items-center gap-3">
         <button type="submit" className="bouton" disabled={enCours}>{enCours ? t.compte.enregistrement : t.compte.enregistrer}</button>
         {etat.ok && !modifie && <span role="status" className="text-sm font-semibold text-emerald-700">{t.compte.enregistre}</span>}

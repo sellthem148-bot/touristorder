@@ -16,6 +16,6 @@ await p.goto(B + "/admin/connexion"); await p.getByLabel("Mot de passe").fill(pr
 await mesure("/admin");
 await p.locator('a[href^="/admin/commandes/"]').first().click(); await p.waitForURL(/commandes\//); await mesure("admin commande");
 await p.screenshot({ path: process.argv[2] + "/v2-11-admin-se.png" });
-await p.getByRole("link", { name: "Reçu à imprimer ou à envoyer" }).click(); await p.getByRole("heading", { name: /^Reçu n°/ }).waitFor(); await mesure("admin reçu");
+await p.getByRole("link", { name: "Reçu à imprimer ou à envoyer" }).click(); await p.getByRole("heading", { name: /^Reçu [A-Z]/ }).waitFor(); await mesure("admin reçu");
 for (const u of ["/admin/statistiques", "/admin/produits", "/admin/produits?etat=a-completer", "/admin/produits/nouveau", "/admin/produits/prix", "/admin/produits/photos", "/admin/tarifs", "/admin/villes", "/admin/clients", "/admin/journee", "/admin/journee?jour=2026-11-11", "/admin/categories", "/admin/reglages"]) { await p.goto(B + u); await mesure(u); }
 console.log(res.join("\n")); await b.close();
