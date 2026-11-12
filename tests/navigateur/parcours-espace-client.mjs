@@ -47,10 +47,10 @@ async function remplirEtCommander(p, { nom, tel, email, adresse }) {
   await p.getByText("Demain", { exact: true }).click();
   await p.getByText("19:00 – 20:00", { exact: true }).click();
   if (nom) await p.getByLabel("Votre nom").fill(nom);
-  if (tel) await p.getByLabel("Votre numéro WhatsApp").fill(tel);
+  if (tel) await p.getByLabel("Votre numéro de téléphone (WhatsApp)").fill(tel);
   if (email) await p.getByLabel("Votre adresse e-mail").fill(email);
   await p.getByLabel("Ville").selectOption("Netanya");
-  if (adresse) await p.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill(adresse);
+  if (adresse) { await p.getByLabel("Rue et numéro, ou nom de l'hôtel").fill(adresse); await p.getByLabel("Étage", { exact: true }).fill("3"); await p.getByLabel("N° d'appartement ou de chambre").fill("12"); }
   await p.getByText("Bit", { exact: true }).click();
   await p.getByRole("button", { name: /^Commander/ }).click();
   await p.waitForURL(/\/suivi\//);
@@ -70,9 +70,9 @@ try {
   await sarah.goto(BASE + "/panier");
   await sarah.getByText("Pack d'eau").first().waitFor();
   await sarah.getByLabel("Votre nom").fill("Sarah Cohen");
-  await sarah.getByLabel("Votre numéro WhatsApp").fill("+33 6 12 34 56 78");
+  await sarah.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 12 34 56 78");
   await sarah.getByLabel("Ville").selectOption("Netanya");
-  await sarah.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Résidence Sea View, appartement 12");
+  await sarah.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Résidence Sea View, appartement 12"); await sarah.getByLabel("Étage", { exact: true }).fill("3"); await sarah.getByLabel("N° d'appartement ou de chambre").fill("12");
   await sarah.getByRole("button", { name: /^Commander/ }).click();
   await sarah.getByText("Votre adresse e-mail est requise.").waitFor();
   ok("commande sans adresse e-mail : refusée, le champ le dit");
@@ -111,7 +111,7 @@ try {
 
   // 4. Profil
   const profil = sarah.locator("section", { hasText: "Mes informations" });
-  await profil.getByLabel("Adresse ou logement habituel").fill("Résidence Sea View, appartement 14");
+  await profil.getByLabel("Rue et numéro, ou logement habituel").fill("Résidence Sea View, appartement 14");
   await profil.getByLabel("Ville").selectOption("Netanya");
   await profil.getByRole("button", { name: "Enregistrer" }).click();
   await profil.getByText(/^Enregistré :/).waitFor();
@@ -123,7 +123,7 @@ try {
   await sarah.waitForURL(BASE + "/panier");
   await sarah.getByText("Taille : 4").waitFor();
   verifier(await sarah.getByRole("link", { name: "Panier, 2 articles" }).isVisible(), "commander à nouveau : les 2 articles sont dans le panier");
-  verifier((await sarah.getByLabel("Votre nom").inputValue()) === "Sarah Cohen" && (await sarah.getByLabel("Adresse ou hôtel (avec n° de chambre)").inputValue()).endsWith("appartement 14"), "commande pré-remplie avec le profil");
+  verifier((await sarah.getByLabel("Votre nom").inputValue()) === "Sarah Cohen" && (await sarah.getByLabel("Rue et numéro, ou nom de l'hôtel").inputValue()).endsWith("appartement 14"), "commande pré-remplie avec le profil");
   verifier((await sarah.getByLabel("Votre adresse e-mail").inputValue()) === SARAH && (await sarah.getByLabel("Votre adresse e-mail").getAttribute("readonly")) !== null, "adresse e-mail du compte, non modifiable");
   const numero2 = await remplirEtCommander(sarah, {});
   await sarah.goto(BASE + "/compte");
@@ -191,10 +191,10 @@ try {
 
   // 10. Suppression de l'espace : confirmation exigée ; les commandes restent côté gérant
   await sarah.getByText("Supprimer mon espace client").click();
-  await sarah.getByLabel("Écris « supprimer » pour confirmer").fill("non");
+  await sarah.getByLabel("Écrivez « supprimer » pour confirmer").fill("non");
   await sarah.getByRole("button", { name: "Supprimer définitivement" }).click();
-  await sarah.getByText("Écris le mot « supprimer » pour confirmer.").waitFor();
-  await sarah.getByLabel("Écris « supprimer » pour confirmer").fill("supprimer");
+  await sarah.getByText("Écrivez le mot « supprimer » pour confirmer.").waitFor();
+  await sarah.getByLabel("Écrivez « supprimer » pour confirmer").fill("supprimer");
   await sarah.getByRole("button", { name: "Supprimer définitivement" }).click();
   await sarah.waitForURL(/\/\?espace=supprime/);
   await sarah.goto(BASE + "/compte");

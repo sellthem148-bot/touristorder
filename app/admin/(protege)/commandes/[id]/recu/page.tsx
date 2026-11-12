@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { adresseComplete } from "@/lib/adresse";
 import { notFound } from "next/navigation";
 import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -22,7 +23,7 @@ export default async function PageRecu({ params }: PageProps<"/admin/commandes/[
       where: { id },
       // Seulement ce que le client a le droit de lire : ni prix d'achat, ni boutique.
       select: {
-        id: true, numero: true, statut: true, createdAt: true, nomClient: true, adresse: true, ville: true, dateLivraison: true, creneau: true,
+        id: true, numero: true, statut: true, createdAt: true, nomClient: true, adresse: true, etage: true, appartement: true, codeEntree: true, ville: true, dateLivraison: true, creneau: true,
         paiement: true, montantPaye: true, payeLe: true, express: true, tarifNom: true, majorationPct: true,
         sousTotal: true, majoration: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
         lignes: { where: { indisponible: false }, orderBy: { nom: "asc" }, select: { id: true, nom: true, options: true, quantite: true, prixUnitaire: true } },
@@ -67,7 +68,7 @@ export default async function PageRecu({ params }: PageProps<"/admin/commandes/[
           <div>
             <h2 className="surtitre mb-1">Client</h2>
             <p className="font-semibold">{c.nomClient}</p>
-            <p className="whitespace-pre-line">{c.adresse}</p>
+            <p className="whitespace-pre-line">{adresseComplete(c)}</p>
             <p>{c.ville}</p>
           </div>
           <div>

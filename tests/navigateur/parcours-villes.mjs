@@ -94,9 +94,9 @@ try {
   // 7. Commande à Herzliya : le serveur facture le même montant
   await client.getByLabel("Ville").selectOption("Herzliya");
   await client.getByLabel("Votre nom").fill("Rachel Benhamou");
-  await client.getByLabel("Votre numéro WhatsApp").fill("+33 6 55 44 33 22");
+  await client.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 55 44 33 22");
   await client.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
-  await client.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Daniel, chambre 301");
+  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Daniel, chambre 301"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement ou de chambre").fill("12");
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);
   const suivi = espaces(await client.locator("main").innerText());

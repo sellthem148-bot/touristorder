@@ -68,7 +68,7 @@ describe("pourboire et express", () => {
   });
   it("le formulaire de commande exige un choix de remplacement valide", () => {
     const base = {
-      nomClient: "Sarah", telephone: "+33612345678", email: "sarah@exemple.fr", ville: "Tel Aviv", adresse: "Hôtel Dan 512",
+      nomClient: "Sarah", telephone: "+33612345678", email: "sarah@exemple.fr", ville: "Tel Aviv", adresse: "Hôtel Dan", etage: "5", appartement: "512",
       dateLivraison: "2026-11-10", creneau: "Dès que possible", lignes: [{ produitId: "a", quantite: 1 }],
     };
     expect(commandeSchema.safeParse({ ...base, remplacement: "EQUIVALENT" }).success).toBe(true);

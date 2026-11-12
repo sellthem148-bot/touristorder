@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { COOKIE_CLIENT, creerJetonClient, DUREE_SESSION_CLIENT_MS, lireJetonClient } from "@/lib/session-client";
+import { COOKIE_LANGUE, DUREE_COOKIE_LANGUE_S, estLangue } from "@/lib/langues";
 
 /**
  * Le lien reçu par e-mail : s'il est authentique et encore valable, il ouvre
@@ -10,7 +11,7 @@ import { COOKIE_CLIENT, creerJetonClient, DUREE_SESSION_CLIENT_MS, lireJetonClie
  */
 export async function GET(requete: NextRequest) {
   const clientId = lireJetonClient("lien", requete.nextUrl.searchParams.get("jeton"));
-  const client = clientId ? await prisma.client.findUnique({ where: { id: clientId }, select: { id: true } }) : null;
+  const client = clientId ? await prisma.client.findUnique({ where: { id: clientId }, select: { id: true, langue: true } }) : null;
   const session = client ? creerJetonClient("session", client.id, DUREE_SESSION_CLIENT_MS) : null;
   if (!session) redirect("/compte/connexion?erreur=lien");
 
@@ -21,5 +22,9 @@ export async function GET(requete: NextRequest) {
     path: "/",
     maxAge: DUREE_SESSION_CLIENT_MS / 1000,
   });
+  // La langue choisie dans l'espace client suit le client sur l'appareil où il se connecte.
+  if (estLangue(client?.langue)) {
+    (await cookies()).set(COOKIE_LANGUE, client.langue, { path: "/", maxAge: DUREE_COOKIE_LANGUE_S, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+  }
   redirect("/compte");
 }

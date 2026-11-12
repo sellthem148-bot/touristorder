@@ -70,7 +70,7 @@ describe("paiement d'une commande (avant les achats)", () => {
 
 describe("demande d'article hors catalogue", () => {
   const base = {
-    nomClient: "Sarah Cohen", telephone: "+33 6 12 34 56 78", email: "sarah@exemple.fr", ville: "Netanya", adresse: "Hôtel Dan, chambre 5",
+    nomClient: "Sarah Cohen", telephone: "+33 6 12 34 56 78", email: "sarah@exemple.fr", ville: "Netanya", adresse: "Hôtel Dan", etage: "1", appartement: "5",
     dateLivraison: "2026-11-12", creneau: "20:00 – 21:00", remplacement: "CONTACTER", paiement: "Bit",
   };
   it("un panier vide n'est accepté qu'avec une demande", () => {

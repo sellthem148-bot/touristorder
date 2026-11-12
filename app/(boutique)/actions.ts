@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { clientConnecte } from "@/lib/client";
 import { envoyerCourrielsDeCommande } from "@/lib/commande-courriels";
 import { adresseDuSite } from "@/lib/site";
+import { traduction } from "@/lib/traduction";
 
 export type EtatCommande = {
   erreur?: string;
@@ -24,19 +25,20 @@ export async function actualiserPanier(ids: string[]) {
 }
 
 export async function passerCommande(_avant: EtatCommande, form: FormData): Promise<EtatCommande> {
+  const { langue, ts } = await traduction();
   // Champ piège invisible : un humain ne le remplit pas.
-  if (String(form.get("site") ?? "") !== "") return { erreur: "Commande refusée." };
+  if (String(form.get("site") ?? "") !== "") return { erreur: ts.erreurs.refusee };
 
   const ip = await ipDuVisiteur();
   if (!autoriser(`commande:${ip}`, 15, 10 * 60 * 1000)) {
-    return { erreur: "Trop de commandes en peu de temps. Réessayez dans quelques minutes." };
+    return { erreur: ts.erreurs.tropDeCommandes };
   }
 
   let lignes: unknown = [];
   try {
     lignes = JSON.parse(String(form.get("lignes") ?? "[]"));
   } catch {
-    return { erreur: "Panier illisible : rechargez la page." };
+    return { erreur: ts.erreurs.panierIllisible };
   }
 
   // Un client connecté commande toujours avec l'adresse de son espace.
@@ -47,6 +49,9 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     email: client?.email ?? form.get("email") ?? "",
     ville: form.get("ville") ?? "",
     adresse: form.get("adresse") ?? "",
+    etage: form.get("etage") ?? "",
+    appartement: form.get("appartement") ?? "",
+    codeEntree: form.get("codeEntree") ?? "",
     dateLivraison: form.get("dateLivraison") ?? "",
     creneau: form.get("creneau") ?? "",
     notes: form.get("notes") ?? "",
@@ -56,7 +61,7 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     paiement: form.get("paiement") ?? "",
     pourboire: Number(form.get("pourboire") ?? 0),
     lignes,
-  }, { clientConnecteId: client?.id });
+  }, { clientConnecteId: client?.id, langue });
 
   if (!resultat.ok) {
     return { erreur: resultat.erreur, champs: resultat.champs, panierPerime: resultat.panierPerime };

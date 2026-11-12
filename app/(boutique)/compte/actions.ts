@@ -3,11 +3,12 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { exigerClient } from "@/lib/client";
 import { COOKIE_CLIENT, creerJetonClient, DUREE_LIEN_CONNEXION_MS } from "@/lib/session-client";
-import { emailSchema, erreursParChamp, telephoneSchema } from "@/lib/validation";
+import { erreursParChamp, schemasPour } from "@/lib/validation";
+import { traduction } from "@/lib/traduction";
+import frSite from "@/lib/i18n/fr";
 import { autoriser } from "@/lib/limite";
 import { ipDuVisiteur } from "@/lib/ip";
 import { adresseDuSite } from "@/lib/site";
@@ -25,16 +26,17 @@ export type EtatConnexion = { envoye?: boolean; erreur?: string };
  * La réponse est la même que l'adresse soit connue ou non : la page ne dit pas qui a un compte.
  */
 export async function demanderLien(_avant: EtatConnexion, form: FormData): Promise<EtatConnexion> {
-  const lecture = emailSchema.safeParse(String(form.get("email") ?? ""));
-  if (!lecture.success) return { erreur: "Adresse e-mail invalide." };
+  const { langue, ts } = await traduction();
+  const lecture = schemasPour(ts.erreurs).emailSchema.safeParse(String(form.get("email") ?? ""));
+  if (!lecture.success) return { erreur: ts.erreurs.emailInvalide };
   const email = lecture.data;
 
   const ip = await ipDuVisiteur();
   if (!autoriser(`lien-ip:${ip}`, 8, 15 * 60 * 1000) || !autoriser(`lien-email:${email}`, 3, 60 * 60 * 1000)) {
-    return { erreur: "Trop de demandes. Réessayez dans un moment." };
+    return { erreur: ts.erreurs.tropDeDemandes };
   }
   if (process.env.NODE_ENV === "production" && !process.env.RESEND_API_KEY) {
-    return { erreur: "L'envoi d'e-mails n'est pas encore configuré sur ce site." };
+    return { erreur: ts.erreurs.emailNonConfigure };
   }
 
   const client = await prisma.client.findUnique({ where: { email }, select: { id: true } });
@@ -44,7 +46,7 @@ export async function demanderLien(_avant: EtatConnexion, form: FormData): Promi
       const site = await adresseDuSite();
       const lien = `${site}/compte/acces?jeton=${jeton}`;
       // Après la réponse : le temps d'envoi ne distingue pas une adresse connue d'une inconnue.
-      after(() => envoyerCourriel({ a: email, ...courrielDeConnexion({ site: NOM_DU_SITE, logo: adresseDuLogo(site), lien, minutes: DUREE_LIEN_CONNEXION_MS / 60000 }) }));
+      after(() => envoyerCourriel({ a: email, ...courrielDeConnexion({ site: NOM_DU_SITE, logo: adresseDuLogo(site), lien, minutes: DUREE_LIEN_CONNEXION_MS / 60000 }, ts.courriel, langue) }));
     }
   }
   return { envoye: true };
@@ -55,27 +57,24 @@ export async function seDeconnecterClient() {
   redirect("/");
 }
 
-const profilSchema = z.object({
-  nom: z.string().trim().min(2, { error: "Votre nom est requis." }).max(80, { error: "80 caractères maximum." }),
-  telephone: telephoneSchema,
-  ville: z.string().trim().max(80),
-  adresse: z.string().trim().max(300, { error: "300 caractères maximum." }),
-});
-
 export type EtatProfil = { ok?: boolean; erreur?: string; champs?: Record<string, string> };
 
 export async function enregistrerProfil(_avant: EtatProfil, form: FormData): Promise<EtatProfil> {
   const client = await exigerClient();
-  const lecture = profilSchema.safeParse({
+  const { ts } = await traduction();
+  const lecture = schemasPour(ts.erreurs).profilSchema.safeParse({
     nom: String(form.get("nom") ?? ""),
     telephone: String(form.get("telephone") ?? ""),
     ville: String(form.get("ville") ?? ""),
     adresse: String(form.get("adresse") ?? ""),
+    etage: String(form.get("etage") ?? ""),
+    appartement: String(form.get("appartement") ?? ""),
+    codeEntree: String(form.get("codeEntree") ?? ""),
   });
-  if (!lecture.success) return { erreur: "Vérifiez les champs en rouge.", champs: erreursParChamp(lecture.error) };
+  if (!lecture.success) return { erreur: ts.erreurs.champs, champs: erreursParChamp(lecture.error) };
   // Une ville vide est permise ; sinon, seulement une ville livrée.
   if (lecture.data.ville && !(await prisma.ville.findFirst({ where: { nom: lecture.data.ville, active: true }, select: { id: true } }))) {
-    return { erreur: "Vérifiez les champs en rouge.", champs: { ville: "Nous ne livrons pas encore cette ville." } };
+    return { erreur: ts.erreurs.champs, champs: { ville: ts.erreurs.villeNonLivree } };
   }
   await prisma.client.update({ where: { id: client.id }, data: lecture.data });
   return { ok: true };
@@ -134,7 +133,10 @@ export async function articlesPourRecommander(commandeId: string): Promise<{ art
 /** Supprime l'espace client. Les commandes restent (comptabilité du gérant), détachées du compte. */
 export async function supprimerMonEspace(form: FormData) {
   const client = await exigerClient();
-  if (String(form.get("confirmation") ?? "").trim().toLowerCase() !== "supprimer") {
+  // Le mot à taper est celui de la langue du client (« supprimer », « delete »…) ; le mot français reste accepté.
+  const { t } = await traduction();
+  const tape = String(form.get("confirmation") ?? "").trim().toLowerCase();
+  if (tape !== t.compte.motSupprimer.toLowerCase() && tape !== frSite.compte.motSupprimer) {
     redirect("/compte?erreur=confirmation#supprimer");
   }
   await prisma.client.delete({ where: { id: client.id } }); // Commande.clientId passe à null (onDelete: SetNull)

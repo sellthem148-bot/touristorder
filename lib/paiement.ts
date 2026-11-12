@@ -2,6 +2,7 @@
 // commande sur Wolt (Bit, PayBox, virement — les coordonnées ne sont données que sur WhatsApp).
 // Pur : sert à l'espace gérant, à la page de suivi, aux messages et aux exports.
 import { formatPrix } from "./argent";
+import type { Langue } from "./langues";
 
 export type CommandePayable = {
   total: number;
@@ -69,36 +70,65 @@ export function libelleDuSolde(e: EtatPaiement): string | null {
   }
 }
 
+export type TextesPaiement = {
+  par: string; // « par {mode} », espace devant compris
+  enAttente: string;
+  enAttenteTexte: string;
+  reste: string;
+  resteTexte: string;
+  recu: string;
+  recuTexte: string;
+  rembourse: string;
+  rembourseTexte: string;
+};
+
+// Les textes en français ; côté client, ceux de sa langue (`t.paiement`).
+export const TEXTES_PAIEMENT_FR: TextesPaiement = {
+  par: " par {mode}",
+  enAttente: "Paiement en attente · {montant}",
+  enAttenteTexte: "Votre commande est préparée dès réception de votre paiement{par}. Les coordonnées de paiement vous sont envoyées sur WhatsApp.",
+  reste: "Reste à régler · {montant}",
+  resteTexte: "Votre commande a été complétée : il reste ce montant à régler{par}.",
+  recu: "Paiement reçu",
+  recuTexte: "Merci, votre paiement est bien enregistré.",
+  rembourse: "Remboursement à venir · {montant}",
+  rembourseTexte: "Ce montant vous est remboursé : un article n'était pas disponible ou la commande a été annulée.",
+};
+
 /** Ce que le client lit sur sa page de suivi (rien à dire tant qu'il n'y a rien à régler). */
-export function paiementPourLeClient(e: EtatPaiement, mode: string): { ton: "attente" | "recu" | "info"; titre: string; texte: string } | null {
-  const par = mode ? ` par ${mode}` : "";
+export function paiementPourLeClient(
+  e: EtatPaiement,
+  mode: string,
+  textes: TextesPaiement = TEXTES_PAIEMENT_FR,
+  langue: Langue = "fr",
+): { ton: "attente" | "recu" | "info"; titre: string; texte: string } | null {
+  const par = mode ? textes.par.replace("{mode}", mode) : "";
+  const montant = formatPrix(e.montant, langue);
   switch (e.etat) {
     case "RIEN":
       return null;
     case "A_PAYER":
-      return {
-        ton: "attente",
-        titre: `Paiement en attente · ${formatPrix(e.montant)}`,
-        texte: `Votre commande est préparée dès réception de votre paiement${par}. Les coordonnées de paiement vous sont envoyées sur WhatsApp.`,
-      };
+      return { ton: "attente", titre: textes.enAttente.replace("{montant}", montant), texte: textes.enAttenteTexte.replace("{par}", par) };
     case "COMPLEMENT":
-      return {
-        ton: "attente",
-        titre: `Reste à régler · ${formatPrix(e.montant)}`,
-        texte: `Votre commande a été complétée : il reste ce montant à régler${par}.`,
-      };
+      return { ton: "attente", titre: textes.reste.replace("{montant}", montant), texte: textes.resteTexte.replace("{par}", par) };
     case "PAYEE":
-      return { ton: "recu", titre: "Paiement reçu", texte: "Merci, votre paiement est bien enregistré." };
+      return { ton: "recu", titre: textes.recu, texte: textes.recuTexte };
     case "A_REMBOURSER":
-      return {
-        ton: "info",
-        titre: `Remboursement à venir · ${formatPrix(e.montant)}`,
-        texte: "Ce montant vous est remboursé : un article n'était pas disponible ou la commande a été annulée.",
-      };
+      return { ton: "info", titre: textes.rembourse.replace("{montant}", montant), texte: textes.rembourseTexte };
   }
 }
 
-/** Le message WhatsApp que le client envoie au gérant pour régler. */
-export function messageDeReglement(i: { numero: number; montant: number; mode: string; site: string }): string {
-  return `Bonjour ! Je souhaite régler ma commande n°${i.numero} sur ${i.site} (${formatPrix(i.montant)})${i.mode ? ` par ${i.mode}` : ""}.`;
+export const MESSAGE_DE_REGLEMENT_FR = "Bonjour ! Je souhaite régler ma commande n°{numero} sur {site} ({montant}){par}.";
+
+/** Le message WhatsApp que le client envoie au gérant pour régler (dans la langue du client). */
+export function messageDeReglement(
+  i: { numero: number; montant: number; mode: string; site: string },
+  textes: { reglement: string; par: string } = { reglement: MESSAGE_DE_REGLEMENT_FR, par: TEXTES_PAIEMENT_FR.par },
+  langue: Langue = "fr",
+): string {
+  return textes.reglement
+    .replace("{numero}", String(i.numero))
+    .replace("{site}", i.site)
+    .replace("{montant}", formatPrix(i.montant, langue))
+    .replace("{par}", i.mode ? textes.par.replace("{mode}", i.mode) : "");
 }

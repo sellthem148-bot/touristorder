@@ -103,10 +103,10 @@ try {
   await client.goto(BASE + "/panier");
   await client.getByText("Pack d'eau").first().waitFor();
   await client.getByLabel("Votre nom").fill(NOM);
-  await client.getByLabel("Votre numéro WhatsApp").fill("+33 6 99 88 77 66");
+  await client.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 99 88 77 66");
   await client.getByLabel("Votre adresse e-mail").fill(`dana${Date.now() % 100000}@exemple.test`);
   await client.getByLabel("Ville").selectOption("Netanya");
-  await client.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Island, chambre 7");
+  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Island, chambre 7"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement ou de chambre").fill("12");
   await client.getByLabel("Un article introuvable ? (facultatif)").fill("1 parasol");
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);

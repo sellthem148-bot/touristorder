@@ -10,6 +10,9 @@ import { prenomDe } from "./messages-client";
 import { NOM_DU_SITE } from "./marque";
 import { messageDeReglement } from "./paiement";
 import { envoyerTelegram, texteDeLAlerte } from "./telegram";
+import { adresseComplete } from "./adresse";
+import { remplir } from "./langues";
+import { dictionnaire, langueDuCourriel, langueEnregistree, libelleDuMode } from "./i18n";
 
 /**
  * Après une commande : la confirmation au client, l'avis au gérant (EMAIL_GERANT) et son alerte Telegram.
@@ -21,7 +24,7 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       prisma.commande.findUnique({
         where: { id: commandeId },
         select: {
-          id: true, numero: true, jeton: true, email: true, clientId: true, nomClient: true, telephone: true, ville: true, adresse: true,
+          id: true, numero: true, jeton: true, email: true, clientId: true, nomClient: true, telephone: true, ville: true, adresse: true, etage: true, appartement: true, codeEntree: true, langue: true,
           dateLivraison: true, creneau: true, paiement: true, notes: true, demandeLibre: true, express: true, tarifNom: true, majorationPct: true,
           sousTotal: true, majoration: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
           // Jamais le prix d'achat, la boutique ni le lien Wolt dans un e-mail au client.
@@ -32,6 +35,9 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
     ]);
     if (!c) return;
 
+    // L'e-mail du client est écrit dans la langue de sa commande ; l'avis au gérant reste en français.
+    const langue = langueEnregistree(c.langue);
+    const t = dictionnaire(langue);
     const jetonEspace = c.clientId ? creerJetonClient("lien", c.clientId, DUREE_LIEN_CONFIRMATION_MS) : null;
     const donnees: CommandePourCourriel = {
       site: NOM_DU_SITE,
@@ -41,7 +47,7 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       prenom: prenomDe(c.nomClient),
       telephone: c.telephone,
       ville: c.ville,
-      adresse: c.adresse,
+      adresse: adresseComplete(c),
       jour: libelleDuJour(c.dateLivraison),
       creneau: c.creneau,
       paiement: c.paiement,
@@ -52,16 +58,29 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       presentation: { regroupes: reglages.fraisRegroupes, express: c.express, tarifNom: c.tarifNom, majorationPct: c.majorationPct, ville: c.ville },
       lienSuivi: `${site}/suivi/${c.jeton}`,
       lienEspace: jetonEspace ? `${site}/compte/acces?jeton=${jetonEspace}` : null,
-      lienWhatsapp: lienWhatsapp(reglages.whatsapp, `Bonjour ! J'ai une question sur ma commande n°${c.numero}.`),
+      lienWhatsapp: lienWhatsapp(reglages.whatsapp, "Bonjour ! J'ai une question sur ma commande n°{numero}.".replace("{numero}", String(c.numero))),
       // Les coordonnées de paiement ne sont jamais dans l'e-mail : le client les demande sur WhatsApp.
       lienPaiement: c.total > 0 ? lienWhatsapp(reglages.whatsapp, messageDeReglement({ numero: c.numero, montant: c.total, mode: c.paiement, site: NOM_DU_SITE })) : null,
     };
 
     const envois: Promise<unknown>[] = [];
-    if (c.email) envois.push(envoyerCourriel({ a: c.email, ...courrielDeConfirmation(donnees) }));
+    if (c.email) {
+      const mode = libelleDuMode(c.paiement, t);
+      const pourLeClient: CommandePourCourriel = {
+        ...donnees,
+        adresse: adresseComplete(c, t.adresse),
+        jour: libelleDuJour(c.dateLivraison, undefined, langue),
+        paiement: mode,
+        lienWhatsapp: lienWhatsapp(reglages.whatsapp, remplir(t.whatsapp.question, { numero: c.numero })),
+        lienPaiement: c.total > 0
+          ? lienWhatsapp(reglages.whatsapp, messageDeReglement({ numero: c.numero, montant: c.total, mode, site: NOM_DU_SITE }, { reglement: t.whatsapp.reglement, par: t.paiement.par }, langue))
+          : null,
+      };
+      envois.push(envoyerCourriel({ a: c.email, ...courrielDeConfirmation(pourLeClient, langueDuCourriel(langue)) }));
+    }
     const gerant = (process.env.EMAIL_GERANT ?? "").trim();
     if (gerant) {
-      envois.push(envoyerCourriel({ a: gerant, ...courrielNouvelleCommande({ ...donnees, presentation: { ...donnees.presentation, regroupes: false }, lienAdmin: `${site}/admin/commandes/${c.id}` }) }));
+      envois.push(envoyerCourriel({ a: gerant, ...courrielNouvelleCommande({ ...donnees, presentation: { ...donnees.presentation, regroupes: false }, lienAdmin: `${site}/admin/commandes/${c.id}`, langueClient: langue }) }));
     }
     // L'alerte Telegram du gérant (si le robot est relié, Réglages) : immédiate, sur son téléphone.
     if (reglages.telegramJeton && reglages.telegramDiscussion) {

@@ -68,7 +68,7 @@ describe("adresse e-mail", () => {
   });
   it("la commande exige une adresse e-mail", () => {
     const base = {
-      nomClient: "Sarah", telephone: "+33612345678", ville: "Netanya", adresse: "Hôtel Dan 512",
+      nomClient: "Sarah", telephone: "+33612345678", ville: "Netanya", adresse: "Hôtel Dan", etage: "5", appartement: "512",
       dateLivraison: "2026-11-10", creneau: "19:00 – 20:00", remplacement: "CONTACTER", lignes: [{ produitId: "a", quantite: 1 }],
     };
     expect(commandeSchema.safeParse(base).success).toBe(false);

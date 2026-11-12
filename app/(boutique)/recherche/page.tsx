@@ -1,37 +1,44 @@
 import Link from "next/link";
 import { ArrowLeft, SearchX } from "lucide-react";
 import { GrilleProduits } from "@/components/CarteProduit";
+import type { Metadata } from "next";
 import { rechercher } from "@/lib/catalogue";
+import { compter, remplir } from "@/lib/langues";
+import { traduction } from "@/lib/traduction";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Recherche", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await traduction();
+  return { title: t.recherche.titre, robots: { index: false } };
+}
 
 export default async function PageRecherche({ searchParams }: PageProps<"/recherche">) {
   const brut = (await searchParams).q;
   const q = (Array.isArray(brut) ? brut[0] : brut ?? "").trim();
-  const produits = await rechercher(q);
+  const [produits, { langue, t }] = await Promise.all([rechercher(q), traduction()]);
+  const r = t.recherche;
 
   return (
     <div className="space-y-6">
       <div>
         <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre">
-          <ArrowLeft className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> Tout le catalogue
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" strokeWidth={1.8} aria-hidden="true" /> {r.retour}
         </Link>
-        <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{q ? <>Résultats pour « {q} »</> : "Recherche"}</h1>
+        <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{q ? remplir(r.resultats, { q }) : r.titre}</h1>
         {q.length >= 2 && produits.length > 0 && (
-          <p className="text-sm text-slate-500">{produits.length} article{produits.length > 1 ? "s" : ""}</p>
+          <p className="text-sm text-slate-500">{compter(langue, produits.length, t.commun.articles)}</p>
         )}
       </div>
       {q.length < 2 ? (
-        <p className="text-slate-600">Tapez au moins deux lettres dans la barre de recherche.</p>
+        <p className="text-slate-600">{r.minimum}</p>
       ) : produits.length === 0 ? (
         <div className="carte space-y-3 p-8 text-center">
           <SearchX className="mx-auto h-8 w-8 text-slate-400" strokeWidth={1.5} aria-hidden="true" />
-          <p className="font-semibold">Aucun produit trouvé.</p>
+          <p className="font-semibold">{r.aucun}</p>
           <p className="mx-auto max-w-md text-sm text-slate-600">
-            Cet article n&apos;est pas dans le catalogue ? Demandez-le : nous le recherchons pour vous et vous confirmons son prix sur WhatsApp.
+            {r.aucunAide}
           </p>
-          <Link href={`/panier?demande=${encodeURIComponent(q.slice(0, 200))}`} className="bouton">Demander cet article</Link>
+          <Link href={`/panier?demande=${encodeURIComponent(q.slice(0, 200))}`} className="bouton">{r.demander}</Link>
         </div>
       ) : (
         <GrilleProduits produits={produits} />

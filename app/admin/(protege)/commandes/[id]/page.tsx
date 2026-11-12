@@ -10,6 +10,9 @@ import { margeEstimee } from "@/lib/calcul";
 import { COULEUR_STATUT, LIBELLE_STATUT } from "@/lib/statuts";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { messagePourLeClient, prenomDe } from "@/lib/messages-client";
+import { langueDesMessages } from "@/lib/i18n";
+import { NOM_DE_LA_LANGUE } from "@/lib/langues";
+import { precisionsAdresse } from "@/lib/adresse";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { BoutonCopier } from "@/components/admin/BoutonCopier";
 import { RecapMontants } from "@/components/RecapMontants";
@@ -53,13 +56,16 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   const solde = libelleDuSolde(paiement);
   const resteAPayer = paiement.etat === "A_PAYER" || paiement.etat === "COMPLEMENT";
   // Le message porte le montant, le mode et les coordonnées de paiement tant qu'il reste à régler.
+  // Il est écrit dans la langue du client (celle du site quand il a commandé).
+  const langueClient = langueDesMessages(c.langue);
   const whatsappClient = lienWhatsapp(
     c.telephone,
     messagePourLeClient(c.statut, {
       prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi, site: NOM_DU_SITE,
-      paiement, mode: c.paiement, coordonnees: reglages.coordonneesPaiement,
-    }),
+      paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement,
+    }, langueClient),
   );
+  const precisions = precisionsAdresse(c);
   const marge = margeEstimee(c.lignes, c);
   const suivant = SUIVANT[c.statut];
 
@@ -291,7 +297,13 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
             <p><a href={`tel:${c.telephone.replace(/[^\d+]/g, "")}`} className="text-marque underline">{c.telephone}</a></p>
             {c.email && <p className="break-all text-slate-600">{c.email}</p>}
             <p className="whitespace-pre-line">{c.adresse}</p>
+            {precisions && <p className="font-medium">{precisions}</p>}
             <p>{c.ville}</p>
+            {langueClient.langue !== "fr" && (
+              <p className="rounded-lg bg-sky-50 p-2 text-sky-900">
+                Langue du client : <strong>{NOM_DE_LA_LANGUE[langueClient.langue]}</strong>. Ton message WhatsApp et son e-mail sont écrits dans sa langue.
+              </p>
+            )}
             <p className="pt-1 font-medium">{libelleDuJour(c.dateLivraison)} · {c.creneau}</p>
             {c.notes && <p className="whitespace-pre-line rounded-lg bg-amber-50 p-2 text-amber-900">Note du client : {c.notes}</p>}
             <p className="pt-2 text-xs text-slate-500 break-all">

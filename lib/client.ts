@@ -5,7 +5,7 @@ import { prisma } from "./prisma";
 import { COOKIE_CLIENT, lireJetonClient } from "./session-client";
 
 // Ce que les pages lisent du client connecté.
-const CHAMPS = { id: true, email: true, nom: true, telephone: true, ville: true, adresse: true, createdAt: true } as const;
+const CHAMPS = { id: true, email: true, nom: true, telephone: true, ville: true, adresse: true, etage: true, appartement: true, codeEntree: true, langue: true, createdAt: true } as const;
 
 /** Le client connecté (cookie signé + compte toujours existant), ou null. */
 export async function clientConnecte() {

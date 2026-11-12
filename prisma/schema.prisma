@@ -79,7 +79,15 @@ model Commande {
   clientId       String?
   client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
   ville          String
+  // La rue et le numéro, ou le nom de l'hôtel. Le reste de l'adresse est dans les trois champs suivants
+  // (lib/adresse.ts les assemble) ; vides sur les commandes d'avant ces champs.
   adresse        String
+  etage          String          @default("")
+  appartement    String          @default("") // numéro d'appartement ou de chambre
+  codeEntree     String          @default("") // code d'entrée ou interphone (facultatif)
+  // La langue du site au moment de la commande (lib/langues.ts) : celle de l'e-mail de confirmation
+  // et des messages WhatsApp que le gérant envoie au client.
+  langue         String          @default("fr")
   dateLivraison  String // AAAA-MM-JJ, jour israélien
   creneau        String
   notes          String          @default("")
@@ -128,6 +136,11 @@ model Client {
   telephone String     @default("")
   ville     String     @default("")
   adresse   String     @default("")
+  etage       String   @default("")
+  appartement String   @default("")
+  codeEntree  String   @default("")
+  // La langue choisie par le client (lib/langues.ts) ; vide = pas encore choisie.
+  langue      String   @default("")
   commandes Commande[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt

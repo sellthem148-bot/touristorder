@@ -2,26 +2,32 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { prisma } from "./prisma";
 import { calculerTotaux } from "./calcul";
-import { commandeSchema, erreursParChamp, regrouperLignes } from "./validation";
+import { erreursParChamp, regrouperLignes, schemasPour } from "./validation";
 import { joursOuverts } from "./livraisons";
 import { lireReglages, plagesActives } from "./reglages";
 import { tarifDeLaLivraison } from "./tarifs";
 import { fraisDeLivraison, minimumPour } from "./villes";
 import { formatPrix } from "./argent";
 import { lireGroupes, resoudreSelection } from "./options";
+import { LANGUE_PAR_DEFAUT, type Langue } from "./langues";
+import { dictionnaireServeur } from "./i18n";
 
 export type ResultatCommande =
   | { ok: true; jeton: string; numero: number; id: string }
   | { ok: false; erreur: string; champs?: Record<string, string>; panierPerime?: boolean };
 
-const CHAMPS = "Vérifiez les champs en rouge.";
-
 /**
  * Crée une commande. Les prix (options, frais, express, pourboire) viennent
  * TOUJOURS de la base et des réglages, jamais du navigateur.
+ * Rien n'est enregistré tant qu'il manque le nom, le téléphone, l'e-mail ou l'adresse entière
+ * (rue ou hôtel, étage, appartement ou chambre) : le gérant les a avant le paiement.
+ * `langue` : celle du client — ses messages d'erreur, puis son e-mail et ses messages.
  */
-export async function creerCommande(entree: unknown, options: { clientConnecteId?: string } = {}): Promise<ResultatCommande> {
-  const lecture = commandeSchema.safeParse(entree);
+export async function creerCommande(entree: unknown, options: { clientConnecteId?: string; langue?: Langue } = {}): Promise<ResultatCommande> {
+  const langue = options.langue ?? LANGUE_PAR_DEFAUT;
+  const m = dictionnaireServeur(langue).erreurs;
+  const CHAMPS = m.champs;
+  const lecture = schemasPour(m).commandeSchema.safeParse(entree);
   if (!lecture.success) {
     return { ok: false, erreur: CHAMPS, champs: erreursParChamp(lecture.error) };
   }
@@ -29,38 +35,38 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
   const [reglages, plages] = await Promise.all([lireReglages(), plagesActives()]);
 
   if (!reglages.ouvert) {
-    return { ok: false, erreur: "Les commandes sont fermées pour le moment. Réessayez un peu plus tard." };
+    return { ok: false, erreur: m.ferme };
   }
   const ville = await prisma.ville.findFirst({
     where: { nom: saisie.ville, active: true },
     select: { nom: true, supplementLivraison: true, minimumCommande: true },
   });
   if (!ville) {
-    return { ok: false, erreur: CHAMPS, champs: { ville: "Nous ne livrons pas encore cette ville." } };
+    return { ok: false, erreur: CHAMPS, champs: { ville: m.villeNonLivree } };
   }
   // Le jour doit être un jour livré, et le créneau encore possible ce jour-là
   // (le soir même : au moins le délai de préparation avant son début).
   const jour = (await joursOuverts(reglages)).find((j) => j.valeur === saisie.dateLivraison);
   if (!jour) {
-    return { ok: false, erreur: CHAMPS, champs: { dateLivraison: "Ce jour n'est plus disponible : choisissez-en un autre." } };
+    return { ok: false, erreur: CHAMPS, champs: { dateLivraison: m.jourIndisponible } };
   }
   // La limite de commandes par créneau : le gérant livre seul.
   if (jour.complets.includes(saisie.creneau)) {
-    return { ok: false, erreur: "Ce créneau vient d'être complet : choisissez-en un autre.", champs: { creneau: "Ce créneau est complet : choisissez-en un autre." } };
+    return { ok: false, erreur: m.creneauComplet, champs: { creneau: m.creneauCompletChamp } };
   }
   if (!jour.creneaux.includes(saisie.creneau)) {
-    return { ok: false, erreur: CHAMPS, champs: { creneau: "Ce créneau n'est plus disponible : choisissez-en un autre." } };
+    return { ok: false, erreur: CHAMPS, champs: { creneau: m.creneauIndisponible } };
   }
   // Le tarif du moment de la livraison (journée, nuit, week-end…).
   const tarif = tarifDeLaLivraison(saisie.dateLivraison, saisie.creneau, plages, reglages);
   if (saisie.express && tarif.fraisExpress <= 0) {
-    return { ok: false, erreur: "La livraison express n'est pas proposée sur ce créneau.", champs: { express: "Pas d'express sur ce créneau." } };
+    return { ok: false, erreur: m.expressNonPropose, champs: { express: m.expressChamp } };
   }
   if (reglages.paiements.length > 0 && !reglages.paiements.includes(saisie.paiement)) {
-    return { ok: false, erreur: CHAMPS, champs: { paiement: "Choisissez un mode de paiement." } };
+    return { ok: false, erreur: CHAMPS, champs: { paiement: m.paiementRequis } };
   }
   if (saisie.pourboire !== 0 && !reglages.pourboires.includes(saisie.pourboire)) {
-    return { ok: false, erreur: "Ce pourboire n'est plus proposé : rechargez la page.", champs: { pourboire: "Choisissez un montant dans la liste." } };
+    return { ok: false, erreur: m.pourboirePerime, champs: { pourboire: m.pourboireChamp } };
   }
   const pourboire = saisie.pourboire;
 
@@ -72,7 +78,7 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
   const parId = new Map(produits.map((p) => [p.id, p]));
   const perime = {
     ok: false as const,
-    erreur: "Certains articles de votre panier ne sont plus disponibles ou ont changé. Nous avons mis votre panier à jour : vérifiez-le.",
+    erreur: m.panierPerime,
     panierPerime: true,
   };
   if (lignes.some((l) => !parId.has(l.produitId))) return perime;
@@ -107,13 +113,17 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
   // l'instant (le gérant ajoutera l'article et son prix), donc pas de minimum à vérifier.
   const minimum = minimumPour(ville, reglages.minimumCommande);
   if (aCopier.length > 0 && totaux.sousTotal < minimum) {
-    return { ok: false, erreur: `Le minimum de commande pour ${ville.nom} est de ${formatPrix(minimum)} d'articles (hors frais).` };
+    return { ok: false, erreur: m.minimum.replace("{ville}", ville.nom).replace("{prix}", formatPrix(minimum, langue)) };
   }
 
   // L'espace client de cette adresse : créé à la première commande. Les coordonnées
   // enregistrées ne sont remplacées que si c'est bien ce client qui est connecté —
   // quelqu'un qui tape l'adresse d'un autre ne réécrit pas son profil.
-  const coordonnees = { nom: saisie.nomClient, telephone: saisie.telephone, ville: saisie.ville, adresse: saisie.adresse };
+  const coordonnees = {
+    nom: saisie.nomClient, telephone: saisie.telephone, ville: saisie.ville,
+    adresse: saisie.adresse, etage: saisie.etage, appartement: saisie.appartement, codeEntree: saisie.codeEntree,
+    langue,
+  };
   const existant = await prisma.client.findUnique({ where: { email: saisie.email }, select: { id: true, nom: true } });
   const client = existant
     ? existant.id === options.clientConnecteId
@@ -131,6 +141,10 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
       telephone: saisie.telephone,
       ville: saisie.ville,
       adresse: saisie.adresse,
+      etage: saisie.etage,
+      appartement: saisie.appartement,
+      codeEntree: saisie.codeEntree,
+      langue,
       dateLivraison: saisie.dateLivraison,
       creneau: saisie.creneau,
       notes: saisie.notes,

@@ -34,10 +34,10 @@ async function commander({ nom, tel, ville, adresse, creneau }) {
   await jour.check({ force: true });
   await p.getByText(creneau, { exact: true }).click();
   await p.getByLabel("Votre nom").fill(nom);
-  await p.getByLabel("Votre numéro WhatsApp").fill(tel);
+  await p.getByLabel("Votre numéro de téléphone (WhatsApp)").fill(tel);
   await p.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await p.getByLabel("Ville").selectOption(ville);
-  await p.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill(adresse);
+  await p.getByLabel("Rue et numéro, ou nom de l'hôtel").fill(adresse); await p.getByLabel("Étage", { exact: true }).fill("3"); await p.getByLabel("N° d'appartement ou de chambre").fill("12");
   await p.getByText("Bit", { exact: true }).click();
   await p.getByRole("button", { name: /^Commander/ }).click();
   await p.waitForURL(/\/suivi\//);

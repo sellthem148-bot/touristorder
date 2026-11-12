@@ -1,14 +1,16 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useTraduction } from "@/components/LangueProvider";
 import { enregistrerProfil, type EtatProfil } from "./actions";
 
 type Props = {
-  client: { nom: string; telephone: string; ville: string; adresse: string };
+  client: { nom: string; telephone: string; ville: string; adresse: string; etage: string; appartement: string; codeEntree: string };
   villes: string[];
 };
 
 export function FormulaireProfil({ client, villes }: Props) {
+  const { t } = useTraduction();
   const [etat, envoyer, enCours] = useActionState<EtatProfil, FormData>(enregistrerProfil, {});
   // Champs contrôlés : React vide un formulaire non contrôlé après l'action.
   const [v, setV] = useState(client);
@@ -37,32 +39,49 @@ export function FormulaireProfil({ client, villes }: Props) {
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="profil-nom" className="etiquette">Nom</label>
+          <label htmlFor="profil-nom" className="etiquette">{t.compte.profilNom}</label>
           <input {...champ("nom")} autoComplete="name" />
           {erreur("nom")}
         </div>
         <div>
-          <label htmlFor="profil-telephone" className="etiquette">Numéro WhatsApp</label>
-          <input {...champ("telephone")} type="tel" autoComplete="tel" />
+          <label htmlFor="profil-telephone" className="etiquette">{t.compte.profilTelephone}</label>
+          <input {...champ("telephone")} dir="ltr" type="tel" autoComplete="tel" placeholder={t.panier.telephonePlaceholder} className={`${champ("telephone").className} rtl:text-right`} />
           {erreur("telephone")}
         </div>
       </div>
       <div>
-        <label htmlFor="profil-ville" className="etiquette">Ville</label>
+        <label htmlFor="profil-ville" className="etiquette">{t.panier.ville}</label>
         <select {...champ("ville")}>
-          <option value="">Choisir…</option>
+          <option value="">{t.panier.choisir}</option>
           {villes.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
         {erreur("ville")}
       </div>
       <div>
-        <label htmlFor="profil-adresse" className="etiquette">Adresse ou logement habituel</label>
-        <textarea {...champ("adresse")} rows={2} autoComplete="street-address" placeholder="Résidence, appartement, étage…" />
+        <label htmlFor="profil-adresse" className="etiquette">{t.compte.profilAdresse}</label>
+        <input {...champ("adresse")} autoComplete="address-line1" maxLength={200} placeholder={t.compte.profilAdressePlaceholder} />
         {erreur("adresse")}
       </div>
+      <div className="grid grid-cols-2 items-end gap-4">
+        <div>
+          <label htmlFor="profil-etage" className="etiquette">{t.panier.etage}</label>
+          <input {...champ("etage")} autoComplete="off" maxLength={20} placeholder={t.panier.etagePlaceholder} />
+        </div>
+        <div>
+          <label htmlFor="profil-appartement" className="etiquette">{t.panier.appartement}</label>
+          <input {...champ("appartement")} autoComplete="address-line2" maxLength={20} placeholder={t.panier.appartementPlaceholder} />
+        </div>
+      </div>
+      {erreur("etage")}
+      {erreur("appartement")}
+      <div>
+        <label htmlFor="profil-codeEntree" className="etiquette">{t.panier.codeEntree}</label>
+        <input {...champ("codeEntree")} autoComplete="off" maxLength={40} placeholder={t.panier.codeEntreePlaceholder} />
+        {erreur("codeEntree")}
+      </div>
       <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className="bouton" disabled={enCours}>{enCours ? "Enregistrement…" : "Enregistrer"}</button>
-        {etat.ok && !modifie && <span role="status" className="text-sm font-semibold text-emerald-700">Enregistré : votre prochaine commande sera pré-remplie.</span>}
+        <button type="submit" className="bouton" disabled={enCours}>{enCours ? t.compte.enregistrement : t.compte.enregistrer}</button>
+        {etat.ok && !modifie && <span role="status" className="text-sm font-semibold text-emerald-700">{t.compte.enregistre}</span>}
         {etat.erreur && <span role="alert" className="text-sm font-semibold text-red-700">{etat.erreur}</span>}
       </div>
     </form>

@@ -1,6 +1,7 @@
 // Les jours et créneaux de livraison proposés au client : une seule définition,
 // pour le panier (ce qu'on propose) et le serveur (ce qu'on accepte).
 import { ajouterJours, jourEnIsrael, libelleDuJour } from "./dates";
+import type { Langue } from "./langues";
 import { debutDuCreneau, enMinutes, heureValide, jourDeLaSemaine, momentPresent } from "./tarifs";
 
 /** `creneaux` : ceux qu'on peut choisir ; `complets` : ceux qui ont atteint la limite de commandes (affichés, non choisissables). */
@@ -72,8 +73,11 @@ export function joursDeLivraison(
   return jours;
 }
 
-/** « 19h – 00h » : du début du premier créneau à la fin du dernier. null si les créneaux n'ont pas d'heures. */
-export function amplitudeDesCreneaux(creneaux: string[]): string | null {
+/**
+ * « 19h – 00h » : du début du premier créneau à la fin du dernier. null si les créneaux n'ont pas d'heures.
+ * Hors du français, les heures s'écrivent « 19:00 – 00:00 ».
+ */
+export function amplitudeDesCreneaux(creneaux: string[], langue: Langue = "fr"): string | null {
   const debuts = creneaux.map(debutDuCreneau).filter((x): x is number => x != null);
   const fins = creneaux.map(finDuCreneau).filter((x): x is number => x != null);
   if (debuts.length === 0 || fins.length === 0) return null;
@@ -81,6 +85,7 @@ export function amplitudeDesCreneaux(creneaux: string[]): string | null {
     const m = minutes % (24 * 60);
     const hh = String(Math.floor(m / 60)).padStart(2, "0");
     const mm = m % 60;
+    if (langue !== "fr") return `${hh}:${String(mm).padStart(2, "0")}`;
     return mm ? `${hh}h${String(mm).padStart(2, "0")}` : `${hh}h`;
   };
   return `${h(Math.min(...debuts))} – ${h(Math.max(...fins))}`;

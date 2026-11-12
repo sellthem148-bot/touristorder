@@ -130,10 +130,10 @@ try {
   await client.getByText("Demain", { exact: true }).click();
   await client.getByText("22:00 – 23:00", { exact: true }).click();
   await client.getByLabel("Votre nom").fill("David Lévy");
-  await client.getByLabel("Votre numéro WhatsApp").fill("+33 6 11 22 33 44");
+  await client.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 11 22 33 44");
   await client.getByLabel("Votre adresse e-mail").fill(`client${Date.now() % 100000}@exemple.test`);
   await client.getByLabel("Ville").selectOption("Netanya");
-  await client.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Carlton, chambre 210");
+  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Carlton, chambre 210"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement ou de chambre").fill("12");
   await client.getByRole("button", { name: /^Commander/ }).click();
   await client.waitForURL(/\/suivi\//);
   await client.getByText("Merci, votre commande est enregistrée.").waitFor();

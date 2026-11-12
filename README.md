@@ -6,12 +6,12 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 
 ## Ce que fait le site
 
-**Côté client** (web app mobile, en français, sans compte)
+**Côté client** (web app mobile, en cinq langues — français, anglais, russe, hébreu, espagnol —, sans compte)
 - Catalogue par catégories (tuiles), rayons qui défilent, recherche, rubrique « Les plus demandés » (produits Populaire / Promo).
 - **Fiche produit** au toucher : grande photo, description, **options obligatoires** (taille, modèle, couleur… avec supplément éventuel), quantité.
 - Badges Populaire / Nouveau / Promo (avec prix barré) ; un produit **épuisé** reste visible mais ne se commande pas.
 - Panier enregistré dans le navigateur ; à l'ouverture, prix et options sont remis à jour depuis la base et ce qui n'existe plus est retiré.
-- Commande : nom, WhatsApp, ville, hôtel, jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
+- Commande : nom, **numéro de téléphone (WhatsApp)**, e-mail, ville, **rue et numéro (ou hôtel), étage, numéro d'appartement ou de chambre** — tous obligatoires : la commande n'est pas enregistrée (donc pas payée) tant qu'il en manque un, et le client est amené sur le champ à compléter ; code d'entrée facultatif ; jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
 - **Paiement à la commande** (Bit, PayBox, virement) : le client règle avant que le gérant commande sur Wolt. Les coordonnées de paiement ne sont jamais sur le site : le client les reçoit sur WhatsApp. Sa page de suivi dit où en est le paiement (en attente avec le montant, reçu, complément à régler, remboursement à venir).
 - **« Je ne trouve pas mon article »** : une demande libre, dans le panier ou seule (recherche sans résultat → « Demander cet article »). Le gérant cherche l'article, l'ajoute à la commande avec son prix ; rien n'est à régler avant.
 - **Pages d'information** : conditions générales de vente, confidentialité, mentions légales, contact (liens dans le pied de page ; les conditions sont rappelées au moment de commander). Le site **vouvoie** le client.
@@ -44,6 +44,16 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - **Ma journée** (la page de travail du gérant) : pour aujourd'hui ou demain, d'abord « Paiements à recevoir » (les commandes pas encore réglées, avec le bouton WhatsApp et « Paiement reçu ») — seules les commandes réglées entrent dans la liste Wolt ; puis (1) « À commander sur Wolt » : la liste de courses de toutes les commandes reçues, additionnée par boutique et par article (« 2 × Couches Huggies (Taille : 4) — n° 35, 36 »), à copier, et un bouton pour les marquer « commandées sur Wolt » ; (2) « Ma tournée » : les livraisons par créneau puis par ville, avec adresse, montant à encaisser et paiement, liens **Waze** et **WhatsApp « j'arrive »**, boutons « En route » et « Livrée » ; et le total à encaisser par mode de paiement.
 - **Livraison le soir** : par défaut, cinq créneaux de 19h à minuit. **Heure limite** (Réglages, 17:00 par défaut) : une commande passée avant est livrée le soir même — le temps que Wolt livre les articles au gérant dans la journée ; après, le soir suivant (le client voit pourquoi). Réglages → « Commandes par créneau » (0 = pas de limite) : un créneau qui a ce nombre de commandes non annulées est affiché « complet », le serveur refuse d'y ajouter une commande, et l'accueil annonce le prochain créneau libre. Réglages → « Jours où tu livres » (les autres ne sont pas proposés) et « Délai de préparation » (60 min par défaut : pour le soir même, un créneau n'est proposé que s'il commence au moins ce délai après la commande, le temps de commander sur Wolt et de préparer). Le serveur refuse un créneau devenu trop proche. L'accueil affiche « Livré le soir, 19h – 00h » et la prochaine livraison.
 - **Réglages** : tarif de base (frais de service, livraison, supplément express (0 = pas d'express), minimum de commande général), « Frais de service (livraison comprise) » en une seule ligne pour le client, pourboires proposés, modes de paiement, créneaux, ton WhatsApp, message d'accueil, ouverture et fermeture des commandes.
+
+## Langues
+
+Le site côté client existe en **français, anglais, russe, hébreu (de droite à gauche) et espagnol**. L'espace gérant reste en français.
+
+- **Quelle langue ?** Celle que le client a choisie (le globe de l'en-tête, le pied de page, ou « Langue » dans son espace client), gardée un an dans un cookie et dans son espace client ; sinon celle de son téléphone ; sinon le français. Se connecter à son espace sur un autre appareil y ramène sa langue.
+- **Ce qui est traduit** : toutes les pages (catalogue, panier, suivi, espace client, pages légales — avec la mention « la version française fait foi »), les messages d'erreur, l'e-mail de confirmation et le lien de connexion, et **les messages WhatsApp que tu envoies au client** depuis l'admin (écrits dans la langue de sa commande ; la fiche de la commande te dit laquelle). Tes e-mails et ton alerte Telegram restent en français.
+- **Ce qui ne l'est pas** : ce que tu saisis toi-même — noms et descriptions des articles, options, villes, créneaux, noms des tarifs, coordonnées de paiement. Les rayons de départ et le message d'accueil de départ sont traduits tant que tu ne les as pas renommés ou réécrits ; « Virement » aussi.
+- **Aucune traduction ne promet de répondre dans la langue du client** : seul le site français dit « service en français ».
+- Les textes sont dans `lib/i18n/` (un fichier par langue ; `fr.ts` est la référence). Vérifier une traduction : `npx tsx tests/outils/verifier-langue.ts he`. Le parcours `tests/navigateur/parcours-langues.mjs` vérifie les cinq langues dans un vrai navigateur.
 
 ## Apparence
 

@@ -37,11 +37,11 @@ try {
   verifier(!(await deborde(client)), "demande : pas de défilement horizontal");
   await client.getByLabel("Que vous faut-il ?").fill("1 parasol de plage, 2 m, bleu");
   await client.getByLabel("Votre nom").fill(NOM);
-  await client.getByLabel("Votre numéro WhatsApp").fill("+33 6 77 88 99 00");
+  await client.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 77 88 99 00");
   const email = `nathan${Date.now() % 100000}@exemple.test`;
   await client.getByLabel("Votre adresse e-mail").fill(email);
   await client.getByLabel("Ville").selectOption("Netanya");
-  await client.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Résidence Lagoon, appartement 14");
+  await client.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Résidence Lagoon, appartement 14"); await client.getByLabel("Étage", { exact: true }).fill("3"); await client.getByLabel("N° d'appartement ou de chambre").fill("12");
   // Le 4e jour proposé : aucun autre parcours n'y commande.
   await client.locator('input[name="dateLivraison"]').nth(3).check({ force: true });
   await client.getByText("Virement", { exact: true }).click();
@@ -205,10 +205,10 @@ try {
   await autre.screenshot({ path: `${OUT}/v7-5-creneau-complet.png`, fullPage: true });
   // Une commande forcée sur ce créneau (page restée ouverte, formulaire modifié) : le serveur refuse.
   await autre.getByLabel("Votre nom").fill("Client Tardif");
-  await autre.getByLabel("Votre numéro WhatsApp").fill("+33 6 01 02 03 04");
+  await autre.getByLabel("Votre numéro de téléphone (WhatsApp)").fill("+33 6 01 02 03 04");
   await autre.getByLabel("Votre adresse e-mail").fill(`tardif${Date.now() % 100000}@exemple.test`);
   await autre.getByLabel("Ville").selectOption("Netanya");
-  await autre.getByLabel("Adresse ou hôtel (avec n° de chambre)").fill("Hôtel Blue Bay, chambre 3");
+  await autre.getByLabel("Rue et numéro, ou nom de l'hôtel").fill("Hôtel Blue Bay, chambre 3"); await autre.getByLabel("Étage", { exact: true }).fill("3"); await autre.getByLabel("N° d'appartement ou de chambre").fill("12");
   await pleins.first().locator("input").evaluate((i) => { i.disabled = false; });
   await pleins.first().locator("input").check({ force: true });
   await autre.getByRole("button", { name: /^Commander/ }).click();

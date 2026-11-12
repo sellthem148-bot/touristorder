@@ -8,6 +8,8 @@ import { COULEUR_STATUT, LIBELLE_STATUT } from "@/lib/statuts";
 import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { lienWhatsapp } from "@/lib/whatsapp";
 import { lienWaze, messageJArrive, messagePourLeClient, prenomDe } from "@/lib/messages-client";
+import { langueDesMessages } from "@/lib/i18n";
+import { precisionsAdresse } from "@/lib/adresse";
 import { COULEUR_PAIEMENT, estReglee, etatDuPaiement, libelleDuSolde, libellePaiement, resteAPayer } from "@/lib/paiement";
 import { prixNonVerifie } from "@/lib/prix-indicatif";
 import { lireReglages } from "@/lib/reglages";
@@ -130,12 +132,14 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
             {enAttente.map((c) => {
               const paiement = etatDuPaiement(c);
               const solde = libelleDuSolde(paiement);
+              // Écrit dans la langue du client (celle du site quand il a commandé).
+              const langueClient = langueDesMessages(c.langue);
               const message = lienWhatsapp(
                 c.telephone,
                 messagePourLeClient(c.statut, {
                   prenom: prenomDe(c.nomClient), numero: c.numero, total: c.total, lienSuivi: `${site}/suivi/${c.jeton}`, site: NOM_DU_SITE,
-                  paiement, mode: c.paiement, coordonnees: reglages.coordonneesPaiement,
-                }),
+                  paiement, mode: langueClient.mode(c.paiement), coordonnees: reglages.coordonneesPaiement,
+                }, langueClient),
               );
               return (
                 <li key={c.id} className="space-y-2 p-3 text-sm">
@@ -249,8 +253,9 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                   const paiement = etatDuPaiement(c);
                   const jArrive = lienWhatsapp(
                     c.telephone,
-                    messageJArrive({ prenom: prenomDe(c.nomClient), numero: c.numero, reste: resteAPayer(c), mode: c.paiement, site: NOM_DU_SITE }),
+                    messageJArrive({ prenom: prenomDe(c.nomClient), numero: c.numero, reste: resteAPayer(c), mode: langueDesMessages(c.langue).mode(c.paiement), site: NOM_DU_SITE }, langueDesMessages(c.langue)),
                   );
+                  const precisions = precisionsAdresse(c);
                   return (
                     <li key={c.id} className="carte space-y-3 p-4">
                       <div className="flex flex-wrap items-center gap-2">
@@ -263,6 +268,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                       <div className="text-sm">
                         <p className="font-semibold">{c.nomClient} · {c.ville}</p>
                         <p className="whitespace-pre-line text-slate-700">{c.adresse}</p>
+                        {precisions && <p className="font-semibold text-slate-800">{precisions}</p>}
                         <p className="text-slate-500">
                           {nbArticles} article{nbArticles > 1 ? "s" : ""}
                           {c.paiement && <> · paiement <strong className="text-slate-700">{c.paiement}</strong></>}

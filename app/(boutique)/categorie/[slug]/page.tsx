@@ -5,30 +5,35 @@ import { GrilleProduits } from "@/components/CarteProduit";
 import { IconeRayon } from "@/components/IconeRayon";
 import { categoriesVisibles, produitsDeLaCategorie } from "@/lib/catalogue";
 import { NOM_DU_SITE } from "@/lib/marque";
+import { compter, remplir } from "@/lib/langues";
+import { nomDuRayon } from "@/lib/i18n/rayons";
+import { traduction } from "@/lib/traduction";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: PageProps<"/categorie/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const c = (await categoriesVisibles()).find((x) => x.slug === slug);
-  if (!c) return { title: "Catégorie" };
+  const [categories, { t }] = await Promise.all([categoriesVisibles(), traduction()]);
+  const c = categories.find((x) => x.slug === slug);
+  if (!c) return { title: t.categorie.titreDefaut };
+  const nom = nomDuRayon(c, t);
   return {
-    title: c.nom,
-    description: `${c.nom} : commandez en français, livraison le soir à votre logement ou à votre hôtel avec ${NOM_DU_SITE}.`,
+    title: nom,
+    description: remplir(t.categorie.metaDescription, { nom, site: NOM_DU_SITE }),
     alternates: { canonical: `/categorie/${c.slug}` },
   };
 }
 
 export default async function PageCategorie({ params }: PageProps<"/categorie/[slug]">) {
   const { slug } = await params;
-  const categories = await categoriesVisibles();
+  const [categories, { langue, t }] = await Promise.all([categoriesVisibles(), traduction()]);
   const c = categories.find((x) => x.slug === slug);
   if (!c) notFound();
   const produits = await produitsDeLaCategorie(slug);
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Catégories" className="rail">
+      <nav aria-label={t.categorie.navAria} className="rail">
         {categories.map((x) => (
           <Link
             key={x.id}
@@ -38,7 +43,7 @@ export default async function PageCategorie({ params }: PageProps<"/categorie/[s
               x.slug === slug ? "border-encre bg-encre text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
             }`}
           >
-            {x.nom}
+            {nomDuRayon(x, t)}
           </Link>
         ))}
       </nav>
@@ -47,12 +52,12 @@ export default async function PageCategorie({ params }: PageProps<"/categorie/[s
           <IconeRayon slug={c.slug} className="h-6 w-6" />
         </span>
         <div>
-          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{c.nom}</h1>
-          <p className="text-sm text-slate-500">{produits.length} article{produits.length > 1 ? "s" : ""}</p>
+          <h1 className="text-2xl font-bold leading-tight sm:text-3xl">{nomDuRayon(c, t)}</h1>
+          <p className="text-sm text-slate-500">{compter(langue, produits.length, t.commun.articles)}</p>
         </div>
       </header>
       {produits.length === 0 ? (
-        <p className="carte p-8 text-center text-slate-600">Aucun produit dans cette catégorie pour le moment.</p>
+        <p className="carte p-8 text-center text-slate-600">{t.categorie.vide}</p>
       ) : (
         <GrilleProduits produits={produits} />
       )}
