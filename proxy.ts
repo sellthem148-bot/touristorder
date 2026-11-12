@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { aiguiller, COOKIE_LANGUE, DUREE_COOKIE_LANGUE_S, ENTETE_LANGUE } from "@/lib/langues";
+import { aiguiller, COOKIE_LANGUE, ENTETE_LANGUE } from "@/lib/langues";
 
 /**
  * Une adresse par langue. Le français garde les adresses sans préfixe (« /panier ») ; « /he/panier » est
@@ -21,14 +21,12 @@ export function proxy(requete: NextRequest) {
   entetes.set(ENTETE_LANGUE, a.langue);
   if (a.action === "suivre") return NextResponse.next({ request: { headers: entetes } });
 
+  // Le cookie `langue` n'est JAMAIS posé ici : il ne garde que le choix du visiteur (le sélecteur de langue,
+  // `changerLangue`). Le poser à chaque adresse à préfixe défaisait ce choix : en production, les liens de la
+  // page encore affichée (« /ru/… ») sont préchargés en arrière-plan, juste après qu'il a choisi le français.
   const adresse = requete.nextUrl.clone();
   adresse.pathname = a.chemin;
-  const reponse = NextResponse.rewrite(adresse, { request: { headers: entetes } });
-  // La langue de l'adresse devient celle du visiteur : un lien sans préfixe (un ancien e-mail) le ramène dans sa langue.
-  if (cookie !== a.langue) {
-    reponse.cookies.set(COOKIE_LANGUE, a.langue, { path: "/", maxAge: DUREE_COOKIE_LANGUE_S, sameSite: "lax", secure: process.env.NODE_ENV === "production" });
-  }
-  return reponse;
+  return NextResponse.rewrite(adresse, { request: { headers: entetes } });
 }
 
 export const config = {
