@@ -175,5 +175,6 @@ En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fi
 
 - Paiement par carte bancaire en ligne (il faut un compte chez un prestataire de paiement israélien : PayPlus, Grow, Tranzila, CardCom…).
 - Facture fiscale : le reçu du site n'en est pas une ; elle se fait dans un logiciel de facturation agréé.
-- Plusieurs langues (anglais, hébreu).
+- Une adresse par langue pour les moteurs de recherche (`/en`, `/he`…) : aujourd'hui la langue suit le navigateur ou le choix du client, et Google ne lit que la version française.
+- Traduction automatique de ce que le gérant écrit lui-même dans l'admin (nouvel article, nouvelle ville).
 - Fiche produit détaillée et variantes (tailles).
