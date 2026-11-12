@@ -150,7 +150,7 @@ describe("articles de Dynamica (électronique)", () => {
   it("tous lots confondus : aucun nom en double, ni entre eux ni avec la base du catalogue", async () => {
     const { LOTS_WOLT } = await import("../prisma/remplissage");
     const tous = LOTS_WOLT.flatMap((l) => l.articles);
-    expect(tous).toHaveLength(556); // 207 + 73 + les 3 du relevé du 12 novembre + les 273 des captures du gérant
+    expect(tous).toHaveLength(745); // 207 + 73 + les 3 du relevé du 12 novembre + les 273 des premières captures du gérant + les 189 des suivantes
     expect(new Set(tous.map((a) => a.nom)).size).toBe(tous.length);
     expect(new Set(tous.map((a) => a.nomWolt)).size).toBe(tous.length);
     // « Poisson » : le rayon « Boucherie & poisson » renommé quand la viande a été retirée.

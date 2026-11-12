@@ -8,13 +8,14 @@ import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "../prisma/articles-
 import { VIANDE_ET_VOLAILLE } from "../prisma/retrait-viande";
 import { LOTS_WOLT, RELEVES_DE_PRIX } from "../prisma/remplissage";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
+import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
 
 const HEBREU = /[֐-׿]/;
 const DEJA_RELEVES = [...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_WOLT_FICHES];
 
 describe("relevé de prix du 12 novembre", () => {
   // Toutes les lignes de tous les relevés.
-  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE];
+  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS];
 
   it("chaque ligne vise un article que le code a installé, avec le prix qu'il lui avait posé", () => {
     for (const l of LIGNES) {
@@ -33,7 +34,7 @@ describe("relevé de prix du 12 novembre", () => {
   });
 
   it("chaque relevé a sa clé : un relevé ajouté plus tard s'applique sans rejouer les précédents", () => {
-    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE]);
+    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, RELEVE_DES_BOISSONS]);
     expect(new Set(RELEVES_DE_PRIX.map((r) => r.cle)).size).toBe(RELEVES_DE_PRIX.length);
     const c = changementsDuReleve([produit({ nom: "Filets de rouget barbet surgelés 400 g", prix: 2890 })], RELEVE_DU_POISSON_SURGELE);
     expect(c).toEqual([{ id: "Filets de rouget barbet surgelés 400 g", nom: "Filets de rouget barbet surgelés 400 g", data: { prix: 2290, prixAchat: 2290, nomWolt: "ברבוניה פילה קפוא - 400 גרם" } }]);

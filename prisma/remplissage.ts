@@ -14,6 +14,7 @@ import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
 import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-viande";
 import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
+import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./articles-wolt-captures-boissons";
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 
@@ -59,6 +60,8 @@ export const LOTS_WOLT: LotWolt[] = [
   { nom: "Wolt Market, relevé du 12 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_DU_12_NOVEMBRE, ordre: 600 },
   // Ce que montrent les captures du gérant et que le site ne vendait pas (sa demande : « rajoute-moi des produits »).
   { nom: "Wolt Market, captures du 12 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_DES_CAPTURES, ordre: 700 },
+  // Trois autres captures le même jour (« rajoute-moi ça, les prix et les images ») : boissons, électronique, capsules Nespresso.
+  { nom: "Wolt Market, captures du 12 novembre (boissons, électronique, Nespresso)", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, ordre: 800 },
 ];
 
 /**
@@ -224,11 +227,13 @@ export async function appliquerLeReleveDePrix(prisma: PrismaClient): Promise<str
 }
 
 export const CLE_RELEVE_DU_POISSON_SURGELE = "releve-prix-2026-11-12-poisson-surgele";
+export const CLE_RELEVE_DES_BOISSONS = "releve-prix-2026-11-12-boissons";
 
 /** Les relevés de prix, dans l'ordre : chacun a sa clé et ne s'applique qu'une fois. */
 export const RELEVES_DE_PRIX: { cle: string; titre: string; lignes: LigneDeReleve[] }[] = [
   { cle: CLE_RELEVE_DU_12_NOVEMBRE, titre: "Relevé de prix du 12 novembre", lignes: RELEVE_DU_12_NOVEMBRE },
   { cle: CLE_RELEVE_DU_POISSON_SURGELE, titre: "Relevé du poisson surgelé (12 novembre)", lignes: RELEVE_DU_POISSON_SURGELE },
+  { cle: CLE_RELEVE_DES_BOISSONS, titre: "Relevé des boissons (12 novembre)", lignes: RELEVE_DES_BOISSONS },
 ];
 
 async function appliquerUnReleve(prisma: PrismaClient, releve: (typeof RELEVES_DE_PRIX)[number]): Promise<string> {
