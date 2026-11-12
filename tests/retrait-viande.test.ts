@@ -35,7 +35,7 @@ describe("plus de viande ni de volaille (décision du gérant : cacherout)", () 
     for (const p of POISSONS_GARDES) expect(p, p).toMatch(/saumon|truite/i);
   });
 
-  it("aucun autre article du catalogue n'est de la viande : ce qui y ressemble est végétarien, du pain ou pour un animal", async () => {
+  it("aucun autre article du catalogue n'est de la viande : ce qui y ressemble est végétarien, du pain, du poisson ou pour un animal", async () => {
     const retires = new Set(VIANDE_ET_VOLAILLE);
     const suspects = (await leCatalogue())
       .filter((a) => !retires.has(a.nom))
@@ -51,6 +51,12 @@ describe("plus de viande ni de volaille (décision du gérant : cacherout)", () 
         "Boulettes de falafel surgelées Tivall 500 g",
         "Croquettes chien adulte Purina One bœuf 1,5 kg",
         "Croquettes chat adulte Purina One poulet 800 g",
+        // Du poisson (captures du rayon poisson, 12 novembre) : le poisson reste au catalogue.
+        "Merlu pané surgelé façon schnitzel, environ 480 g",
+        "Nuggets de merlu en tempura surgelés, environ 500 g",
+        "Kebabs de poisson 400 g",
+        "Schnitzel de filet de tilapia pané 450 g",
+        "Nuggets de filet de poisson en tempura 450 g",
       ].sort(),
     );
   });

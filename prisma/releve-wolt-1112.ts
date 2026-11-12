@@ -35,6 +35,17 @@ export const RELEVE_DU_12_NOVEMBRE: LigneDeReleve[] = [
   { nom: "Pain 100 % seigle complet tranché 500 g", nomWolt: "לחם שיפון 100% ברלין אגמי", prix: 16.9, ancien: 17.9 },
 ];
 
+/**
+ * Suite du relevé, d'après la capture du rayon poisson : trois articles SURGELÉS de la liste du gérant
+ * que cette page de Wolt montre aussi. Plutôt que de les ajouter en double, on note leur vrai prix.
+ */
+export const RELEVE_DU_POISSON_SURGELE: LigneDeReleve[] = [
+  { nom: "Filets de rouget barbet surgelés 400 g", nomWolt: "ברבוניה פילה קפוא - 400 גרם", prix: 22.9, ancien: 28.9 },
+  { nom: "Saumon Coho sauvage d'Alaska surgelé × 2", nomWolt: "סלמון קוהו מנות זוגות עם עור קפוא - 400 גרם", prix: 41.9, ancien: 39.9 },
+  // « Dagim » est le mot « דגים » (poissons) du nom de Wolt.
+  { nom: "Bâtonnets de poisson pané Dagim 400 g", nomWolt: "צ'ונגו דגים", prix: 28.9, ancien: 23.9 },
+];
+
 export type Remplacement = {
   /** Le nom de l'article de la liste du gérant, que Wolt ne vend pas tel quel. */
   ancien: string;

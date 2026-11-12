@@ -6,15 +6,18 @@ import { ARTICLES_DYNAMICA } from "../prisma/articles-dynamica";
 import { ARTICLES_WOLT_FICHES } from "../prisma/articles-wolt-fiches";
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE } from "../prisma/articles-liste";
 import { VIANDE_ET_VOLAILLE } from "../prisma/retrait-viande";
-import { LOTS_WOLT } from "../prisma/remplissage";
-import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
+import { LOTS_WOLT, RELEVES_DE_PRIX } from "../prisma/remplissage";
+import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
 
 const HEBREU = /[֐-׿]/;
 const DEJA_RELEVES = [...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_WOLT_FICHES];
 
 describe("relevé de prix du 12 novembre", () => {
+  // Toutes les lignes de tous les relevés.
+  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE];
+
   it("chaque ligne vise un article que le code a installé, avec le prix qu'il lui avait posé", () => {
-    for (const l of RELEVE_DU_12_NOVEMBRE) {
+    for (const l of LIGNES) {
       const releve = DEJA_RELEVES.find((a) => a.nom === l.nom);
       const liste = ARTICLES_MIS_EN_VENTE.find((a) => a.nom === l.nom);
       expect(releve || liste, l.nom).toBeTruthy();
@@ -25,8 +28,15 @@ describe("relevé de prix du 12 novembre", () => {
       expect(l.nomWolt).toMatch(HEBREU);
       expect(VIANDE_ET_VOLAILLE).not.toContain(l.nom);
     }
-    expect(new Set(RELEVE_DU_12_NOVEMBRE.map((l) => l.nom)).size).toBe(RELEVE_DU_12_NOVEMBRE.length);
-    expect(new Set(RELEVE_DU_12_NOVEMBRE.map((l) => l.nomWolt)).size).toBe(RELEVE_DU_12_NOVEMBRE.length);
+    expect(new Set(LIGNES.map((l) => l.nom)).size).toBe(LIGNES.length);
+    expect(new Set(LIGNES.map((l) => l.nomWolt)).size).toBe(LIGNES.length);
+  });
+
+  it("chaque relevé a sa clé : un relevé ajouté plus tard s'applique sans rejouer les précédents", () => {
+    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE]);
+    expect(new Set(RELEVES_DE_PRIX.map((r) => r.cle)).size).toBe(RELEVES_DE_PRIX.length);
+    const c = changementsDuReleve([produit({ nom: "Filets de rouget barbet surgelés 400 g", prix: 2890 })], RELEVE_DU_POISSON_SURGELE);
+    expect(c).toEqual([{ id: "Filets de rouget barbet surgelés 400 g", nom: "Filets de rouget barbet surgelés 400 g", data: { prix: 2290, prixAchat: 2290, nomWolt: "ברבוניה פילה קפוא - 400 גרם" } }]);
   });
 
   const produit = (p: Partial<ProduitReleve> & { nom: string }): ProduitReleve => ({ id: p.nom, nomWolt: "", prix: 0, prixAchat: null, ...p });
@@ -56,7 +66,7 @@ describe("relevé de prix du 12 novembre", () => {
   });
 
   it("les prix relevés sont en agorot entiers", () => {
-    for (const l of RELEVE_DU_12_NOVEMBRE) expect(Number.isInteger(enAgorot(l.prix)) && Number.isInteger(enAgorot(l.ancien)), l.nom).toBe(true);
+    for (const l of LIGNES) expect(Number.isInteger(enAgorot(l.prix)) && Number.isInteger(enAgorot(l.ancien)), l.nom).toBe(true);
   });
 });
 
@@ -80,9 +90,9 @@ describe("mise en ligne", () => {
     const preparer = readFileSync("prisma/preparer.ts", "utf8");
     expect(preparer.indexOf("appliquerLeReleveDePrix(prisma)")).toBeGreaterThan(preparer.indexOf("mettreEnVenteLaListe(prisma)"));
     const remplissage = readFileSync("prisma/remplissage.ts", "utf8");
-    const corps = remplissage.slice(remplissage.indexOf("export async function appliquerLeReleveDePrix"), remplissage.indexOf("export const CLE_RETRAIT_VIANDE"));
-    expect(corps).toContain("operationFaite(prisma, CLE_RELEVE_DU_12_NOVEMBRE)");
-    expect(corps).toContain("noterOperation(prisma, CLE_RELEVE_DU_12_NOVEMBRE)");
+    const corps = remplissage.slice(remplissage.indexOf("async function appliquerUnReleve"), remplissage.indexOf("export const CLE_REMPLACEMENTS_DU_12_NOVEMBRE"));
+    expect(corps).toContain("operationFaite(prisma, releve.cle)");
+    expect(corps).toContain("noterOperation(prisma, releve.cle)");
   });
 });
 

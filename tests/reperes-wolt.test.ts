@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { DOSSIER_DES_REPERES, PHOTOS_REPERE, estPhotoRepere, photoRepere } from "@/lib/reperes-wolt";
 import { repereWolt } from "@/lib/repere-wolt";
 import { LOTS_WOLT } from "../prisma/remplissage";
-import { RELEVE_DU_12_NOVEMBRE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
+import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 
 const fichiersDe = (dossier: string): string[] =>
   readdirSync(dossier, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? fichiersDe(path.join(dossier, e.name)) : [path.join(dossier, e.name)]));
@@ -26,7 +26,7 @@ describe("photos repère", () => {
 
   it("chaque photo est celle d'un article du site, avec son nom exact sur Wolt", () => {
     const connus = new Map<string, string>();
-    for (const a of [...LOTS_WOLT.flatMap((l) => l.articles), ...RELEVE_DU_12_NOVEMBRE, ...REMPLACEMENTS_DU_12_NOVEMBRE]) connus.set(a.nom, a.nomWolt);
+    for (const a of [...LOTS_WOLT.flatMap((l) => l.articles), ...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...REMPLACEMENTS_DU_12_NOVEMBRE]) connus.set(a.nom, a.nomWolt);
     for (const p of PHOTOS_REPERE) expect(connus.get(p.nom), p.nom).toBe(p.nomWolt);
   });
 

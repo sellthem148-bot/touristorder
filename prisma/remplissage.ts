@@ -13,7 +13,8 @@ import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fi
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from "./articles-liste";
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
 import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-viande";
-import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve } from "./releve-wolt-1112";
+import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
+import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -55,6 +56,8 @@ export const LOTS_WOLT: LotWolt[] = [
   { nom: "Dynamica", boutique: BOUTIQUE_DYNAMICA, articles: ARTICLES_DYNAMICA },
   { nom: "Wolt Market, fiches du 11 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_FICHES, ordre: 500 },
   { nom: "Wolt Market, relevé du 12 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_DU_12_NOVEMBRE, ordre: 600 },
+  // Ce que montrent les captures du gérant et que le site ne vendait pas (sa demande : « rajoute-moi des produits »).
+  { nom: "Wolt Market, captures du 12 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_DES_CAPTURES, ordre: 700 },
 ];
 
 /**
@@ -64,12 +67,17 @@ export const LOTS_WOLT: LotWolt[] = [
  */
 async function rayonsDe(prisma: PrismaClient, noms: Iterable<string>): Promise<Map<string, string>> {
   const connus = new Map([...CATEGORIES, ...CATEGORIES_WOLT].map((c, i) => [c.nom as string, { emoji: c.emoji, ordre: "ordre" in c ? c.ordre : (i + 1) * 10 }]));
+  // « Poisson » est le rayon « Boucherie & poisson » renommé quand la viande a été retirée : sur une base
+  // où il porte encore son premier nom, c'est lui — on ne crée jamais un second rayon de poisson.
+  connus.set(RAYON_POISSON.nom, connus.get(RAYON_BOUCHERIE)!);
+  const trouver = (nom: string) => prisma.categorie.findFirst({ where: { OR: [{ nom }, { slug: slugDe(nom) }] }, select: { id: true } });
   const ids = new Map<string, string>();
   for (const nom of new Set(noms)) {
     const rayon = connus.get(nom);
     if (!rayon) throw new Error(`Rayon inconnu : ${nom}`);
     const c =
-      (await prisma.categorie.findFirst({ where: { OR: [{ nom }, { slug: slugDe(nom) }] }, select: { id: true } })) ??
+      (await trouver(nom)) ??
+      (nom === RAYON_POISSON.nom ? await trouver(RAYON_BOUCHERIE) : null) ??
       (await prisma.categorie.create({ data: { nom, emoji: rayon.emoji, slug: slugDe(nom), ordre: rayon.ordre }, select: { id: true } }));
     ids.set(nom, c.id);
   }
@@ -209,20 +217,34 @@ export const CLE_RELEVE_DU_12_NOVEMBRE = "releve-prix-2026-11-12";
  * de l'article sur Wolt est noté s'il manquait.
  */
 export async function appliquerLeReleveDePrix(prisma: PrismaClient): Promise<string> {
-  const faite = await operationFaite(prisma, CLE_RELEVE_DU_12_NOVEMBRE);
-  if (faite === null) return "Relevé de prix du 12 novembre : réglages pas encore créés, rien de changé.";
-  if (faite) return "Relevé de prix du 12 novembre : déjà appliqué, rien de changé.";
+  const bilans: string[] = [];
+  for (const releve of RELEVES_DE_PRIX) bilans.push(await appliquerUnReleve(prisma, releve));
+  return bilans.join(" ");
+}
+
+export const CLE_RELEVE_DU_POISSON_SURGELE = "releve-prix-2026-11-12-poisson-surgele";
+
+/** Les relevés de prix, dans l'ordre : chacun a sa clé et ne s'applique qu'une fois. */
+export const RELEVES_DE_PRIX: { cle: string; titre: string; lignes: LigneDeReleve[] }[] = [
+  { cle: CLE_RELEVE_DU_12_NOVEMBRE, titre: "Relevé de prix du 12 novembre", lignes: RELEVE_DU_12_NOVEMBRE },
+  { cle: CLE_RELEVE_DU_POISSON_SURGELE, titre: "Relevé du poisson surgelé (12 novembre)", lignes: RELEVE_DU_POISSON_SURGELE },
+];
+
+async function appliquerUnReleve(prisma: PrismaClient, releve: (typeof RELEVES_DE_PRIX)[number]): Promise<string> {
+  const faite = await operationFaite(prisma, releve.cle);
+  if (faite === null) return `${releve.titre} : réglages pas encore créés, rien de changé.`;
+  if (faite) return `${releve.titre} : déjà appliqué, rien de changé.`;
   const produits = await prisma.produit.findMany({
-    where: { OR: [{ nom: { in: RELEVE_DU_12_NOVEMBRE.map((l) => l.nom) } }, { nomWolt: { in: RELEVE_DU_12_NOVEMBRE.map((l) => l.nomWolt) } }] },
+    where: { OR: [{ nom: { in: releve.lignes.map((l) => l.nom) } }, { nomWolt: { in: releve.lignes.map((l) => l.nomWolt) } }] },
     select: { id: true, nom: true, nomWolt: true, prix: true, prixAchat: true },
   });
-  const changements = changementsDuReleve(produits);
+  const changements = changementsDuReleve(produits, releve.lignes);
   await prisma.$transaction([
     ...changements.map((c) => prisma.produit.update({ where: { id: c.id }, data: c.data })),
-    noterOperation(prisma, CLE_RELEVE_DU_12_NOVEMBRE),
+    noterOperation(prisma, releve.cle),
   ]);
   const prix = changements.filter((c) => c.data.prix !== undefined).length;
-  return `Relevé de prix du 12 novembre : ${prix} prix mis à jour sur ${RELEVE_DU_12_NOVEMBRE.length} relevés (les autres ont été fixés par le gérant, ou l'article n'existe plus) ; ${changements.length - prix} nom(s) Wolt noté(s) sans toucher au prix.`;
+  return `${releve.titre} : ${prix} prix mis à jour sur ${releve.lignes.length} relevés (les autres ont été fixés par le gérant, ou l'article n'existe plus) ; ${changements.length - prix} nom(s) Wolt noté(s) sans toucher au prix.`;
 }
 
 export const CLE_REMPLACEMENTS_DU_12_NOVEMBRE = "remplacements-2026-11-12";

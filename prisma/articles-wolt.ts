@@ -18,6 +18,8 @@ export const CATEGORIES_WOLT = [
 
 export type CategorieWolt =
   | (typeof CATEGORIES_WOLT)[number]["nom"]
+  // Le rayon « Boucherie & poisson » depuis que la viande est retirée (prisma/retrait-viande.ts).
+  | "Poisson"
   | "Courses & épicerie"
   | "Boissons"
   | "Fruits & légumes"
