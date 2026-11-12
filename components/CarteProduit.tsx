@@ -10,12 +10,19 @@ import { FicheProduit } from "./FicheProduit";
 import { useTraduction } from "./LangueProvider";
 import { remplir } from "@/lib/langues";
 
+// Le bouton posé dans le coin de la photo : arrondi comme elle côté coin, et à l'opposé (la forme de Wolt).
+const COIN = "rounded-ss-xl rounded-ee-xl";
+
 function articleSansOptions(p: ProduitPublic) {
   return { produitId: p.id, nom: p.nom, optionsLibelle: "", prix: p.prix, photoUrl: p.photoUrl, emoji: p.categorie.emoji };
 }
 
-/** Le bouton d'ajout, en bas à droite de la ligne : « + », ou la quantité déjà au panier. */
-function BoutonRapide({ produit, ouvrir }: { produit: ProduitPublic; ouvrir: () => void }) {
+/**
+ * Le bouton d'ajout : « + », ou la quantité déjà au panier.
+ * - `surPhoto` : posé dans le coin de la photo, comme sur Wolt, aux couleurs du site (encre, « + » blanc) ;
+ * - sinon (article sans photo) : en bas à droite de la ligne.
+ */
+function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitPublic; ouvrir: () => void; surPhoto?: boolean }) {
   const panier = usePanier();
   const { t } = useTraduction();
   if (produit.epuise) return null;
@@ -24,11 +31,11 @@ function BoutonRapide({ produit, ouvrir }: { produit: ProduitPublic; ouvrir: () 
 
   if (!avecOptions && quantite > 0) {
     return (
-      <div className="flex items-center rounded-xl bg-encre text-white">
+      <div className={`flex items-center bg-encre text-white ${surPhoto ? COIN : "rounded-xl"}`}>
         <button
           type="button"
           onClick={() => panier.changerQuantite(produit.id, quantite - 1)}
-          className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-white/10"
+          className={`flex h-9 items-center justify-center hover:bg-white/10 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
           aria-label={remplir(t.produit.retirerUn, { nom: produit.nom })}
         >
           <Minus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
@@ -37,7 +44,7 @@ function BoutonRapide({ produit, ouvrir }: { produit: ProduitPublic; ouvrir: () 
         <button
           type="button"
           onClick={() => panier.ajouter(articleSansOptions(produit))}
-          className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-white/10"
+          className={`flex h-9 items-center justify-center hover:bg-white/10 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
           aria-label={remplir(t.produit.ajouterUn, { nom: produit.nom })}
         >
           <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
@@ -51,9 +58,13 @@ function BoutonRapide({ produit, ouvrir }: { produit: ProduitPublic; ouvrir: () 
     <button
       type="button"
       onClick={() => (avecOptions ? ouvrir() : panier.ajouter(articleSansOptions(produit)))}
-      className={`flex h-9 min-w-9 items-center justify-center rounded-xl border px-2 text-sm font-bold tabular-nums transition active:scale-95 ${
-        dejaChoisi ? "border-encre bg-encre text-white" : "border-slate-300 bg-white text-encre hover:border-encre hover:bg-slate-50"
-      }`}
+      className={
+        surPhoto
+          ? `flex h-9 min-w-9 items-center justify-center bg-encre px-2 text-sm font-bold tabular-nums text-white transition hover:bg-encre/90 active:scale-95 ${COIN}`
+          : `flex h-9 min-w-9 items-center justify-center rounded-xl border px-2 text-sm font-bold tabular-nums transition active:scale-95 ${
+              dejaChoisi ? "border-encre bg-encre text-white" : "border-slate-300 bg-white text-encre hover:border-encre hover:bg-slate-50"
+            }`
+      }
       aria-label={remplir(avecOptions ? t.produit.choisirOptions : t.produit.ajouterAuPanier, { nom: produit.nom })}
     >
       {dejaChoisi ? quantite : <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />}
@@ -64,6 +75,8 @@ function BoutonRapide({ produit, ouvrir }: { produit: ProduitPublic; ouvrir: () 
 /**
  * Un article, présenté comme une ligne de menu : le nom, le format, le prix — et la photo
  * seulement quand il y en a une. Toute la ligne ouvre la fiche ; le bouton ajoute au panier.
+ * Avec une photo : elle est au début de la ligne et porte le bouton « + » dans son coin, comme sur Wolt.
+ * Sans photo : pas d'image de remplacement, le bouton reste en bas à droite.
  */
 export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitPublic; sansBadge?: boolean }) {
   const [ouvert, setOuvert] = useState(false);
@@ -71,37 +84,43 @@ export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitP
   const detail = produit.description || (produit.options.length > 0 ? remplir(t.produit.auChoix, { options: produit.options.map((g) => g.affiche ?? g.nom).join(", ") }) : "");
 
   return (
-    <article className={`relative flex min-h-[5.75rem] flex-col rounded-2xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-400 ${produit.epuise ? "bg-slate-50" : ""}`}>
-      <div className="flex gap-3">
-        <div className="min-w-0 flex-1">
-          {((produit.badge && !sansBadge) || produit.epuise) && (
-            <p className="mb-1 flex flex-wrap gap-1">
-              {!sansBadge && <PastilleBadge badge={produit.badge} libelle={produit.badge ? t.produit.badges[produit.badge] : undefined} />}
-              {produit.epuise && <span className="inline-block rounded-md bg-slate-200 px-1.5 py-0.5 text-[10.5px] font-semibold uppercase leading-4 tracking-wide text-slate-700">{t.produit.epuise}</span>}
-            </p>
-          )}
-          <h3 className={`text-[15px] font-semibold leading-snug ${produit.epuise ? "text-slate-500" : "text-encre"}`}>
-            {/* Le bouton s'étend à toute la ligne (after:inset-0). */}
-            <button type="button" onClick={() => setOuvert(true)} className="line-clamp-2 text-start after:absolute after:inset-0 after:rounded-2xl" aria-label={remplir(t.produit.voir, { nom: produit.nom })}>
-              {/* <bdi> : un nom en français garde son ordre dans une page en hébreu. */}
-              <bdi>{produit.nom}</bdi>
-            </button>
-          </h3>
-          {detail && <p className="mt-0.5 line-clamp-1 text-[13px] text-slate-500"><bdi>{detail}</bdi></p>}
-        </div>
-        {produit.photoUrl && (
+    <article className={`relative flex min-h-[5.75rem] gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-400 ${produit.epuise ? "bg-slate-50" : ""}`}>
+      {produit.photoUrl && (
+        <div className="relative shrink-0 self-start">
           <img
             src={produit.photoUrl}
             alt=""
             loading="lazy"
-            className={`h-16 w-16 shrink-0 rounded-xl border border-slate-200 bg-white object-contain ${produit.epuise ? "opacity-50 grayscale" : ""}`}
+            className={`h-24 w-24 rounded-xl border border-slate-200 bg-white object-contain ${produit.epuise ? "opacity-50 grayscale" : ""}`}
           />
+          {/* Le « + » dans le coin de la photo (côté début de ligne : en haut à gauche en français). */}
+          <div className="absolute start-0 top-0 z-10">
+            <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} surPhoto />
+          </div>
+        </div>
+      )}
+      <div className="flex min-w-0 flex-1 flex-col">
+        {((produit.badge && !sansBadge) || produit.epuise) && (
+          <p className="mb-1 flex flex-wrap gap-1">
+            {!sansBadge && <PastilleBadge badge={produit.badge} libelle={produit.badge ? t.produit.badges[produit.badge] : undefined} />}
+            {produit.epuise && <span className="inline-block rounded-md bg-slate-200 px-1.5 py-0.5 text-[10.5px] font-semibold uppercase leading-4 tracking-wide text-slate-700">{t.produit.epuise}</span>}
+          </p>
         )}
-      </div>
-      <div className="mt-auto flex items-end justify-between gap-3 pt-2">
-        <Prix prix={produit.prix} prixBarre={produit.prixBarre} langue={langue} auLieuDe={t.produit.auLieuDe} />
-        <div className="relative z-10">
-          <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} />
+        <h3 className={`text-[15px] font-semibold leading-snug ${produit.epuise ? "text-slate-500" : "text-encre"}`}>
+          {/* Le bouton s'étend à toute la ligne (after:inset-0). */}
+          <button type="button" onClick={() => setOuvert(true)} className="line-clamp-2 text-start after:absolute after:inset-0 after:rounded-2xl" aria-label={remplir(t.produit.voir, { nom: produit.nom })}>
+            {/* <bdi> : un nom en français garde son ordre dans une page en hébreu. */}
+            <bdi>{produit.nom}</bdi>
+          </button>
+        </h3>
+        {detail && <p className="mt-0.5 line-clamp-1 text-[13px] text-slate-500"><bdi>{detail}</bdi></p>}
+        <div className="mt-auto flex items-end justify-between gap-3 pt-2">
+          <Prix prix={produit.prix} prixBarre={produit.prixBarre} langue={langue} auLieuDe={t.produit.auLieuDe} />
+          {!produit.photoUrl && (
+            <div className="relative z-10">
+              <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} />
+            </div>
+          )}
         </div>
       </div>
       {ouvert && <FicheProduit produit={produit} fermer={() => setOuvert(false)} />}
