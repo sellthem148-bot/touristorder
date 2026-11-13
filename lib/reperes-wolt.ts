@@ -1,5 +1,5 @@
 // Les photos repère du gérant : la photo que Wolt montre pour un article, découpée dans SES captures
-// d'écran de Wolt Market (relevé du 12 novembre 2026). Elles l'aident à reconnaître un article qu'il ne
+// d'écran de Wolt Market (relevé du 12 novembre 2026) et de Dynamica (13 novembre). Elles l'aident à reconnaître un article qu'il ne
 // connaît pas, pour le retrouver sur Wolt et pour chercher ou prendre sa propre photo.
 //
 // RÉSERVÉES À L'ESPACE GÉRANT : ces photos appartiennent à Wolt et aux marques. Elles ne sont pas dans
@@ -568,6 +568,34 @@ export const PHOTOS_REPERE: PhotoRepere[] = [
   { nom: "Coca-Cola Zero 1 L", nomWolt: "קוקה קולה זירו בקבוק - 1 ליטר", fichier: "coca-cola-zero-1-l.jpg" },
   { nom: "Eau minérale Neviot 1,5 L", nomWolt: "נביעות מים מינרליים בקבוק - 1.5 ליטר", fichier: "eau-minerale-neviot-1-5-l.jpg" },
   { nom: "Eau minérale Ein Gedi 2 L", nomWolt: "עין גדי מים מינרליים בקבוק - 2 ליטר", fichier: "eau-minerale-ein-gedi-2-l.jpg" },
+  // Dynamica Netanya : capture du 13 novembre 2026 (page « Les plus commandés »).
+  { nom: "Samsung Galaxy A07 64 Go noir", nomWolt: "סמסונג גלקסי Samsung Galaxy A07 64GB | שחור", fichier: "samsung-galaxy-a07-64-go-noir.jpg" },
+  { nom: "Chargeur Apple 20 W USB-C", nomWolt: "Apple | 20W | USB-C", fichier: "chargeur-apple-20-w-usb-c.jpg" },
+  { nom: "Manette PS5 DualSense rouge", nomWolt: "בקר אלחוטי Dualsense PS5 V3 | אדום", fichier: "manette-ps5-dualsense-rouge.jpg" },
+  { nom: "Alimentation pour routeur noir", nomWolt: "שנאי נתב | שחור", fichier: "alimentation-pour-routeur-noir.jpg" },
+  { nom: "Écouteurs sans fil Samsung Galaxy Buds Core noir", nomWolt: "אוזניות אלחוטיות Samsung Galaxy Buds Core | שחור", fichier: "ecouteurs-sans-fil-samsung-galaxy-buds-core-noir.jpg" },
+  { nom: "Télécommande MB Pro pour décodeur MasterBox", nomWolt: "שלט MB PRO לממיר MasterBox SEI500C ATV 4K", fichier: "telecommande-mb-pro-pour-decodeur-masterbox.jpg" },
+  { nom: "Tablette Samsung Galaxy Tab A11 8,7 pouces Wi-Fi gris", nomWolt: "טאבלט Galaxy Tab A11 8.7 WIFI | אפור", fichier: "tablette-samsung-galaxy-tab-a11-8-7-pouces-wi-fi-gris.jpg" },
+  { nom: "Écouteurs filaires d'origine Samsung AKG noir", nomWolt: "אוזניות חוטיות מקוריות Samsung AKG | שחור", fichier: "ecouteurs-filaires-d-origine-samsung-akg-noir.jpg" },
+  { nom: "Chargeur USB-C 25 W blanc", nomWolt: "ראש מטען 25W | type c | לבן", fichier: "chargeur-usb-c-25-w-blanc.jpg" },
+  { nom: "Chargeur Samsung 25 W + câble USB-C noir", nomWolt: "ראש מטען 25W + כבל Samsung Charger C to C | שחור", fichier: "chargeur-samsung-25-w-cable-usb-c-noir.jpg" },
+  { nom: "Étui silicone pour AirPods 4 rose", nomWolt: "כיסוי סיליקון לאוזניות Essentials CaseGuard Airpods 4 | ורוד", fichier: "etui-silicone-pour-airpods-4-rose.jpg" },
+  { nom: "Écouteurs filaires Samsung AKG jack 3,5 mm noir", nomWolt: "אוזניות סמסונג Samsung AKG Earphone 3.5 | שחור", fichier: "ecouteurs-filaires-samsung-akg-jack-3-5-mm-noir.jpg" },
+  { nom: "Verre trempé anti-regards PG Glass iPhone 17/18 Pro", nomWolt: "מגן מסך זכוכית כהה | PG Glass Privacy iPhone 17/18 Pro", fichier: "verre-trempe-anti-regards-pg-glass-iphone-17-18-pro.jpg" },
+  { nom: "Batterie externe magnétique Samsung blanc", nomWolt: "Samsung Magnetic Battery סוללת טעינה מגנטית | לבן", fichier: "batterie-externe-magnetique-samsung-blanc.jpg" },
+  { nom: "Enceinte Bluetooth JBL Flip 7 rouge", nomWolt: "רמקול אלחוטי JBL FLIP 7 | אדום", fichier: "enceinte-bluetooth-jbl-flip-7-rouge.jpg" },
+  { nom: "Enceinte Bluetooth JBL Charge 6 rouge", nomWolt: "רמקול אלחוטי JBL CHARGE 6 | אדום", fichier: "enceinte-bluetooth-jbl-charge-6-rouge.jpg" },
+  { nom: "Écouteurs sans fil Samsung Galaxy Buds Core blanc", nomWolt: "אוזניות אלחוטיות Samsung Galaxy Buds Core | לבן", fichier: "ecouteurs-sans-fil-samsung-galaxy-buds-core-blanc.jpg" },
+  { nom: "Chargeur rapide PureGear 45 W USB-C noir", nomWolt: "ראש מטען קיר מהיר PureGear Type C + 45W | שחור", fichier: "chargeur-rapide-puregear-45-w-usb-c-noir.jpg" },
+  { nom: "Manette Xbox sans fil rouge", nomWolt: "בקר אלחוטי XBOX Series 2026 X | S למחשב, אנדרואיד ו-iOS", fichier: "manette-xbox-sans-fil-rouge.jpg" },
+  { nom: "Écouteurs filaires d'origine Samsung AKG blanc", nomWolt: "אוזניות חוטיות מקוריות Samsung AKG | לבן", fichier: "ecouteurs-filaires-d-origine-samsung-akg-blanc.jpg" },
+  { nom: "Coque transparente Hard Shell iPhone 17/18 Pro", nomWolt: "Hard Shell M.S iPhone 18/17 Pro כיסוי אחורי | שקוף", fichier: "coque-transparente-hard-shell-iphone-17-18-pro.jpg" },
+  { nom: "Enceinte Bluetooth JBL Grip noir", nomWolt: "רמקול אלחוטי שחור JBL GRIP | שחור", fichier: "enceinte-bluetooth-jbl-grip-noir.jpg" },
+  { nom: "Kit Samsung Galaxy S25 : coque React + verre trempé", nomWolt: "קיט S25 כיסוי אחורי React ומגן מסך זכוכית | שקוף", fichier: "kit-samsung-galaxy-s25-coque-react-verre-trempe.jpg" },
+  { nom: "Verre trempé PG Glass iPhone 16/17/18 Pro Max", nomWolt: "PG Glass iPhone 16/17/18 Pro Max מגן מסך זכוכית | שקוף", fichier: "verre-trempe-pg-glass-iphone-16-17-18-pro-max.jpg" },
+  { nom: "Casque sans fil PS5 Pulse Elite noir", nomWolt: "אוזניות אלחוטיות PS5 Pulse Elite | שחור", fichier: "casque-sans-fil-ps5-pulse-elite-noir.jpg" },
+  { nom: "Verre trempé anti-regards PG Glass iPhone 17/18 Pro Max", nomWolt: "מגן מסך זכוכית כהה | PG Glass Privacy iPhone 17/18 Pro Max", fichier: "verre-trempe-anti-regards-pg-glass-iphone-17-18-pro-max.jpg" },
+  { nom: "Verre trempé OtterBox iPhone 17/18 Pro", nomWolt: "OtterBox Glass iPhone 17/18 Pro מגן מסך זכוכית | שקוף", fichier: "verre-trempe-otterbox-iphone-17-18-pro.jpg" },
 ];
 
 export const DOSSIER_DES_REPERES = "prive/reperes-wolt";

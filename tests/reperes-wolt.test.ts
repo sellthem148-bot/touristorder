@@ -31,6 +31,15 @@ describe("photos repère", () => {
     for (const p of PHOTOS_REPERE) expect(connus.get(p.nom), p.nom).toBe(p.nomWolt);
   });
 
+  it("Dynamica (capture du 13 novembre) : la photo de chaque article que la page montrait — 27 sur 30", () => {
+    const dynamica = LOTS_WOLT.find((l) => l.nom === "Dynamica")!.articles;
+    expect(dynamica).toHaveLength(30);
+    const sansPhoto = dynamica.filter((a) => photoRepere(a.nom, a.nomWolt) == null).map((a) => a.nom);
+    // Trois articles n'étaient plus sur la page « Les plus commandés » ce jour-là.
+    expect(sansPhoto.sort()).toEqual(["Coque MagSafe transparente Dualtek iPhone 17 Pro Max", "Verre trempé OtterBox iPhone 17/18 Pro Max", "Verre trempé anti-regards PG Glass iPhone 17 Pro"]);
+    expect(photoRepere("Chargeur Apple 20 W USB-C", "Apple | 20W | USB-C")).toBe("/admin/repere/chargeur-apple-20-w-usb-c.jpg");
+  });
+
   it("un article est reconnu à son nom sur Wolt (même renommé), sinon à son nom ; un autre n'a pas de photo", () => {
     const lait = PHOTOS_REPERE.find((p) => p.nom === "Lait Tnuva 3 % 1 L")!;
     expect(photoRepere("Mon lait préféré", lait.nomWolt)).toBe(`/admin/repere/${lait.fichier}`);
