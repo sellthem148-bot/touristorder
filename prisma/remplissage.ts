@@ -315,8 +315,8 @@ export const CLE_RETRAIT_INTROUVABLES = "retrait-introuvables-2026-11-12";
 
 /**
  * Cinq articles de la liste du gérant que Wolt ne vend pas : retirés de la vente (sa décision, 12 novembre
- * 2026). Une seule fois, et MASQUÉS plutôt que supprimés : un article supprimé reviendrait à la prochaine
- * installation de la liste. Un article qu'il remet en vente ensuite y reste.
+ * 2026). Une seule fois, et d'abord seulement MASQUÉS ; il les a fait supprimer le lendemain
+ * (`supprimerLesIntrouvables`).
  */
 export async function retirerLesIntrouvables(prisma: PrismaClient): Promise<string> {
   const faite = await operationFaite(prisma, CLE_RETRAIT_INTROUVABLES);
@@ -327,6 +327,26 @@ export async function retirerLesIntrouvables(prisma: PrismaClient): Promise<stri
     noterOperation(prisma, CLE_RETRAIT_INTROUVABLES),
   ]);
   return `Articles introuvables sur Wolt : ${retires.count} retiré(s) de la vente (masqués).`;
+}
+
+export const CLE_SUPPRESSION_INTROUVABLES = "suppression-introuvables-2026-11-13";
+
+/**
+ * Les cinq articles introuvables sur Wolt, supprimés pour de bon : la demande du gérant (13 novembre 2026,
+ * « enlève »), qui les avait déjà fait retirer la veille — masqués, ils restaient dans son espace.
+ * Une seule fois, et ces cinq noms seulement. Les commandes passées gardent leur copie de l'article (nom,
+ * prix : `LigneCommande.produitId` se vide). Ils ne reviennent pas : sa liste ne s'installe qu'une fois
+ * (`installerLaListeDuGerant`) ; sur une base neuve, elle les installe et cette opération les supprime.
+ */
+export async function supprimerLesIntrouvables(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_SUPPRESSION_INTROUVABLES);
+  if (faite === null) return "Articles introuvables sur Wolt : réglages pas encore créés, rien supprimé.";
+  if (faite) return "Articles introuvables sur Wolt : déjà supprimés, rien de changé.";
+  const [supprimes] = await prisma.$transaction([
+    prisma.produit.deleteMany({ where: { nom: { in: INTROUVABLES_SUR_WOLT } } }),
+    noterOperation(prisma, CLE_SUPPRESSION_INTROUVABLES),
+  ]);
+  return `Articles introuvables sur Wolt : ${supprimes.count} supprimé(s).`;
 }
 
 /**

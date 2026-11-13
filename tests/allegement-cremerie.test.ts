@@ -64,6 +64,25 @@ describe("articles introuvables sur Wolt", () => {
   });
 });
 
+describe("articles introuvables sur Wolt : supprimés à la demande du gérant (13 novembre 2026, « enlève »)", () => {
+  it("une seule fois, dans la même transaction, et ces cinq noms seulement", () => {
+    const corps = corpsDe("supprimerLesIntrouvables");
+    for (const morceau of ["operationFaite(prisma, CLE_SUPPRESSION_INTROUVABLES)", "noterOperation(prisma, CLE_SUPPRESSION_INTROUVABLES)", "$transaction"]) expect(corps, morceau).toContain(morceau);
+    // La seule suppression du fichier : rien d'autre n'est jamais supprimé par le code.
+    expect(corps).toContain("prisma.produit.deleteMany({ where: { nom: { in: INTROUVABLES_SUR_WOLT } } })");
+    expect(lire("prisma/remplissage.ts").match(/\.(delete|deleteMany)\(/g)).toHaveLength(1);
+    // Une commande passée garde sa ligne : le lien vers l'article se vide, rien d'autre.
+    expect(lire("prisma/schema.prisma")).toMatch(/produit\s+Produit\?\s+@relation\(fields: \[produitId\], references: \[id\], onDelete: SetNull\)/);
+  });
+  it("après tout ce qui les concerne ; la base d'essai suit le même chemin", () => {
+    const preparer = lire("prisma/preparer.ts");
+    const ordre = ["retirerLesIntrouvables(prisma)", "remettreEnVenteLesRayons(prisma)", "supprimerLesIntrouvables(prisma)"].map((appel) => preparer.indexOf(`await ${appel}`));
+    expect(ordre.every((i) => i > 0)).toBe(true);
+    expect([...ordre].sort((a, b) => a - b)).toEqual(ordre);
+    expect(lire("tests/outils/base-complete.ts")).toContain("r.supprimerLesIntrouvables");
+  });
+});
+
 describe("masqués, une seule fois — jamais supprimés", () => {
   it("la Crèmerie passe par l'opération commune aux rayons courts, avec sa clé et sa sélection", () => {
     const corps = corpsDe("allegerLaCremerie");

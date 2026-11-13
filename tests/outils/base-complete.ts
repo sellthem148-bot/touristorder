@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
   console.log((await r.remplirLaBase(prisma)).slice(0, 200));
   for (const operation of [
     r.mettreEnVenteLaListe, r.appliquerLeReleveDePrix, r.remplacerLesArticles, r.retirerLaViande, r.retirerLesIntrouvables,
-    r.allegerLaCremerie, r.allegerLesBoissons, r.remettreEnVenteRedBullEtMonster, r.remettreEnVenteLesRayons, r.installerLaListeDynamica, r.installerLesPhotosFrais,
+    r.allegerLaCremerie, r.allegerLesBoissons, r.remettreEnVenteRedBullEtMonster, r.remettreEnVenteLesRayons, r.supprimerLesIntrouvables, r.installerLaListeDynamica, r.installerLesPhotosFrais,
   ]) console.log(" ·", (await operation(prisma)).slice(0, 160));
   const rayons = await prisma.categorie.findMany({ orderBy: { ordre: "asc" }, select: { nom: true, _count: { select: { produits: { where: { actif: true, prix: { gt: 0 } } } } } } });
   console.log(rayons.filter((c) => c._count.produits > 0).map((c) => `${c.nom} ${c._count.produits}`).join(" · "));

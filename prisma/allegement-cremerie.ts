@@ -56,7 +56,7 @@ export const CREMERIE_GARDEE: string[] = [
   "Café glacé Yotvata 1 L",
 ];
 
-/** Articles de la liste du gérant introuvables sur Wolt : retirés de la vente. */
+/** Articles de la liste du gérant introuvables sur Wolt : retirés de la vente le 12 novembre 2026, supprimés le 13 (sa demande). */
 export const INTROUVABLES_SUR_WOLT: string[] = [
   "Truite saumonée fraîche sous vide, environ 300 g",
   "Lait frais Tara 1 % 1 L",
