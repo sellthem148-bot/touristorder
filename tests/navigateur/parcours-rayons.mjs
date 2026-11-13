@@ -1,7 +1,7 @@
 // Le catalogue « comme sur Wolt » : des sous-rayons, des tuiles, une colonne des rayons — pour qu'un rayon de
 // plusieurs centaines d'articles reste facile à parcourir, sur téléphone comme sur ordinateur.
 // À lancer sur le catalogue ENTIER (pas le jeu de test, trop petit pour avoir des sous-rayons) :
-//   base vide, puis  npx tsx tests/outils/base-complete.ts --tout-en-vente
+//   base vide, puis  npx tsx tests/outils/base-complete.ts
 // Ne modifie rien dans la base.
 import { chromium, devices } from "playwright";
 import { writeFileSync } from "node:fs";

@@ -26,7 +26,7 @@ node tests/navigateur/parcours-langues.mjs /tmp/captures   # les cinq langues, c
 BASE_URL=http://localhost:3101 node tests/navigateur/langues-en-production.mjs   # à lancer sur « npm run build && npx next start -p 3101 » : les liens y sont préchargés comme sur le vrai site (pas en développement) — commande en hébreu, changement de langue en pleine saisie, retour au français qui tient
 node tests/navigateur/largeur.mjs /tmp/captures     # aucune page plus large qu'un téléphone de 320 px
 node tests/navigateur/repere-wolt.mjs /tmp/captures   # le repère Wolt du gérant : nom en hébreu à copier et lien « Images » dans Ma journée, la commande et Prix rapides
-node tests/navigateur/parcours-rayons.mjs /tmp/captures   # le catalogue « comme sur Wolt » : sous-rayons, tuiles, colonne des rayons. Sur le catalogue ENTIER : base vide, puis « npx tsx tests/outils/base-complete.ts --tout-en-vente » (ne modifie rien)
+node tests/navigateur/parcours-rayons.mjs /tmp/captures   # le catalogue « comme sur Wolt » : sous-rayons, tuiles, colonne des rayons. Sur le catalogue ENTIER : base vide, puis « npx tsx tests/outils/base-complete.ts » (ne modifie rien)
 node tests/navigateur/menu-gerant.mjs               # le menu du gérant : aucun lien hors de l'écran, de l'ordinateur au petit téléphone (ne modifie rien)
 ```
 

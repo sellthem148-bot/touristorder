@@ -420,6 +420,56 @@ export async function remettreEnVenteRedBullEtMonster(prisma: PrismaClient): Pro
   return `Red Bull et Monster : ${remis.count} article(s) remis en vente.`;
 }
 
+export const CLE_REMISE_EN_VENTE_DES_RAYONS = "remise-en-vente-rayons-2026-11-13";
+
+/**
+ * Le moment où les deux rayons ont été raccourcis (la première des deux mises en ligne, 12 novembre 2026) :
+ * un article masqué AVANT l'a été par le gérant lui-même (ou par une autre décision), et ne revient pas.
+ */
+export const RAYONS_RACCOURCIS_LE = new Date("2026-11-12T15:30:00Z");
+
+/**
+ * Ce que les rayons « Crèmerie & œufs » et « Boissons » retrouvent (pur) : tout ce que leurs courtes sélections
+ * avaient masqué, sauf les articles introuvables sur Wolt (« supprime ça » : ils restent retirés).
+ */
+export function rayonsARemettre(): { noms: string[]; nomsWolt: string[] } {
+  const introuvables = new Set(INTROUVABLES_SUR_WOLT);
+  const retires = [cremerieARetirer(), boissonsARetirer()];
+  return {
+    noms: [...new Set(retires.flatMap((r) => r.noms))].filter((n) => !introuvables.has(n)),
+    nomsWolt: [...new Set(retires.flatMap((r) => r.nomsWolt))],
+  };
+}
+
+/**
+ * Les rayons « Crèmerie & œufs » et « Boissons » retrouvent tous leurs articles : la demande du gérant
+ * (13 novembre 2026, « remets tout »), une fois le catalogue rangé en sous-rayons — un long rayon se parcourt
+ * maintenant sans tout faire défiler. Une seule fois : ce qu'il remasque ensuite le reste.
+ * Ne reviennent que les articles masqués par les deux sélections courtes : jamais un article sans prix
+ * (« à définir »), ni l'alcool (le code ne l'a jamais mis en vente), ni les introuvables sur Wolt, ni un
+ * article qu'il avait masqué lui-même avant (`RAYONS_RACCOURCIS_LE`).
+ */
+export async function remettreEnVenteLesRayons(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_REMISE_EN_VENTE_DES_RAYONS);
+  if (faite === null) return "Crèmerie et Boissons : réglages pas encore créés, rien de changé.";
+  if (faite) return "Crèmerie et Boissons : déjà remis en vente, rien de changé.";
+  const { noms, nomsWolt } = rayonsARemettre();
+  const [remis] = await prisma.$transaction([
+    prisma.produit.updateMany({
+      where: {
+        actif: false,
+        prix: { gt: 0 },
+        updatedAt: { gte: RAYONS_RACCOURCIS_LE },
+        nom: { notIn: INTROUVABLES_SUR_WOLT },
+        OR: [{ nom: { in: noms } }, { nomWolt: { in: nomsWolt } }],
+      },
+      data: { actif: true },
+    }),
+    noterOperation(prisma, CLE_REMISE_EN_VENTE_DES_RAYONS),
+  ]);
+  return `Crèmerie et Boissons : ${remis.count} article(s) remis en vente.`;
+}
+
 /**
  * Met en vente les articles de la liste du gérant au prix de sa liste : SA décision (11 novembre 2026),
  * prise après avoir vu que ces prix sont souvent plus bas que ceux de Wolt (prisma/articles-liste.ts).

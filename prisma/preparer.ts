@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, retirerLesIntrouvables, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -103,6 +103,8 @@ async function main() {
     dire(await allegerLesBoissons(prisma));
     // Puis Red Bull et Monster remis en vente, à sa demande. Une seule fois.
     dire(await remettreEnVenteRedBullEtMonster(prisma));
+    // Puis les deux rayons en entier, à sa demande (13 novembre, « remets tout ») : rangés en sous-rayons, ils se parcourent sans tout faire défiler. Une seule fois ; les introuvables sur Wolt restent retirés.
+    dire(await remettreEnVenteLesRayons(prisma));
     // Sa liste « Dynamica » : installée « à compléter », masquée — et elle le reste (prix et modèles invérifiables).
     dire(await installerLaListeDynamica(prisma));
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.
