@@ -6,6 +6,7 @@ import { estBadge, type Badge } from "./choix-commande";
 import type { Langue } from "./langues";
 import { dictionnaire } from "./i18n";
 import { chercherDansLaLangue, descriptionArticle, nomArticle, traduireGroupes } from "./i18n/catalogue";
+import { sousRayonDe } from "./sous-rayons";
 
 // Ce qu'une page PUBLIQUE lit d'un produit. Jamais le prix d'achat,
 // la boutique ni le lien Wolt : ils sont à toi seul.
@@ -29,6 +30,8 @@ export type ProduitPublic = Omit<Brut, "options" | "badge" | "prixBarre"> & {
   options: GroupeOptions[];
   badge: Badge;
   prixBarre: number | null;
+  /** Le sous-rayon de l'article dans son rayon (« eaux », « colas »… ou « autres ») : lib/sous-rayons.ts. */
+  sousRayon: string;
 };
 
 /**
@@ -45,6 +48,8 @@ function versPublic(p: Brut, langue: Langue = "fr"): ProduitPublic {
     badge: estBadge(p.badge) ? p.badge : "",
     // Un ancien prix qui n'est pas plus cher n'est pas une promo.
     prixBarre: p.prixBarre != null && p.prixBarre > p.prix ? p.prixBarre : null,
+    // D'après le nom FRANÇAIS (celui de la base), avant sa traduction.
+    sousRayon: sousRayonDe(p.categorie.slug, p.nom),
   };
 }
 
@@ -69,21 +74,24 @@ export async function produitsDeLaCategorie(slug: string, langue: Langue = "fr")
   return liste.map((p) => versPublic(p, langue));
 }
 
+// À partir de combien d'articles avec photo la rangée d'un rayon, sur l'accueil, ne montre qu'eux.
+const PHOTOS_POUR_UNE_RANGEE = 4;
+
+/**
+ * La vitrine de l'accueil : chaque rayon et ses premiers articles. Une rangée se lit mieux quand ses tuiles
+ * ont la même hauteur : si le rayon a assez d'articles avec photo, la rangée ne montre qu'eux ; sinon ses
+ * premiers articles, tels quels.
+ */
 export async function vitrine(parCategorie = 10, langue: Langue = "fr") {
   const categories = await categoriesVisibles();
   return Promise.all(
-    categories.map(async (c) => ({
-      categorie: c,
-      produits: (
-        await prisma.produit.findMany({
-          where: { ...VISIBLE, categorieId: c.id },
-          orderBy: ORDRE,
-          take: parCategorie,
-          select: PRODUIT_PUBLIC,
-        })
-      ).map((p) => versPublic(p, langue)),
-      total: c._count.produits,
-    })),
+    categories.map(async (c) => {
+      const lire = (where: Prisma.ProduitWhereInput) =>
+        prisma.produit.findMany({ where: { ...VISIBLE, categorieId: c.id, ...where }, orderBy: ORDRE, take: parCategorie, select: PRODUIT_PUBLIC });
+      const avecPhoto = await lire({ photoUrl: { not: "" } });
+      const produits = avecPhoto.length >= PHOTOS_POUR_UNE_RANGEE ? avecPhoto : await lire({});
+      return { categorie: c, produits: produits.map((p) => versPublic(p, langue)), total: c._count.produits };
+    }),
   );
 }
 

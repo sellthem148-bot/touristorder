@@ -101,10 +101,32 @@ const ru: Dictionnaire = {
     "cadeaux-fleurs": "Подарки и цветы",
   },
 
+  sousRayons: {
+    "boissons": { "eaux": "Вода и лёд", "eaux-aromatisees": "Ароматизированная вода", "colas": "Кола", "sodas": "Газировка и лимонады", "jus": "Соки и фруктовые напитки", "thes-glaces": "Холодный чай", "energie": "Энергетики и спортивные напитки", "sirops": "Сиропы", "alcools": "Пиво, вино и крепкие напитки" },
+    "cremerie-oeufs": { "oeufs": "Яйца", "lait": "Молоко и растительные напитки", "beurre-creme": "Масло и сливки", "fromages": "Сыры", "yaourts": "Йогурты", "desserts": "Десерты", "boissons-lactees": "Молочные напитки и холодный кофе" },
+    "courses-epicerie": { "pates-riz": "Макароны, рис и бобовые", "conserves": "Консервы", "sauces-epices": "Масла, соусы и специи", "petit-dejeuner": "Завтрак", "cafe-the": "Кофе и чай", "cuisine-du-monde": "Азиатская кухня", "frais": "Свежее и кулинария" },
+    "pain-patisserie": { "pains": "Хлеб", "petits-pains": "Булочки и бейглы", "pitas-wraps": "Питы и тортильи", "patisseries": "Выпечка и торты", "pates-a-cuire": "Готовое тесто", "crackers": "Крекеры и хлебцы", "sans-gluten": "Без глютена" },
+    "fruits-legumes": { "fruits": "Фрукты", "legumes": "Овощи", "herbes-salades": "Салаты и зелень" },
+    "poisson": { "frais": "Свежая рыба", "surgele": "Замороженная рыба", "fume-sale": "Копчёная и солёная рыба", "sauces": "Соусы", "viande": "Мясо и птица" },
+    "surgeles-glaces": { "glaces": "Мороженое", "pizzas-plats": "Пицца и готовые блюда", "legumes-fruits": "Овощи и фрукты", "poisson": "Рыба", "vegetarien": "Вегетарианское", "viande": "Мясо и птица" },
+    "apero-snacks": { "chips": "Чипсы и солёные снеки", "biscuits": "Печенье и кексы", "chocolat": "Шоколад", "bonbons": "Конфеты", "barres": "Злаковые батончики", "fruits-secs": "Орехи, сухофрукты и семечки" },
+    "maison-entretien": { "papier": "Бумажные товары", "nettoyage": "Стирка и уборка", "cuisine-jetable": "Кухня и одноразовая посуда", "eau-gazeuse": "Кувшины и сифоны для газировки", "animaux": "Для животных" },
+    "pharmacie-hygiene": { "corps": "Тело и волосы", "dents": "Уход за зубами", "intime": "Интимная гигиена", "sante": "Здоровье" },
+    "chargeurs-electronique": { "chargeurs-cables": "Зарядки, кабели и батарейки", "audio": "Наушники и колонки", "telephones-tablettes": "Телефоны и планшеты", "protection": "Чехлы и защитные стёкла", "montres-objets": "Часы и умные устройства", "jeux": "Видеоигры", "accessoires": "Аксессуары" },
+  },
+
   categorie: {
     titreDefaut: "Категория",
     metaDescription: "{nom}: закажите онлайн с вечерней доставкой в апартаменты или отель — {site}.",
     navAria: "Категории",
+    tout: "Все",
+    toutVoir: "Смотреть все",
+    autres: "Другое",
+    sousRayonsAria: "Подкатегории",
+    tousLesRayons: "Все отделы",
+    autresRayons: "Другие отделы",
+    retourAuRayon: "Весь отдел «{nom}»",
+    metaDescriptionSous: "{sous} — {nom}: заказывайте онлайн, доставка вечером в ваше жильё или отель с {site}.",
     vide: "В этой категории пока нет товаров.",
   },
 

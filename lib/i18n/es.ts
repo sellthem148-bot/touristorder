@@ -101,10 +101,32 @@ const es: Dictionnaire = {
     "cadeaux-fleurs": "Regalos y flores",
   },
 
+  sousRayons: {
+    "boissons": { "eaux": "Aguas y hielo", "eaux-aromatisees": "Aguas saborizadas", "colas": "Refrescos de cola", "sodas": "Refrescos y limonadas", "jus": "Zumos y bebidas de frutas", "thes-glaces": "Tés fríos", "energie": "Energía y deporte", "sirops": "Siropes", "alcools": "Cervezas, vinos y licores" },
+    "cremerie-oeufs": { "oeufs": "Huevos", "lait": "Leche y bebidas vegetales", "beurre-creme": "Mantequilla y nata", "fromages": "Quesos", "yaourts": "Yogures", "desserts": "Postres", "boissons-lactees": "Bebidas lácteas y cafés fríos" },
+    "courses-epicerie": { "pates-riz": "Pasta, arroz y legumbres", "conserves": "Conservas", "sauces-epices": "Aceites, salsas y especias", "petit-dejeuner": "Desayuno", "cafe-the": "Café y té", "cuisine-du-monde": "Cocina asiática", "frais": "Frescos y charcutería" },
+    "pain-patisserie": { "pains": "Panes", "petits-pains": "Panecillos y bagels", "pitas-wraps": "Pitas y tortillas", "patisseries": "Bollería y pasteles", "pates-a-cuire": "Masas para hornear", "crackers": "Crackers y tortitas", "sans-gluten": "Sin gluten" },
+    "fruits-legumes": { "fruits": "Frutas", "legumes": "Verduras", "herbes-salades": "Ensaladas y hierbas" },
+    "poisson": { "frais": "Pescado fresco", "surgele": "Pescado congelado", "fume-sale": "Ahumados y salazones", "sauces": "Salsas", "viande": "Carne y aves" },
+    "surgeles-glaces": { "glaces": "Helados", "pizzas-plats": "Pizzas y platos", "legumes-fruits": "Verduras y frutas", "poisson": "Pescado", "vegetarien": "Vegetariano", "viande": "Carne y aves" },
+    "apero-snacks": { "chips": "Patatas fritas y salados", "biscuits": "Galletas y bizcochos", "chocolat": "Chocolate", "bonbons": "Caramelos", "barres": "Barritas de cereales", "fruits-secs": "Frutos secos y semillas" },
+    "maison-entretien": { "papier": "Papel", "nettoyage": "Colada y limpieza", "cuisine-jetable": "Cocina y desechables", "eau-gazeuse": "Jarras y agua con gas", "animaux": "Mascotas" },
+    "pharmacie-hygiene": { "corps": "Cuerpo y cabello", "dents": "Dientes", "intime": "Higiene íntima", "sante": "Salud" },
+    "chargeurs-electronique": { "chargeurs-cables": "Cargadores, cables y pilas", "audio": "Auriculares y altavoces", "telephones-tablettes": "Teléfonos y tabletas", "protection": "Fundas y protectores", "montres-objets": "Relojes y dispositivos inteligentes", "jeux": "Videojuegos", "accessoires": "Accesorios" },
+  },
+
   categorie: {
     titreDefaut: "Categoría",
     metaDescription: "{nom}: haga su pedido y recíbalo por la noche en su alojamiento o en su hotel con {site}.",
     navAria: "Categorías",
+    tout: "Todo",
+    toutVoir: "Ver todo",
+    autres: "Otros",
+    sousRayonsAria: "Subcategorías",
+    tousLesRayons: "Todas las secciones",
+    autresRayons: "Otras secciones",
+    retourAuRayon: "Toda la sección {nom}",
+    metaDescriptionSous: "{sous} — {nom}: pida en línea, entrega por la tarde en su alojamiento u hotel con {site}.",
     vide: "Por el momento no hay productos en esta categoría.",
   },
 

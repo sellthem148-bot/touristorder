@@ -100,10 +100,32 @@ const he: Dictionnaire = {
     "cadeaux-fleurs": "מתנות ופרחים",
   },
 
+  sousRayons: {
+    "boissons": { "eaux": "מים וקרח", "eaux-aromatisees": "מים בטעמים", "colas": "קולה", "sodas": "משקאות מוגזים", "jus": "מיצים ומשקאות פירות", "thes-glaces": "תה קר", "energie": "אנרגיה וספורט", "sirops": "סירופים", "alcools": "בירות, יינות ואלכוהול" },
+    "cremerie-oeufs": { "oeufs": "ביצים", "lait": "חלב ומשקאות צמחיים", "beurre-creme": "חמאה ושמנת", "fromages": "גבינות", "yaourts": "יוגורטים", "desserts": "מעדנים", "boissons-lactees": "משקאות חלב וקפה קר" },
+    "courses-epicerie": { "pates-riz": "פסטה, אורז וקטניות", "conserves": "שימורים", "sauces-epices": "שמנים, רטבים ותבלינים", "petit-dejeuner": "ארוחת בוקר", "cafe-the": "קפה ותה", "cuisine-du-monde": "מטבח אסייתי", "frais": "טרי ומעדנייה" },
+    "pain-patisserie": { "pains": "לחמים", "petits-pains": "לחמניות ובייגלים", "pitas-wraps": "פיתות וטורטיות", "patisseries": "מאפים ועוגות", "pates-a-cuire": "בצקים", "crackers": "קרקרים ופריכיות", "sans-gluten": "ללא גלוטן" },
+    "fruits-legumes": { "fruits": "פירות", "legumes": "ירקות", "herbes-salades": "חסות ועשבי תיבול" },
+    "poisson": { "frais": "דגים טריים", "surgele": "דגים קפואים", "fume-sale": "מעושן ומלוח", "sauces": "רטבים", "viande": "בשר ועוף" },
+    "surgeles-glaces": { "glaces": "גלידות", "pizzas-plats": "פיצות ומנות מוכנות", "legumes-fruits": "ירקות ופירות", "poisson": "דגים", "vegetarien": "צמחוני", "viande": "בשר ועוף" },
+    "apero-snacks": { "chips": "חטיפים מלוחים", "biscuits": "עוגיות וביסקוויטים", "chocolat": "שוקולד", "bonbons": "סוכריות", "barres": "חטיפי דגנים", "fruits-secs": "פיצוחים ופירות יבשים" },
+    "maison-entretien": { "papier": "מוצרי נייר", "nettoyage": "כביסה וניקיון", "cuisine-jetable": "מטבח וחד-פעמי", "eau-gazeuse": "קנקנים ומכשירי סודה", "animaux": "חיות מחמד" },
+    "pharmacie-hygiene": { "corps": "גוף ושיער", "dents": "שיניים", "intime": "היגיינה אינטימית", "sante": "בריאות" },
+    "chargeurs-electronique": { "chargeurs-cables": "מטענים, כבלים וסוללות", "audio": "אוזניות ורמקולים", "telephones-tablettes": "טלפונים וטאבלטים", "protection": "כיסויים ומגני מסך", "montres-objets": "שעונים ומוצרים חכמים", "jeux": "גיימינג", "accessoires": "אביזרים" },
+  },
+
   categorie: {
     titreDefaut: "קטגוריה",
     metaDescription: "{nom}: הזמינו באתר וקבלו משלוח בערב לדירה או למלון שלכם, עם {site}.",
     navAria: "קטגוריות",
+    tout: "הכול",
+    toutVoir: "הצג הכול",
+    autres: "אחר",
+    sousRayonsAria: "תת-קטגוריות",
+    tousLesRayons: "כל המחלקות",
+    autresRayons: "מחלקות נוספות",
+    retourAuRayon: "כל מחלקת {nom}",
+    metaDescriptionSous: "{sous} — {nom}: הזמינו אונליין, משלוח בערב למקום האירוח או למלון עם {site}.",
     vide: "אין כרגע מוצרים בקטגוריה הזו.",
   },
 

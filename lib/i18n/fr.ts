@@ -107,10 +107,33 @@ const fr = {
     "cadeaux-fleurs": "Cadeaux & fleurs",
   },
 
+  // Les sous-rayons de chaque rayon (lib/sous-rayons.ts range les articles d'après leur nom).
+  sousRayons: {
+    "boissons": { "eaux": "Eaux & glaçons", "eaux-aromatisees": "Eaux aromatisées", "colas": "Colas", "sodas": "Sodas & limonades", "jus": "Jus & boissons aux fruits", "thes-glaces": "Thés glacés", "energie": "Énergie & sport", "sirops": "Sirops", "alcools": "Bières, vins & alcools" },
+    "cremerie-oeufs": { "oeufs": "Œufs", "lait": "Lait & boissons végétales", "beurre-creme": "Beurre & crème", "fromages": "Fromages", "yaourts": "Yaourts", "desserts": "Desserts", "boissons-lactees": "Boissons lactées & cafés glacés" },
+    "courses-epicerie": { "pates-riz": "Pâtes, riz & légumes secs", "conserves": "Conserves", "sauces-epices": "Huiles, sauces & épices", "petit-dejeuner": "Petit-déjeuner", "cafe-the": "Café & thé", "cuisine-du-monde": "Cuisine asiatique", "frais": "Frais & traiteur" },
+    "pain-patisserie": { "pains": "Pains", "petits-pains": "Petits pains & bagels", "pitas-wraps": "Pitas & tortillas", "patisseries": "Pâtisseries", "pates-a-cuire": "Pâtes à cuire", "crackers": "Crackers & galettes", "sans-gluten": "Sans gluten" },
+    "fruits-legumes": { "fruits": "Fruits", "legumes": "Légumes", "herbes-salades": "Salades & herbes" },
+    "poisson": { "frais": "Poisson frais", "surgele": "Poisson surgelé", "fume-sale": "Fumé & salé", "sauces": "Sauces", "viande": "Viande & volaille" },
+    "surgeles-glaces": { "glaces": "Glaces", "pizzas-plats": "Pizzas & plats", "legumes-fruits": "Légumes & fruits", "poisson": "Poisson", "vegetarien": "Végétarien", "viande": "Viande & volaille" },
+    "apero-snacks": { "chips": "Chips & salé", "biscuits": "Biscuits & gâteaux", "chocolat": "Chocolat", "bonbons": "Bonbons", "barres": "Barres de céréales", "fruits-secs": "Fruits secs & graines" },
+    "maison-entretien": { "papier": "Papier", "nettoyage": "Lessive & nettoyage", "cuisine-jetable": "Cuisine & jetable", "eau-gazeuse": "Carafes & eau gazeuse", "animaux": "Animaux" },
+    "pharmacie-hygiene": { "corps": "Corps & cheveux", "dents": "Dents", "intime": "Hygiène intime", "sante": "Santé" },
+    "chargeurs-electronique": { "chargeurs-cables": "Chargeurs, câbles & piles", "audio": "Écouteurs & enceintes", "telephones-tablettes": "Téléphones & tablettes", "protection": "Coques & verres", "montres-objets": "Montres & objets connectés", "jeux": "Jeux vidéo", "accessoires": "Accessoires" },
+  },
+
   categorie: {
     titreDefaut: "Catégorie",
     metaDescription: "{nom} : commandez en français, livraison le soir à votre logement ou à votre hôtel avec {site}.",
     navAria: "Catégories",
+    tout: "Tout",
+    toutVoir: "Tout voir",
+    autres: "Autres",
+    sousRayonsAria: "Sous-rayons",
+    tousLesRayons: "Tous les rayons",
+    autresRayons: "Autres rayons",
+    retourAuRayon: "Tout le rayon {nom}",
+    metaDescriptionSous: "{sous} — {nom} : commandez en français, livraison le soir à votre logement ou à votre hôtel avec {site}.",
     vide: "Aucun produit dans cette catégorie pour le moment.",
   },
 

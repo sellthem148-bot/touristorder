@@ -104,10 +104,32 @@ const en: Dictionnaire = {
     "cadeaux-fleurs": "Gifts & flowers",
   },
 
+  sousRayons: {
+    "boissons": { "eaux": "Water & ice", "eaux-aromatisees": "Flavoured water", "colas": "Colas", "sodas": "Fizzy drinks", "jus": "Juices & fruit drinks", "thes-glaces": "Iced tea", "energie": "Energy & sports drinks", "sirops": "Syrups", "alcools": "Beer, wine & spirits" },
+    "cremerie-oeufs": { "oeufs": "Eggs", "lait": "Milk & plant drinks", "beurre-creme": "Butter & cream", "fromages": "Cheese", "yaourts": "Yoghurts", "desserts": "Desserts", "boissons-lactees": "Milk drinks & iced coffee" },
+    "courses-epicerie": { "pates-riz": "Pasta, rice & pulses", "conserves": "Tins & jars", "sauces-epices": "Oils, sauces & spices", "petit-dejeuner": "Breakfast", "cafe-the": "Coffee & tea", "cuisine-du-monde": "Asian cooking", "frais": "Fresh & deli" },
+    "pain-patisserie": { "pains": "Bread", "petits-pains": "Rolls & bagels", "pitas-wraps": "Pittas & tortillas", "patisseries": "Pastries & cakes", "pates-a-cuire": "Ready-made dough", "crackers": "Crackers & crispbreads", "sans-gluten": "Gluten-free" },
+    "fruits-legumes": { "fruits": "Fruit", "legumes": "Vegetables", "herbes-salades": "Salad leaves & herbs" },
+    "poisson": { "frais": "Fresh fish", "surgele": "Frozen fish", "fume-sale": "Smoked & cured", "sauces": "Sauces", "viande": "Meat & poultry" },
+    "surgeles-glaces": { "glaces": "Ice cream", "pizzas-plats": "Pizzas & ready meals", "legumes-fruits": "Vegetables & fruit", "poisson": "Fish", "vegetarien": "Vegetarian", "viande": "Meat & poultry" },
+    "apero-snacks": { "chips": "Crisps & savoury snacks", "biscuits": "Biscuits & cakes", "chocolat": "Chocolate", "bonbons": "Sweets", "barres": "Cereal bars", "fruits-secs": "Nuts, dried fruit & seeds" },
+    "maison-entretien": { "papier": "Paper goods", "nettoyage": "Laundry & cleaning", "cuisine-jetable": "Kitchen & disposables", "eau-gazeuse": "Filter jugs & sparkling water makers", "animaux": "Pets" },
+    "pharmacie-hygiene": { "corps": "Body & hair", "dents": "Dental care", "intime": "Intimate care", "sante": "Health" },
+    "chargeurs-electronique": { "chargeurs-cables": "Chargers, cables & batteries", "audio": "Earphones & speakers", "telephones-tablettes": "Phones & tablets", "protection": "Cases & screen protectors", "montres-objets": "Watches & smart devices", "jeux": "Gaming", "accessoires": "Accessories" },
+  },
+
   categorie: {
     titreDefaut: "Category",
     metaDescription: "{nom}: order online for evening delivery to your rental or hotel with {site}.",
     navAria: "Categories",
+    tout: "All",
+    toutVoir: "See all",
+    autres: "Other",
+    sousRayonsAria: "Sub-categories",
+    tousLesRayons: "All categories",
+    autresRayons: "Other categories",
+    retourAuRayon: "All of {nom}",
+    metaDescriptionSous: "{sous} — {nom}: order online, evening delivery to your accommodation or hotel with {site}.",
     vide: "No products in this category at the moment.",
   },
 

@@ -7,7 +7,7 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 ## Ce que fait le site
 
 **Côté client** (web app mobile, en cinq langues — français, anglais, russe, hébreu, espagnol —, sans compte)
-- Catalogue par catégories (tuiles), rayons qui défilent, recherche, rubrique « Les plus demandés » (produits Populaire / Promo).
+- Catalogue « comme sur Wolt » : des rayons, et dans chaque grand rayon des **sous-rayons** (Eaux, Colas, Jus… dans Boissons) — un aperçu de chacun avec « Tout voir », une rangée de sous-rayons qui reste en haut de l'écran sur téléphone, une colonne des rayons sur ordinateur. Les articles sont des tuiles (deux par ligne sur téléphone), rangés tout seuls dans leur sous-rayon d'après leur nom. Sur l'accueil : les rayons, puis une rangée à faire défiler par rayon et « Les plus demandés » (produits Populaire / Promo). Recherche dans tout le catalogue.
 - **Fiche produit** au toucher : grande photo, description, **options obligatoires** (taille, modèle, couleur… avec supplément éventuel), quantité.
 - Badges Populaire / Nouveau / Promo (avec prix barré) ; un produit **épuisé** reste visible mais ne se commande pas.
 - Panier enregistré dans le navigateur ; à l'ouverture, prix et options sont remis à jour depuis la base et ce qui n'existe plus est retiré.
@@ -60,7 +60,7 @@ Le site côté client existe en **français, anglais, russe, hébreu (de droite 
 
 ## Apparence
 
-Côté client, le site est volontairement sobre : texte et boutons en encre, fond clair, traits fins, une seule couleur d'accent, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un article s'affiche comme une ligne de menu — nom, format, prix — avec sa photo seulement s'il en a une (les photos s'ajoutent dans l'espace gérant, fiche du produit). Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
+Côté client, le site est volontairement sobre : texte et boutons en encre, fond clair, traits fins, une seule couleur d'accent, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un article s'affiche comme une tuile — sa photo en haut s'il en a une, puis nom, format, prix — et c'est avec des photos que le catalogue ressemble le plus à Wolt (elles s'ajoutent dans l'espace gérant : « Photos rapides », ou la fiche du produit). Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
 
 ### Photos des produits
 
