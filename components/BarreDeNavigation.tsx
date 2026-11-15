@@ -86,5 +86,5 @@ export function BarreDeNavigation() {
         ? "w-[88%] transition-[width] duration-[7s] ease-[cubic-bezier(0.05,0.85,0.1,1)]"
         : "w-full opacity-0 transition-[width,opacity] duration-300 [transition-delay:0s,150ms]";
   // `start-0` : elle part du côté où la lecture commence (à droite en hébreu).
-  return <div aria-hidden="true" data-barre-navigation={etat} className={`pointer-events-none fixed start-0 top-0 z-50 h-[3px] rounded-e-full bg-marque ${allure}`} />;
+  return <div aria-hidden="true" data-barre-navigation={etat} className={`pointer-events-none fixed start-0 top-0 z-50 h-[3px] rounded-e-full bg-soleil ${allure}`} />;
 }

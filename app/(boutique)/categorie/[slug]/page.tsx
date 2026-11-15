@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { GrilleProduits } from "@/components/CarteProduit";
 import { Apparition } from "@/components/Apparition";
 import { IconeRayon } from "@/components/IconeRayon";
+import { couleurDuRayon } from "@/lib/couleurs-rayons";
 import { RangeeDeLiens } from "@/components/Rangee";
 import { categoriesVisibles, produitsDeLaCategorie } from "@/lib/catalogue";
 import { NOM_DU_SITE } from "@/lib/marque";
@@ -76,7 +77,8 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
                     x.slug === slug ? "bg-encre text-white" : "text-slate-700 hover:bg-slate-200/70"
                   }`}
                 >
-                  <IconeRayon slug={x.slug} className="h-[18px] w-[18px] shrink-0" />
+                  {/* L'icône à la couleur de son rayon (blanche sur le rayon ouvert). */}
+                  <IconeRayon slug={x.slug} className={`h-[18px] w-[18px] shrink-0 ${x.slug === slug ? "" : couleurDuRayon(x.slug).trait}`} />
                   <span className="min-w-0 flex-1 truncate">{nomDuRayon(x, t)}</span>
                   <span className="text-xs font-normal tabular-nums opacity-60">{x._count.produits}</span>
                 </Link>
@@ -117,7 +119,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
                 x.slug === slug ? "border-encre bg-encre text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400"
               }`}
             >
-              <IconeRayon slug={x.slug} className="h-4 w-4 shrink-0" />
+              <IconeRayon slug={x.slug} className={`h-4 w-4 shrink-0 ${x.slug === slug ? "" : couleurDuRayon(x.slug).trait}`} />
               {nomDuRayon(x, t)}
             </Link>
           ))}
@@ -125,7 +127,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
         </nav>
 
         <header className="apparait flex items-center gap-3.5">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700">
+          <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${couleurDuRayon(c.slug).pastille}`}>
             <IconeRayon slug={c.slug} className="h-6 w-6" />
           </span>
           <div className="min-w-0">

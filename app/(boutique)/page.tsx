@@ -4,6 +4,7 @@ import { RailProduits } from "@/components/CarteProduit";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { Apparition } from "@/components/Apparition";
 import { IconeRayon } from "@/components/IconeRayon";
+import { couleurDuRayon } from "@/lib/couleurs-rayons";
 import { misEnAvant, vitrine } from "@/lib/catalogue";
 import { libelleDuMode, nomDuRayon } from "@/lib/i18n/rayons";
 import { reglagesPublics } from "@/lib/reglages";
@@ -51,6 +52,9 @@ const donneesStructurees = (langue: Langue, description: string) => JSON.stringi
 }).replace(/</g, "\\u003c");
 
 type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string; enDirect?: boolean };
+
+// La pastille au jaune du logo (les repères de la livraison) : un fond très clair, un trait brun doré.
+const PASTILLE_SOLEIL = "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-soleil/20 text-amber-900";
 
 /** Un point vert qui bat doucement : les commandes sont ouvertes, voici la prochaine livraison. Décoratif. */
 function PointOuvert() {
@@ -116,8 +120,9 @@ export default async function Accueil() {
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200">
       {faits.map((f, i) => (
         <div key={f.titre} className={`flex flex-col gap-2 bg-white p-3.5 sm:flex-row sm:gap-3 sm:p-4 ${faits.length % 2 === 1 && i === faits.length - 1 ? "col-span-2" : ""}`}>
-          <span className="apparait relative h-5 w-5 shrink-0 sm:mt-0.5" style={rangDansLaCascade(i * 2 + 4)}>
-            <f.icone className="h-5 w-5 text-slate-500" strokeWidth={1.6} aria-hidden="true" />
+          {/* L'icône dans une pastille au jaune du logo : la seule couleur de ce bloc. */}
+          <span className={`apparait relative ${PASTILLE_SOLEIL}`} style={rangDansLaCascade(i * 2 + 4)}>
+            <f.icone className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" />
             {f.enDirect && <PointOuvert />}
           </span>
           <div className="apparait min-w-0" style={rangDansLaCascade(i * 2 + 5)}>
@@ -129,7 +134,7 @@ export default async function Accueil() {
       ))}
       {villes.length > 0 && (
         <div className="col-span-2 flex gap-3 bg-white p-3.5 sm:p-4">
-          <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.6} aria-hidden="true" />
+          <span className={PASTILLE_SOLEIL}><MapPin className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" /></span>
           <div className="min-w-0">
             <dt className="text-[13px] text-slate-500">{compter(langue, villes.length, a.villesLivrees)}</dt>
             <dd className="text-sm leading-relaxed text-slate-700">{villes.join(" · ")}</dd>
@@ -167,7 +172,7 @@ export default async function Accueil() {
             {faits.slice(amplitude ? 1 : 0, amplitude ? 3 : 2).map((f) => (
               <li key={f.titre} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold">
                 <span className="relative h-4 w-4 shrink-0">
-                  <f.icone className="h-4 w-4 text-slate-500" strokeWidth={1.7} aria-hidden="true" />
+                  <f.icone className="h-4 w-4 text-amber-700" strokeWidth={1.7} aria-hidden="true" />
                   {f.enDirect && <PointOuvert />}
                 </span>
                 <span className="sr-only">{f.titre} : </span>{f.valeur}
@@ -199,8 +204,8 @@ export default async function Accueil() {
                     href={lien(`/categorie/${categorie.slug}`)}
                     className="group flex h-full flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3.5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.96] sm:py-4"
                   >
-                    {/* L'icône rebondit juste après l'arrivée de sa tuile. */}
-                    <span className="saute flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition duration-200 group-hover:scale-110 group-hover:bg-encre group-hover:text-white group-active:bg-encre group-active:text-white" style={{ animationDelay: `${640 + i * 45}ms` }}>
+                    {/* L'icône, dans une pastille à la couleur du rayon, rebondit juste après l'arrivée de sa tuile. */}
+                    <span className={`saute flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-200 group-hover:scale-110 ${couleurDuRayon(categorie.slug).pastille} ${couleurDuRayon(categorie.slug).survol}`} style={{ animationDelay: `${640 + i * 45}ms` }}>
                       <IconeRayon slug={categorie.slug} className="h-[22px] w-[22px]" />
                     </span>
                     <span className="min-w-0">
@@ -232,9 +237,13 @@ export default async function Accueil() {
           {rangees.map(({ categorie, produits, total }) => (
             <Apparition key={categorie.id}>
               <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3">
-                <div className="flex items-baseline justify-between gap-4">
-                  <h2 id={`rangee-${categorie.slug}`} className="text-lg font-bold sm:text-xl">
-                    <Link href={lien(`/categorie/${categorie.slug}`)} className="hover:underline">{nomDuRayon(categorie, t)}</Link>
+                <div className="flex items-center justify-between gap-4">
+                  <h2 id={`rangee-${categorie.slug}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold sm:text-xl">
+                    {/* La pastille du rayon, à sa couleur : on retrouve la tuile d'en haut. */}
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${couleurDuRayon(categorie.slug).pastille}`}>
+                      <IconeRayon slug={categorie.slug} className="h-[17px] w-[17px]" />
+                    </span>
+                    <Link href={lien(`/categorie/${categorie.slug}`)} className="min-w-0 truncate hover:underline">{nomDuRayon(categorie, t)}</Link>
                   </h2>
                   <Link href={lien(`/categorie/${categorie.slug}`)} className="group/lien inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-encre hover:underline">
                     {t.categorie.toutVoir} <span className="font-normal tabular-nums text-slate-500">({total})</span>
@@ -256,7 +265,7 @@ export default async function Accueil() {
                   <li key={e.titre} className="bg-white p-5">
                     {/* Le contenu de chaque étape arrive à son tour (la case reste en place : pas de trou gris). */}
                     <div className="apparait space-y-2" style={rangDansLaCascade(i * 3)}>
-                      <span className="text-sm font-semibold tabular-nums text-slate-400">0{i + 1}</span>
+                      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-soleil/25 text-[13px] font-bold tabular-nums text-amber-900">{i + 1}</span>
                       <span className="block font-semibold">{e.titre}</span>
                       <span className="block text-sm text-slate-600">{e.texte}</span>
                     </div>
