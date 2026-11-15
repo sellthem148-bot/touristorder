@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { formatPrix } from "@/lib/argent";
 import { Messages } from "@/components/admin/Messages";
 import { Vignette } from "@/components/Vignette";
+import { PhotoWolt } from "@/components/admin/PhotoWolt";
+import { photoRepere } from "@/lib/reperes-wolt";
 import { basculerEpuise, basculerProduit } from "../actions";
 import { PastilleBadge } from "@/components/Prix";
 import { estBadge } from "@/lib/choix-commande";
@@ -106,8 +108,16 @@ export default async function PageProduits({ searchParams }: PageProps<"/admin/p
             const marge = p.prixAchat != null && p.prix > 0 ? p.prix - p.prixAchat : null;
             return (
               <li key={p.id} className="flex flex-wrap items-center gap-3 p-3">
-                <Vignette url={p.photoUrl} emoji={p.categorie.emoji} alt="" className="h-14 w-14 shrink-0 rounded-xl" />
-                <div className="min-w-0 flex-1">
+                {/* Sa photo sur le site ; sinon la photo de Wolt, pour reconnaître l'article (étiquette « Wolt » : le client ne la voit pas). */}
+                <span className="flex w-20 shrink-0 justify-center">
+                  {!p.photoUrl && photoRepere(p.nom, p.nomWolt) ? (
+                    <PhotoWolt photo={photoRepere(p.nom, p.nomWolt)!} nom={p.nom} taille="liste" />
+                  ) : (
+                    <Vignette url={p.photoUrl} emoji={p.categorie.emoji} alt="" className="h-14 w-14 shrink-0 rounded-xl" />
+                  )}
+                </span>
+                {/* `min-w-40` : sur téléphone, le prix et les boutons passent dessous au lieu de serrer le nom. */}
+                <div className="min-w-40 flex-1">
                   <p className="flex flex-wrap items-center gap-2">
                     <Link href={`/admin/produits/${p.id}`} className="font-semibold hover:underline">{p.nom}</Link>
                     {estBadge(p.badge) && <PastilleBadge badge={p.badge} />}

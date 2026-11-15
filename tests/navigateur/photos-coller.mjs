@@ -63,7 +63,7 @@ try {
   await copier(p, 640, "#1d4ed8");
   await lignes.nth(0).getByRole("button", { name: /^Coller/ }).click();
   await message(0).filter({ hasText: "Photo enregistrée." }).waitFor();
-  const premiere = await lignes.nth(0).locator("img").first().getAttribute("src");
+  const premiere = await lignes.nth(0).locator("img[data-photo-site]").getAttribute("src");
   verifier(/^\/uploads\/[0-9a-f-]{36}\.(png|jpg)$/.test(premiere), `« Coller » : l'image copiée est enregistrée sur « ${await nomDe(0)} » et sa vignette s'affiche`);
   verifier((await textes(lignes.nth(0))).join(" / ") === "Coller / Changer", "le second bouton devient « Changer »");
   if (OUT) await p.screenshot({ path: `${OUT}/photos-coller-1.png` });

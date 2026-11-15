@@ -1,8 +1,8 @@
-/* eslint-disable @next/next/no-img-element -- photo repère servie par une route réservée au gérant */
 "use client";
 
 import { useState } from "react";
 import { Copy, Search } from "lucide-react";
+import { PhotoWolt } from "./PhotoWolt";
 
 type Props = {
   /** Le nom de l'article en français, pour les lecteurs d'écran. */
@@ -17,17 +17,13 @@ type Props = {
 /**
  * Sous un article de la liste de courses : son nom en hébreu (à copier dans la recherche de Wolt) et
  * un lien pour le voir en images. « traduction » prévient que ce n'est pas le nom exact relevé sur Wolt.
- * Quand on l'a, la photo que Wolt montre pour l'article : un toucher l'ouvre en grand.
+ * Quand on l'a, la photo que Wolt montre pour l'article (`PhotoWolt`) : un toucher l'ouvre en entier.
  */
 export function RepereWolt({ nom, hebreu, exact, images, photo }: Props) {
   const [copie, setCopie] = useState<"" | "ok" | "echec">("");
   return (
     <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-      {photo && (
-        <a href={photo} target="_blank" rel="noopener noreferrer" aria-label={`Voir la photo Wolt de ${nom}`} className="shrink-0">
-          <img src={photo} alt="" width={96} height={53} loading="lazy" className="h-[53px] w-24 rounded-lg border border-slate-200 bg-white object-contain" />
-        </a>
-      )}
+      {photo && <PhotoWolt photo={photo} nom={nom} />}
       {hebreu && (
         <>
           <span dir="rtl" lang="he" className="text-sm text-slate-800">{hebreu}</span>

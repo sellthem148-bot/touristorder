@@ -8,6 +8,9 @@ import { donneesDuFormulaire } from "../donnees";
 import { dupliquerProduit, supprimerProduit } from "../../actions";
 import { lireGroupes, optionsEnTexte } from "@/lib/options";
 import { Messages } from "@/components/admin/Messages";
+import { PhotoWolt } from "@/components/admin/PhotoWolt";
+import { RepereWolt } from "@/components/admin/RepereWolt";
+import { repereWolt } from "@/lib/repere-wolt";
 
 export const metadata = { title: "Modifier un produit" };
 
@@ -20,6 +23,7 @@ export default async function ModifierProduit({ params, searchParams }: PageProp
     donneesDuFormulaire(),
   ]);
   if (!p) notFound();
+  const repere = repereWolt(p.nom, p.nomWolt);
 
   return (
     <div className="space-y-4">
@@ -32,6 +36,22 @@ export default async function ModifierProduit({ params, searchParams }: PageProp
         </form>
       </div>
       <Messages params={messages} />
+      {/* Ce que Wolt montre pour cet article : pour le reconnaître, et le retrouver sur Wolt. */}
+      {(repere.photo || repere.hebreu) && (
+        <section aria-label="Sur Wolt" className="carte flex flex-wrap items-center gap-4 p-4">
+          {repere.photo && <PhotoWolt photo={repere.photo} nom={p.nom} taille="grande" />}
+          {/* Sur téléphone, le texte passe sous la photo (`min-w-48`) au lieu de se serrer à côté. */}
+          <div className="min-w-48 flex-1 space-y-1">
+            <p className="surtitre">Sur Wolt</p>
+            <RepereWolt nom={p.nom} hebreu={repere.hebreu} exact={repere.exact} images={repere.images} />
+            <p className="text-xs text-slate-500">
+              {repere.photo
+                ? "Cette photo ne sert qu'à toi, pour reconnaître l'article : le client ne la voit pas."
+                : "Pas encore de photo de Wolt pour cet article : elle vient de tes captures du rayon."}
+            </p>
+          </div>
+        </section>
+      )}
       <FormulaireProduit
         categories={categories}
         boutiques={boutiques}

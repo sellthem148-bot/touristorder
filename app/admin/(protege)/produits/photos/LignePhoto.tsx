@@ -4,6 +4,7 @@
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type DragEvent } from "react";
 import { Camera, Check, ClipboardPaste, ImageOff, Search } from "lucide-react";
 import { avisDeTaille, dimensionsDe, empreinteDe, imageDuPressePapiers, imageDuTransfert } from "@/lib/coller-image";
+import { PhotoWolt } from "@/components/admin/PhotoWolt";
 import { reduirePhoto } from "@/lib/reduire-photo";
 import { rechercheDImage } from "@/lib/recherche-image";
 import { enregistrerPhotoRapide } from "../../actions";
@@ -19,6 +20,9 @@ type Props = { id: string; nom: string; nomWolt: string; detail: string; photoUr
  * « Chercher une image » ouvre la recherche dans un autre onglet ; il y copie l'image, revient, et la COLLE —
  * bouton « Coller », Ctrl + V, ou l'image glissée sur la ligne. La ligne touchée en dernier est celle qui
  * reçoit le collage (`cible.ts`) : elle est entourée, pour qu'on voie où l'image va tomber.
+ *
+ * La photo de Wolt passe en premier, en grand (`PhotoWolt`) : c'est elle qui dit quel article chercher. La
+ * photo du site, celle que voit le client, s'affiche près des boutons une fois posée.
  */
 export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Props) {
   const champ = useRef<HTMLInputElement>(null);
@@ -115,25 +119,20 @@ export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Pr
       onDragOver={auSurvol}
       onDragLeave={() => setSurvol(false)}
       onDrop={auDepot}
-      className={`flex items-center gap-3 p-3 transition-colors first:rounded-t-3xl last:rounded-b-3xl ${visee || survol ? "bg-marque/5 ring-2 ring-inset ring-marque" : ""}`}
+      className={`flex flex-wrap items-center gap-3 p-3 transition-colors first:rounded-t-3xl last:rounded-b-3xl sm:flex-nowrap ${visee || survol ? "bg-marque/5 ring-2 ring-inset ring-marque" : ""}`}
     >
-      {photo ? (
-        <img src={photo} alt="" className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />
+      {/* D'abord ce que Wolt montre : c'est ce qui dit au gérant quel article chercher. */}
+      {photoWolt ? (
+        <PhotoWolt photo={photoWolt} nom={nom} />
       ) : (
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 text-slate-400">
-          <ImageOff className="h-5 w-5" strokeWidth={1.6} aria-hidden="true" />
+        <span className="flex h-[84px] w-28 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 px-2 text-center text-[11px] leading-tight text-slate-500 sm:h-[108px] sm:w-36">
+          Pas de photo de Wolt
         </span>
       )}
       <div className="min-w-0 flex-1">
         <p className="font-medium leading-snug">{nom}</p>
         <p className="truncate text-xs text-slate-500">{detail}</p>
         {nomWolt && <p dir="auto" lang="he" className="truncate text-xs text-slate-500">{nomWolt}</p>}
-        {photoWolt && (
-          <a href={photoWolt} target="_blank" rel="noopener noreferrer" className="mt-1 flex items-center gap-2 text-xs text-slate-500" aria-label={`Voir la photo Wolt de ${nom}`}>
-            <img src={photoWolt} alt="" width={96} height={53} loading="lazy" className="h-[53px] w-24 rounded-lg border border-slate-200 bg-white object-contain" />
-            Sur Wolt
-          </a>
-        )}
         <a
           href={rechercheDImage(nom, nomWolt)}
           target="_blank"
@@ -152,21 +151,30 @@ export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Pr
           visee && <p className="mt-0.5 text-xs font-semibold text-marque">Copie l&apos;image choisie, reviens ici, puis « Coller ».</p>
         )}
       </div>
-      <input
-        ref={champ}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="sr-only"
-        tabIndex={-1}
-        aria-label={`Photo de ${nom}`}
-        onChange={(e) => envoyer(e.target.files?.[0])}
-      />
-      <div className="flex shrink-0 flex-col gap-1.5">
-        <button type="button" className={`${visee ? "bouton" : "bouton-secondaire"} px-3 py-2 text-sm`} disabled={etat.enCours} onClick={coller} aria-label={`Coller l'image copiée sur ${nom}`}>
+      {/* Sur téléphone, les boutons passent sous l'article, sur toute la largeur ; à côté sur ordinateur. */}
+      <div className="relative flex w-full items-center gap-2 sm:w-auto sm:flex-col sm:items-stretch">
+        {/* La photo que voit le client, une fois posée. */}
+        {photo ? (
+          <img src={photo} alt={`Photo de ${nom} sur le site`} title="Sur le site" data-photo-site className="h-11 w-11 shrink-0 rounded-xl border border-slate-200 bg-white object-contain sm:h-14 sm:w-14 sm:self-center" />
+        ) : (
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dashed border-slate-300 text-slate-400 sm:hidden" title="Pas encore de photo sur le site">
+            <ImageOff className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" />
+          </span>
+        )}
+        <input
+          ref={champ}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="sr-only"
+          tabIndex={-1}
+          aria-label={`Photo de ${nom}`}
+          onChange={(e) => envoyer(e.target.files?.[0])}
+        />
+        <button type="button" className={`${visee ? "bouton" : "bouton-secondaire"} flex-1 px-3 py-2 text-sm sm:flex-none`} disabled={etat.enCours} onClick={coller} aria-label={`Coller l'image copiée sur ${nom}`}>
           <ClipboardPaste className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
           Coller
         </button>
-        <button type="button" className="bouton-secondaire px-3 py-2 text-sm" disabled={etat.enCours} onClick={() => champ.current?.click()} aria-label={`${photo ? "Changer" : "Ajouter"} la photo de ${nom}`}>
+        <button type="button" className="bouton-secondaire flex-1 px-3 py-2 text-sm sm:flex-none" disabled={etat.enCours} onClick={() => champ.current?.click()} aria-label={`${photo ? "Changer" : "Ajouter"} la photo de ${nom}`}>
           <Camera className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
           {photo ? "Changer" : "Ajouter"}
         </button>

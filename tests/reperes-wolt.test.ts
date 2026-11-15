@@ -72,13 +72,33 @@ describe("photos repère", () => {
     expect(route).toContain("private");
   });
 
+  it("le gérant les voit partout dans son espace : liste des produits, fiche, Photos rapides, listes de courses", () => {
+    // « Je veux toutes les photos de Wolt, comme ça je sais ce que je cherche » (15 novembre 2026).
+    const lire = (f: string) => readFileSync(f, "utf8");
+    const liste = lire("app/admin/(protege)/produits/page.tsx");
+    expect(liste).toContain("photoRepere(p.nom, p.nomWolt)");
+    expect(liste).toContain('<PhotoWolt photo={photoRepere(p.nom, p.nomWolt)!} nom={p.nom} taille="liste" />');
+    const fiche = lire("app/admin/(protege)/produits/[id]/page.tsx");
+    expect(fiche).toContain("repereWolt(p.nom, p.nomWolt)");
+    expect(fiche).toContain('<PhotoWolt photo={repere.photo} nom={p.nom} taille="grande" />');
+    expect(fiche).toContain("le client ne la voit pas");
+    expect(lire("app/admin/(protege)/produits/photos/LignePhoto.tsx")).toContain("<PhotoWolt photo={photoWolt} nom={nom} />");
+    // Ma journée, la commande et Prix rapides passent par la même ligne de repère.
+    expect(lire("components/admin/RepereWolt.tsx")).toContain("<PhotoWolt photo={photo} nom={nom} />");
+    // Une seule façon de la montrer : en grand, recadrée sur l'article dans une liste, avec l'étiquette « Wolt ».
+    const photo = lire("components/admin/PhotoWolt.tsx");
+    expect(photo).toMatch(/ligne: "h-\[84px\] w-28 sm:h-\[108px\] sm:w-36"/);
+    expect(photo).toContain(">Wolt</span>");
+    expect(photo).not.toContain('"use client"');
+  });
+
   it("ces photos appartiennent à Wolt et aux marques : aucune dans public/, aucune page client ne les connaît", () => {
     const publics = new Set(fichiersDe("public").map((f) => path.basename(f)));
     for (const p of PHOTOS_REPERE) expect(publics.has(p.fichier), p.fichier).toBe(false);
     const cotéClient = [...fichiersDe("app/(boutique)"), ...fichiersDe("components").filter((f) => !f.includes(`${path.sep}admin${path.sep}`)), "lib/catalogue.ts"];
     for (const f of cotéClient.filter((f) => /\.(ts|tsx)$/.test(f))) {
       const source = readFileSync(f, "utf8");
-      expect(/reperes-wolt|repere-wolt|admin\/repere/.test(source), f).toBe(false);
+      expect(/reperes-wolt|repere-wolt|admin\/repere|PhotoWolt/.test(source), f).toBe(false);
     }
     // Le dossier part bien avec la route qui les sert (sinon elles manquent en production).
     expect(readFileSync("next.config.ts", "utf8")).toContain("./prive/reperes-wolt/*.jpg");
