@@ -21,9 +21,14 @@ export function poidsLisible(octets: number): string {
   return `${Math.max(1, Math.round(octets / 1024))} Ko`;
 }
 
+/** Les types que le serveur accepte (lib/image.ts) : une image d'un autre type est toujours convertie en JPEG. */
+const TYPE_ACCEPTE = /^image\/(jpeg|png|webp)$/;
+
 /**
  * La photo allégée (JPEG, 1 600 px au plus), ou la photo d'origine si elle est déjà légère,
  * si le navigateur ne sait pas la lire, ou si le résultat serait plus lourd. Ne lève jamais.
+ * Une image collée peut arriver dans un type que le serveur refuse (TIFF, GIF, BMP…) : celle-là est
+ * convertie en JPEG même petite.
  */
 export async function reduirePhoto(fichier: File): Promise<File> {
   try {
@@ -35,7 +40,8 @@ export async function reduirePhoto(fichier: File): Promise<File> {
       await image.decode();
       const { largeur, hauteur } = dimensionsReduites(image.naturalWidth, image.naturalHeight);
       if (largeur === 0) return fichier;
-      const dejaPetite = largeur === image.naturalWidth && fichier.size <= POIDS_SANS_RETOUCHE;
+      const accepte = TYPE_ACCEPTE.test(fichier.type);
+      const dejaPetite = accepte && largeur === image.naturalWidth && fichier.size <= POIDS_SANS_RETOUCHE;
       if (dejaPetite) return fichier;
 
       const toile = document.createElement("canvas");
@@ -48,7 +54,7 @@ export async function reduirePhoto(fichier: File): Promise<File> {
       contexte.fillRect(0, 0, largeur, hauteur);
       contexte.drawImage(image, 0, 0, largeur, hauteur);
       const blob = await new Promise<Blob | null>((fini) => toile.toBlob(fini, "image/jpeg", QUALITE_JPEG));
-      if (!blob || blob.type !== "image/jpeg" || blob.size >= fichier.size) return fichier;
+      if (!blob || blob.type !== "image/jpeg" || (accepte && blob.size >= fichier.size)) return fichier;
       const nom = fichier.name.replace(/\.[^.]*$/, "") || "photo";
       return new File([blob], `${nom}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
     } finally {

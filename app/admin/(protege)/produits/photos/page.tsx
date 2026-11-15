@@ -14,8 +14,9 @@ const VUES = {
 type Vue = keyof typeof VUES;
 
 /**
- * Photos rapides : tous les articles sans photo sur un écran, un bouton par article.
- * Sur téléphone, le bouton ouvre l'appareil photo ou la galerie ; la photo part aussitôt.
+ * Photos rapides : tous les articles sans photo sur un écran, deux boutons par article.
+ * « Coller » pose l'image que le gérant vient de copier dans un autre onglet (le chemin le plus court) ;
+ * « Ajouter » ouvre l'appareil photo ou la galerie. Dans les deux cas la photo part aussitôt.
  */
 export default async function PagePhotos({ searchParams }: PageProps<"/admin/produits/photos">) {
   await exigerAdmin();
@@ -44,9 +45,15 @@ export default async function PagePhotos({ searchParams }: PageProps<"/admin/pro
       <div>
         <h1 className="text-2xl font-extrabold">Photos rapides</h1>
         <p className="text-sm text-slate-600">
-          Les articles en ligne, rayon par rayon. Appuie sur « Ajouter », prends la photo ou choisis-la : elle est allégée et enregistrée aussitôt.
-          Une photo nette, de face, sur fond clair. « Chercher une image » lance une recherche avec le nom exact de l&apos;article sur Wolt.
+          Les articles en ligne, rayon par rayon. Une photo nette, de face, sur fond clair : elle est allégée et enregistrée aussitôt.
+          « Ajouter » prend une photo ou la choisit dans tes fichiers. Le plus rapide :
         </p>
+        {/* Chercher, copier, coller (LignePhoto.tsx) : la ligne touchée rappelle la suite. */}
+        <ol className="mt-1 list-decimal space-y-0.5 ps-5 text-sm text-slate-600">
+          <li>« Chercher une image » : la recherche s&apos;ouvre dans un autre onglet.</li>
+          <li>Ouvre l&apos;image en grand, appui long dessus (clic droit sur ordinateur) → « Copier l&apos;image ».</li>
+          <li>Reviens ici → « Coller ». Sur ordinateur : Ctrl + V, ou glisse l&apos;image sur la ligne.</li>
+        </ol>
       </div>
       <nav aria-label="Filtrer les articles" className="flex gap-2">
         {(Object.keys(VUES) as Vue[]).map((v) => (
