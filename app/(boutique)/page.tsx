@@ -104,8 +104,8 @@ export default async function Accueil() {
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200">
       {faits.map((f, i) => (
         <div key={f.titre} className={`flex flex-col gap-2 bg-white p-3.5 sm:flex-row sm:gap-3 sm:p-4 ${faits.length % 2 === 1 && i === faits.length - 1 ? "col-span-2" : ""}`}>
-          <f.icone className="h-5 w-5 shrink-0 text-slate-500 sm:mt-0.5" strokeWidth={1.6} aria-hidden="true" />
-          <div className="min-w-0">
+          <f.icone className="apparait h-5 w-5 shrink-0 text-slate-500 sm:mt-0.5" strokeWidth={1.6} aria-hidden="true" style={rangDansLaCascade(i * 2 + 4)} />
+          <div className="apparait min-w-0" style={rangDansLaCascade(i * 2 + 5)}>
             <dt className="text-[13px] text-slate-500">{f.titre}</dt>
             <dd className="font-semibold leading-snug">{f.valeur}</dd>
             {f.precision && <dd className="mt-0.5 text-[13px] leading-snug text-slate-500">{f.precision}</dd>}
@@ -229,10 +229,13 @@ export default async function Accueil() {
               <h2 id="titre-etapes" className="text-xl font-bold sm:text-2xl">{a.commentTitre}</h2>
               <ol className="grid gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
                 {a.etapes.map((e, i) => (
-                  <li key={e.titre} className="space-y-2 bg-white p-5">
-                    <span className="text-sm font-semibold tabular-nums text-slate-400">0{i + 1}</span>
-                    <span className="block font-semibold">{e.titre}</span>
-                    <span className="block text-sm text-slate-600">{e.texte}</span>
+                  <li key={e.titre} className="bg-white p-5">
+                    {/* Le contenu de chaque étape arrive à son tour (la case reste en place : pas de trou gris). */}
+                    <div className="apparait space-y-2" style={rangDansLaCascade(i * 3)}>
+                      <span className="text-sm font-semibold tabular-nums text-slate-400">0{i + 1}</span>
+                      <span className="block font-semibold">{e.titre}</span>
+                      <span className="block text-sm text-slate-600">{e.texte}</span>
+                    </div>
                   </li>
                 ))}
               </ol>

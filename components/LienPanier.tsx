@@ -14,14 +14,16 @@ export function LienPanier() {
   return (
     <Link
       href={lien("/panier")}
-      className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-encre px-3 text-sm font-semibold text-white hover:bg-slate-800"
+      className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-encre px-3 text-sm font-semibold text-white transition duration-150 hover:bg-slate-800 active:scale-95"
       aria-label={compter(langue, nombre, t.entete.panierAria)}
     >
-      <ShoppingCart className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
+      {/* Le chariot se balance à chaque article qui entre ou sort (sa clé change avec le nombre). Sa clé et
+          celle du compteur sont distinctes : deux voisins de même clé, et React en laissait des copies. */}
+      <ShoppingCart key={`chariot-${nombre}`} className={`h-[18px] w-[18px] ${nombre > 0 ? "balance" : ""}`} strokeWidth={1.8} aria-hidden="true" />
       <span className="hidden sm:inline" aria-hidden="true">{t.entete.panier}</span>
       {nombre > 0 && (
         // La clé change avec le nombre d'articles : le compteur rebondit à chaque ajout.
-        <span key={nombre} className="saute min-w-5 rounded-md bg-white px-1 text-center text-xs font-bold leading-5 text-encre tabular-nums" aria-hidden="true">
+        <span key={`compteur-${nombre}`} className="saute min-w-5 rounded-md bg-white px-1 text-center text-xs font-bold leading-5 text-encre tabular-nums" aria-hidden="true">
           {nombre > 99 ? "99+" : nombre}
         </span>
       )}
@@ -44,7 +46,7 @@ export function BarrePanier() {
           <span key={nombre} className="saute flex h-6 min-w-6 items-center justify-center rounded-md bg-white/15 px-1.5 text-sm tabular-nums">{nombre}</span>
           {t.entete.voirLePanier}
         </span>
-        <span key={sousTotal} className="entree-page tabular-nums">{formatPrix(sousTotal, langue)}</span>
+        <span key={sousTotal} className="change tabular-nums">{formatPrix(sousTotal, langue)}</span>
       </Link>
     </aside>
   );

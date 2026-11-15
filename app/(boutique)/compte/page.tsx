@@ -22,6 +22,8 @@ import { BoutonRecommander } from "./BoutonRecommander";
 import { FormulaireProfil } from "./FormulaireProfil";
 import { seDeconnecterClient, supprimerMonEspace } from "./actions";
 import { referenceDeCommande } from "@/lib/reference";
+import { Apparition } from "@/components/Apparition";
+import { rangDansLaCascade } from "@/lib/cascade";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -60,7 +62,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
   return (
     <div className="space-y-8">
       <section className="space-y-5">
-        <div>
+        <div className="apparait">
           <p className="surtitre">{c0.surtitre}</p>
           <h1 className="mt-1 text-2xl font-bold sm:text-4xl">{prenomDe(client.nom) ? remplir(c0.bonjour, { prenom: prenomDe(client.nom) }) : c0.bienvenue}</h1>
           <p className="mt-1 text-sm text-slate-500"><bdi dir="ltr">{client.email}</bdi> · {remplir(c0.clientDepuis, { date: dateLongue(client.createdAt, langue) })}</p>
@@ -71,10 +73,11 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
             { libelle: c0.statEnCours, valeur: String(resume.enCours) },
             { libelle: c0.statArticles, valeur: String(resume.articles) },
             { libelle: c0.statDepense, valeur: prix(resume.depense) },
-          ].map((x) => (
+          ].map((x, i) => (
             <div key={x.libelle} className="flex flex-col-reverse bg-white p-4">
               <dt className="text-[13px] text-slate-500">{x.libelle}</dt>
-              <dd className="text-xl font-bold tabular-nums sm:text-2xl">{x.valeur}</dd>
+              {/* Les chiffres arrivent l'un après l'autre (le chiffre seul : la case, elle, reste en place). */}
+              <dd className="apparait text-xl font-bold tabular-nums sm:text-2xl" style={rangDansLaCascade(i + 1)}>{x.valeur}</dd>
             </div>
           ))}
         </dl>
@@ -86,7 +89,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           {enCours.map((c) => {
             const etape = ETAPES.indexOf(c.statut);
             return (
-              <article key={c.id} className="carte space-y-4 p-5">
+              <article key={c.id} className="carte apparait space-y-4 p-5" style={rangDansLaCascade(3)}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-semibold text-slate-500">{remplir(c0.ligneCommande, { reference: referenceDeCommande(c.numero, c.nomClient), jour: jour(c.dateLivraison), creneau: c.creneau })}</p>
@@ -97,7 +100,10 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                 <ol className="grid grid-cols-4 gap-2" aria-label={t.suivi.avancement}>
                   {ETAPES.map((e, i) => (
                     <li key={e} className="space-y-1 text-center text-xs" aria-current={i === etape ? "step" : undefined}>
-                      <div className={`h-1.5 rounded-full ${i <= etape ? "bg-encre" : "bg-slate-200"}`} />
+                      {/* Les étapes franchies se remplissent l'une après l'autre. */}
+                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                        {i <= etape && <div className="se-remplit h-full rounded-full bg-encre" style={rangDansLaCascade(i + 2)} />}
+                      </div>
                       <span className={i <= etape ? "font-bold text-slate-900" : "text-slate-500"}>{t.statuts.libelle[e]}</span>
                     </li>
                   ))}
@@ -109,13 +115,17 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
         </section>
       )}
 
+      {/* Plus bas, chaque bloc monte en fondu quand il arrive à l'écran. */}
       {preferes.length > 0 && (
+        <Apparition>
         <section aria-labelledby="t-preferes" className="space-y-3">
           <h2 id="t-preferes" className="text-xl font-extrabold">{c0.preferes}</h2>
           <RailProduits produits={preferes} />
         </section>
+        </Apparition>
       )}
 
+      <Apparition>
       <section aria-labelledby="t-historique" className="space-y-3">
         <h2 id="t-historique" className="text-xl font-extrabold">{c0.historique}</h2>
         {commandes.length === 0 ? (
@@ -126,11 +136,11 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           </div>
         ) : (
           <ul className="space-y-3">
-            {commandes.map((c) => {
+            {commandes.map((c, i) => {
               const nombre = c.lignes.filter((l) => !l.indisponible).reduce((s, l) => s + l.quantite, 0);
               return (
-                <li key={c.id}>
-                  <details className="carte group">
+                <li key={c.id} className="apparait" style={rangDansLaCascade(i)}>
+                  <details className="carte group transition duration-200 hover:border-slate-300 open:border-slate-300">
                     <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 p-4">
                       <span className="font-extrabold"><bdi dir="ltr">{referenceDeCommande(c.numero, c.nomClient)}</bdi></span>
                       <span className={`rounded-md px-2 py-0.5 text-xs font-semibold ${COULEUR_STATUT[c.statut]}`}>{t.statuts.libelle[c.statut]}</span>
@@ -138,7 +148,8 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
                       <span className="ms-auto font-extrabold tabular-nums">{prix(c.total)}</span>
                       <span className="w-full text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 group-open:hidden">{c0.voirDetail}</span>
                     </summary>
-                    <div className="space-y-4 border-t border-slate-100 p-4">
+                    {/* Le détail monte en fondu à l'ouverture. */}
+                    <div className="apparait space-y-4 border-t border-slate-100 p-4">
                       <p className="text-sm text-slate-600">
                         {remplir(c0.livraison, { jour: jour(c.dateLivraison), creneau: c.creneau, adresse: adresseComplete(c, t.adresse).replace(/\s+/g, " "), ville: nomVille(c.ville, langue) })}
                         {c.paiement && remplir(c0.paiementMode, { mode: libelleDuMode(c.paiement, t) })}
@@ -178,7 +189,9 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           </ul>
         )}
       </section>
+      </Apparition>
 
+      <Apparition>
       <section aria-labelledby="t-infos" className="carte space-y-4 p-5">
         <div>
           <h2 id="t-infos" className="text-xl font-extrabold">{c0.infosTitre}</h2>
@@ -190,6 +203,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           villes={villes.map((v) => ({ nom: v.nom, affiche: nomVille(v.nom, langue) }))}
         />
       </section>
+      </Apparition>
 
       {/* La langue du site et des e-mails : le choix s'applique tout de suite et reste attaché à l'espace client. */}
       <section aria-labelledby="t-langue" className="carte space-y-3 p-5">

@@ -19,16 +19,16 @@ export default async function ConnexionClient({ searchParams }: PageProps<"/comp
 
   return (
     <div className="mx-auto max-w-md space-y-5">
-      <div className="carte space-y-4 p-6">
+      <div className="carte apparait space-y-4 p-6">
         <p className="surtitre">{t.connexion.surtitre}</p>
         <h1 className="text-2xl font-bold">{t.connexion.titre}</h1>
         <p className="text-slate-600">{t.connexion.intro}</p>
         {lienInvalide && (
-          <p role="alert" className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">{t.connexion.lienInvalide}</p>
+          <p role="alert" className="apparait rounded-2xl bg-amber-50 p-3 text-sm text-amber-900" style={{ animationDelay: "150ms" }}>{t.connexion.lienInvalide}</p>
         )}
         <FormulaireLien />
       </div>
-      <p className="text-center text-sm text-slate-600">
+      <p className="apparait text-center text-sm text-slate-600" style={{ animationDelay: "120ms" }}>
         {t.connexion.creation}{" "}
         <Link href={lien("/commandes")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{t.connexion.voirCommandes}</Link>
       </p>

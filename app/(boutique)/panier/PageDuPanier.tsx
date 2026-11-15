@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { usePanier } from "@/components/panier/PanierProvider";
 import { useTraduction } from "@/components/LangueProvider";
-import { Minus, Plus, ShoppingCart, Trash2, Zap } from "lucide-react";
+import { LoaderCircle, Minus, Plus, ShoppingCart, Trash2, Zap } from "lucide-react";
+import { Apparition } from "@/components/Apparition";
+import { rangDansLaCascade } from "@/lib/cascade";
 import { calculerTotaux } from "@/lib/calcul";
 import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
 import { RecapMontants } from "@/components/RecapMontants";
@@ -95,6 +97,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
     pourboire: 0,
   });
   const [avis, setAvis] = useState("");
+  // Les lignes en train de quitter le panier : elles se replient d'abord (voir `retirer`).
+  const [sortants, setSortants] = useState<string[]>([]);
   // Une demande sans article du catalogue : le formulaire s'affiche même avec un panier vide.
   const [demandeSeule, setDemandeSeule] = useState(demande !== null);
   // La langue dans laquelle le panier a été remis à jour (noms et options) ; il l'est de nouveau si elle change.
@@ -183,9 +187,18 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
     className: `champ ${erreur(nom) ? "champ-erreur" : ""}`,
   });
   const messageErreur = (nom: string) =>
-    erreur(nom) ? <p id={`${nom}-erreur`} className="mt-1.5 text-sm font-medium text-red-700">{erreur(nom)}</p> : null;
+    erreur(nom) ? <p id={`${nom}-erreur`} className="apparait mt-1.5 text-sm font-medium text-red-700">{erreur(nom)}</p> : null;
   // Un numéro ou une adresse e-mail s'écrit de gauche à droite, même dans une page en hébreu.
   const latin = { dir: "ltr" as const };
+
+  // Retirer une ligne : elle se replie, puis quitte le panier (les montants suivent à ce moment-là).
+  function retirer(cle: string) {
+    setSortants((s) => [...s, cle]);
+    window.setTimeout(() => {
+      panier.changerQuantite(cle, 0);
+      setSortants((s) => s.filter((x) => x !== cle));
+    }, 220);
+  }
 
   if (!panier.pret) {
     return <p className="py-16 text-center text-slate-500">{p.chargement}</p>;
@@ -194,8 +207,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   const panierVide = panier.articles.length === 0;
   if (panierVide && !demandeSeule) {
     return (
-      <div className="carte mx-auto max-w-md space-y-4 p-10 text-center">
-        <ShoppingCart className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
+      <div className="carte apparait mx-auto max-w-md space-y-4 p-10 text-center">
+        <ShoppingCart className="balance mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
         <h1 className="text-xl font-bold">{p.videTitre}</h1>
         {avis && <p className="text-sm text-amber-800">{avis}</p>}
         <Link href={lien("/")} className="bouton">{t.commun.voirCatalogue}</Link>
@@ -214,40 +227,50 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   return (
     <form action={envoyer} noValidate className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 space-y-5">
-        <h1 className="text-2xl font-bold sm:text-3xl">{panierVide ? p.titreDemande : p.titreCommande}</h1>
-        {avis && <p className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{avis}</p>}
+        <h1 className="apparait text-2xl font-bold sm:text-3xl">{panierVide ? p.titreDemande : p.titreCommande}</h1>
+        {avis && <p className="apparait rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{avis}</p>}
 
         <Section titre={panierVide ? p.sectionDemande : p.sectionPanier} numero={1}>
           {!panierVide && <ul className="divide-y divide-slate-100">
-            {panier.articles.map((a) => (
-              <li key={a.cle} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                {a.photoUrl && <img src={a.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />}
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold leading-snug"><bdi>{a.nom}</bdi></p>
-                  {a.optionsLibelle && <p className="truncate text-xs text-slate-500"><bdi>{a.optionsLibelle}</bdi></p>}
-                  <p className="text-sm tabular-nums text-slate-600">{prix(a.prix * a.quantite)}</p>
-                </div>
-                <div className="flex shrink-0 items-center rounded-xl border border-slate-300">
-                  <button
-                    type="button"
-                    onClick={() => panier.changerQuantite(a.cle, a.quantite - 1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-100"
-                    aria-label={remplir(a.quantite === 1 ? p.retirer : p.unDeMoins, { nom: a.nom })}
-                  >
-                    {a.quantite === 1 ? <Trash2 className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> : <Minus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />}
-                  </button>
-                  <span className="w-6 text-center text-sm font-bold tabular-nums">{a.quantite}</span>
-                  <button
-                    type="button"
-                    onClick={() => panier.changerQuantite(a.cle, a.quantite + 1)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-100"
-                    aria-label={remplir(p.unDePlus, { nom: a.nom })}
-                  >
-                    <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
-                  </button>
-                </div>
-              </li>
-            ))}
+            {panier.articles.map((a, i) => {
+              const sortant = sortants.includes(a.cle);
+              return (
+                // Une ligne retirée se replie (la rangée de la grille passe de 1fr à 0fr) avant de disparaître.
+                <li key={a.cle} className={`group/ligne grid transition-[grid-template-rows,opacity] duration-200 ease-out ${sortant ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr]"}`}>
+                  <div className={`min-h-0 ${sortant ? "overflow-hidden" : ""}`}>
+                    {/* Les lignes arrivent l'une après l'autre à l'ouverture du panier. */}
+                    <div className="apparait flex items-center gap-3 py-3 group-first/ligne:pt-0 group-last/ligne:pb-0" style={rangDansLaCascade(i)}>
+                      {a.photoUrl && <img src={a.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold leading-snug"><bdi>{a.nom}</bdi></p>
+                        {a.optionsLibelle && <p className="truncate text-xs text-slate-500"><bdi>{a.optionsLibelle}</bdi></p>}
+                        {/* Le prix de la ligne revient en fondu quand la quantité change. */}
+                        <p className="text-sm tabular-nums text-slate-600"><span key={a.prix * a.quantite} className="change inline-block">{prix(a.prix * a.quantite)}</span></p>
+                      </div>
+                      <div className="flex shrink-0 items-center rounded-xl border border-slate-300">
+                        <button
+                          type="button"
+                          onClick={() => (a.quantite === 1 ? retirer(a.cle) : panier.changerQuantite(a.cle, a.quantite - 1))}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 active:scale-90 active:bg-slate-200"
+                          aria-label={remplir(a.quantite === 1 ? p.retirer : p.unDeMoins, { nom: a.nom })}
+                        >
+                          {a.quantite === 1 ? <Trash2 className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> : <Minus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />}
+                        </button>
+                        <span className="w-6 text-center text-sm font-bold tabular-nums"><span key={a.quantite} className="saute inline-block">{a.quantite}</span></span>
+                        <button
+                          type="button"
+                          onClick={() => panier.changerQuantite(a.cle, a.quantite + 1)}
+                          className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-700 transition hover:bg-slate-100 active:scale-90 active:bg-slate-200"
+                          aria-label={remplir(p.unDePlus, { nom: a.nom })}
+                        >
+                          <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>}
           <Link href={lien("/")} className="inline-flex items-center gap-1.5 text-sm font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre"><Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" /> {panierVide ? t.commun.voirCatalogue : p.ajouterAutres}</Link>
           <div className={panierVide ? "" : "border-t border-slate-100 pt-4"}>
@@ -264,6 +287,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
           </div>
         </Section>
 
+        {/* Les étapes suivantes montent en fondu quand on y descend. */}
+        <Apparition>
         <Section titre={p.sectionCoordonnees} numero={2}>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -285,7 +310,9 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             <p className="mt-1 text-xs text-slate-500">{client ? p.emailAideConnecte : p.emailAide}</p>
           </div>
         </Section>
+        </Apparition>
 
+        <Apparition>
         <Section titre={p.sectionAdresse} numero={3}>
           <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">{p.adresseObligatoire}</p>
           <div>
@@ -324,10 +351,11 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             {messageErreur("logement")}
           </fieldset>
           {v.logement === "HOTEL" && (
-            <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="note">{p.hotelAvis}</p>
+            <p className="apparait rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="note">{p.hotelAvis}</p>
           )}
+          {/* Les champs propres au logement choisi arrivent en montant. */}
           {v.logement !== "" && (
-            <div>
+            <div className="apparait">
               <label htmlFor="adresse" className="etiquette">{v.logement === "HOTEL" ? p.hotelNom : p.adresse}</label>
               <input {...texte("adresse")} autoComplete={v.logement === "HOTEL" ? "organization" : "address-line1"} maxLength={200} placeholder={v.logement === "HOTEL" ? p.hotelNomPlaceholder : p.adressePlaceholder} required />
               {messageErreur("adresse")}
@@ -335,7 +363,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
           )}
           {v.logement === "APPARTEMENT" && (
             <>
-              <div className="grid grid-cols-2 items-end gap-4">
+              <div className="apparait grid grid-cols-2 items-end gap-4" style={rangDansLaCascade(1)}>
                 <div>
                   <label htmlFor="etage" className="etiquette">{p.etage}</label>
                   <input {...texte("etage")} autoComplete="off" maxLength={20} placeholder={p.etagePlaceholder} required />
@@ -351,21 +379,23 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             </>
           )}
           {v.logement === "HOTEL" && (
-            <div>
+            <div className="apparait" style={rangDansLaCascade(1)}>
               <label htmlFor="appartement" className="etiquette">{p.chambre}</label>
               <input {...texte("appartement")} autoComplete="off" maxLength={20} placeholder={p.appartementPlaceholder} />
               {messageErreur("appartement")}
             </div>
           )}
           {(v.logement === "APPARTEMENT" || v.logement === "MAISON") && (
-            <div>
+            <div className="apparait" style={rangDansLaCascade(2)}>
               <label htmlFor="codeEntree" className="etiquette">{p.codeEntree}</label>
               <input {...texte("codeEntree")} autoComplete="off" maxLength={40} placeholder={p.codeEntreePlaceholder} />
               {messageErreur("codeEntree")}
             </div>
           )}
         </Section>
+        </Apparition>
 
+        <Apparition>
         <Section titre={p.sectionMoment} numero={4}>
           <fieldset>
             <legend className="etiquette">{p.jour}</legend>
@@ -411,27 +441,30 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
           </fieldset>
 
           <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700" aria-live="polite">
-            <strong>{tarif.nom === NOM_TARIF_DE_BASE ? p.tarifNormal : remplir(p.tarifNom, { nom: nomDeTarif(tarif.nom).toLowerCase() })}</strong>
-            {" · "}
-            {reglages.fraisRegroupes
-              ? remplir(p.serviceEtLivraison, { prix: prixCourt(tarif.fraisService + livraison) })
-              : remplir(p.serviceLivraisonDetail, { service: prixCourt(tarif.fraisService), livraison: prixCourt(livraison) })}
-            {ville && ville.supplementLivraison > 0 && remplir(p.dontVille, { prix: prixCourt(ville.supplementLivraison), ville: nomDeVille(ville.nom) })}
-            {tarif.majorationPct > 0 && remplir(p.articlesPlus, { pct: tarif.majorationPct })}
+            {/* Le tarif change avec le jour, le créneau ou la ville : la phrase revient en fondu, on le remarque. */}
+            <span key={`${tarif.nom}|${tarif.fraisService}|${livraison}|${tarif.majorationPct}`} className="change inline-block">
+              <strong>{tarif.nom === NOM_TARIF_DE_BASE ? p.tarifNormal : remplir(p.tarifNom, { nom: nomDeTarif(tarif.nom).toLowerCase() })}</strong>
+              {" · "}
+              {reglages.fraisRegroupes
+                ? remplir(p.serviceEtLivraison, { prix: prixCourt(tarif.fraisService + livraison) })
+                : remplir(p.serviceLivraisonDetail, { service: prixCourt(tarif.fraisService), livraison: prixCourt(livraison) })}
+              {ville && ville.supplementLivraison > 0 && remplir(p.dontVille, { prix: prixCourt(ville.supplementLivraison), ville: nomDeVille(ville.nom) })}
+              {tarif.majorationPct > 0 && remplir(p.articlesPlus, { pct: tarif.majorationPct })}
+            </span>
           </p>
 
           {expressPossible && (
             <fieldset>
               <legend className="etiquette">{p.rapidite}</legend>
               <div className="grid gap-2 sm:grid-cols-2">
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 p-4 has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 p-4 transition active:scale-[0.99] has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
                   <input type="radio" name="express" value="0" checked={!express} onChange={() => changer("express", false)} className="mt-1 accent-encre" />
                   <span>
                     <span className="block font-bold">{p.standard}</span>
                     <span className="text-sm text-slate-600">{p.standardAide}</span>
                   </span>
                 </label>
-                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 p-4 has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 p-4 transition active:scale-[0.99] has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
                   <input type="radio" name="express" value="1" checked={express} onChange={() => changer("express", true)} className="mt-1 accent-encre" />
                   <span>
                     <span className="flex items-center gap-1.5 font-bold"><Zap className="h-4 w-4 text-slate-600" strokeWidth={1.8} aria-hidden="true" /> {p.express} · <span dir="ltr">+{prixCourt(tarif.fraisExpress)}</span></span>
@@ -442,7 +475,9 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             </fieldset>
           )}
         </Section>
+        </Apparition>
 
+        <Apparition>
         <Section titre={p.sectionPreferences} numero={5}>
           {reglages.paiements.length > 0 && (
             <fieldset>
@@ -464,7 +499,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             <legend className="etiquette">{p.siManque}</legend>
             <div className="grid gap-2">
               {(Object.keys(REMPLACEMENTS) as Remplacement[]).map((r) => (
-                <label key={r} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
+                <label key={r} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 transition active:scale-[0.99] has-[:checked]:border-encre has-[:checked]:bg-slate-50 has-[:checked]:ring-1 has-[:checked]:ring-encre">
                   <input type="radio" name="remplacement" value={r} checked={v.remplacement === r} onChange={() => changer("remplacement", r)} className="accent-encre" />
                   <span className="font-medium">{p.remplacements[r]}</span>
                 </label>
@@ -494,10 +529,11 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             {messageErreur("notes")}
           </div>
         </Section>
+        </Apparition>
       </div>
 
       <aside className="lg:pt-[3.25rem]">
-        <div className="carte space-y-4 p-5 lg:sticky lg:top-20">
+        <div className="carte apparait space-y-4 p-5 lg:sticky lg:top-20" style={rangDansLaCascade(2)}>
           <h2 className="text-lg font-bold">{panierVide ? p.sectionDemande : p.recap}</h2>
           {!panierVide && (
             <RecapMontants
@@ -529,9 +565,9 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
           />
           {!expressPossible && <input type="hidden" name="express" value="0" />}
 
-          {etat.erreur && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-sm font-medium text-red-800">{etat.erreur}</p>}
+          {etat.erreur && <p role="alert" className="apparait rounded-2xl bg-red-50 p-3 text-sm font-medium text-red-800">{etat.erreur}</p>}
           {!panierVide && sousLeMinimum && (
-            <p className="rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="apparait rounded-2xl bg-amber-50 p-3 text-sm text-amber-900">
               {ville && ville.minimumCommande > reglages.minimumCommande
                 ? remplir(p.minimumVille, { ville: nomDeVille(ville.nom), prix: prix(minimum) })
                 : remplir(p.minimum, { prix: prix(minimum) })}
@@ -548,7 +584,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
             className="bouton w-full py-4 text-base"
             disabled={enCours || (!panierVide && sousLeMinimum) || (panierVide && !demandeRemplie) || !reglages.ouvert || jours.length === 0}
           >
-            {enCours ? p.envoi : panierVide ? p.envoyerDemande : remplir(p.commander, { prix: prix(totaux.total) })}
+            {enCours ? <><LoaderCircle className="tourne h-5 w-5" strokeWidth={2} aria-hidden="true" /> {p.envoi}</> : panierVide ? p.envoyerDemande : remplir(p.commander, { prix: prix(totaux.total) })}
           </button>
           <p className="text-center text-xs text-slate-500">
             {p.conditionsAvant}<Link href={lien("/conditions")} className="underline underline-offset-2 hover:text-encre">{p.conditionsLien}</Link>{p.conditionsApres}

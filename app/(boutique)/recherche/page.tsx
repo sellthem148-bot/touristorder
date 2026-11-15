@@ -21,9 +21,9 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href={lien("/")} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre">
-          <ArrowLeft className="h-4 w-4 rtl:rotate-180" strokeWidth={1.8} aria-hidden="true" /> {r.retour}
+      <div className="apparait">
+        <Link href={lien("/")} className="group/retour inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre">
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover/retour:-translate-x-0.5 rtl:rotate-180 rtl:group-hover/retour:translate-x-0.5" strokeWidth={1.8} aria-hidden="true" /> {r.retour}
         </Link>
         <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{q ? remplir(r.resultats, { q }) : r.titre}</h1>
         {q.length >= 2 && produits.length > 0 && (
@@ -33,8 +33,8 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
       {q.length < 2 ? (
         <p className="text-slate-600">{r.minimum}</p>
       ) : produits.length === 0 ? (
-        <div className="carte space-y-3 p-8 text-center">
-          <SearchX className="mx-auto h-8 w-8 text-slate-400" strokeWidth={1.5} aria-hidden="true" />
+        <div className="carte apparait space-y-3 p-8 text-center" style={{ animationDelay: "90ms" }}>
+          <SearchX className="balance mx-auto h-8 w-8 text-slate-400" strokeWidth={1.5} aria-hidden="true" />
           <p className="font-semibold">{r.aucun}</p>
           <p className="mx-auto max-w-md text-sm text-slate-600">
             {r.aucunAide}

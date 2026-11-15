@@ -20,7 +20,7 @@ const pause = (p, ms) => p.waitForTimeout(ms);
 const restes = (p) =>
   p.evaluate(() =>
     // (Un bloc encore en attente plus bas dans la page n'est pas un reste : `enAttente` le compte à part.)
-    [...document.querySelectorAll(".apparait, .arrive, .entree-page, .saute, .monte, .deploie")]
+    [...document.querySelectorAll(".apparait, .arrive, .entree-page, .saute, .monte, .deploie, .change, .se-remplit, .balance")]
       .filter((el) => {
         const s = getComputedStyle(el);
         return el.getClientRects().length > 0 && (Number(s.opacity) < 1 || s.clipPath !== "none" || s.transform !== "none");
@@ -45,6 +45,8 @@ try {
     const contexte = await navigateur.newContext({ ...devices["iPhone 13"] });
     const p = await contexte.newPage();
     p.on("pageerror", (e) => erreurs.push(String(e)));
+    // Les avertissements de React (deux voisins de même clé…) arrivent dans la console, pas en erreur de page.
+    p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erreurs.push(m.text().slice(0, 300)); });
 
     // 1. L'accueil : le haut de page arrive en cascade, le bas attend d'être à l'écran
     await p.goto(BASE + prefixe + "/", { waitUntil: "networkidle" });
@@ -102,6 +104,7 @@ try {
     await pause(p, 500);
     verifier((await compteur.locator("[aria-live]").innerText()).trim() === "2", `${langue} — un second appui : 2`);
     verifier((await barre.locator(".saute").innerText()).trim() === "2", `${langue} — le compteur de la barre suit : 2`);
+    verifier((await p.locator("header a[href$='/panier'] svg").count()) === 1, `${langue} — en-tête : un seul chariot, qui se balance à chaque ajout`);
     verifier((await restes(p)).length === 0, `${langue} — rien n'est resté transparent ou coupé après l'ajout`);
     if (OUT) await p.screenshot({ path: `${OUT}/mouvement-4-panier-${prefixe ? "he" : "fr"}.png` });
 
@@ -128,18 +131,72 @@ try {
     verifier((await enAttente(p)) === 0 && (await restes(p)).length === 0, `${langue} — crèmerie : tout est arrivé, rien n'est resté invisible`);
     verifier(!(await deborde(p)), `${langue} — crèmerie : pas de défilement horizontal`);
 
-    // 6. D'une page à l'autre : le fondu rejoue, et le panier n'a pas bougé
+    // 6. D'une page à l'autre : la barre de chargement accompagne, le fondu rejoue, et le panier n'a pas bougé
+    verifier((await p.locator("header").first().getAttribute("data-defile")) === "oui", `${langue} — page défilée : l'en-tête a pris son ombre`);
     await p.evaluate(() => scrollTo(0, 0));
+    await pause(p, 150);
+    verifier((await p.locator("header").first().getAttribute("data-defile")) === "non", `${langue} — revenu en haut : l'ombre de l'en-tête s'en va`);
+    await p.evaluate(() => {
+      window.__barre = [];
+      new MutationObserver(() => {
+        const b = document.querySelector("[data-barre-navigation]");
+        const etat = b ? b.dataset.barreNavigation : "repos";
+        if (window.__barre.at(-1) !== etat) window.__barre.push(etat);
+      }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-barre-navigation"] });
+    });
     await p.evaluate(() => { window.__fondus = 0; document.querySelector(".entree-page").addEventListener("animationstart", (e) => { if (e.animationName === "fondu" && e.target === e.currentTarget) window.__fondus += 1; }); });
     await p.locator("header a").first().click();
     await p.waitForURL(BASE + (prefixe || "/"));
     await pause(p, 700);
     verifier((await p.evaluate(() => window.__fondus)) === 1, `${langue} — en changeant de page, le contenu arrive en fondu (une fois)`);
     verifier((await p.locator("aside.monte .saute").innerText()).trim() === "2", `${langue} — le panier est resté tel quel d'une page à l'autre`);
+    await pause(p, 600);
+    const barre2 = await p.evaluate(() => window.__barre.join(" → "));
+    // (« charge » manque quand la page arrive tout de suite : la barre va droit au bout.)
+    verifier(/^depart( → charge)? → fin → repos$/.test(barre2), `${langue} — la barre de chargement part, avance, finit et se retire (${barre2})`);
+    if (!prefixe) {
+      const depart = await p.evaluate(() => new Promise((fini) => {
+        new MutationObserver((_, o) => { const b = document.querySelector("[data-barre-navigation]"); if (b) { o.disconnect(); const r = b.getBoundingClientRect(); fini({ x: r.x, y: r.y }); } }).observe(document.body, { childList: true, subtree: true });
+        document.querySelector("#rayons a").click();
+      }));
+      verifier(depart.x === 0 && depart.y === 0, "français — la barre part du coin haut gauche de l'écran");
+      await p.waitForURL(/\/categorie\//);
+      await p.goBack();
+      await pause(p, 600);
+    }
+
+    // 7. Le panier (sans rien commander) : les lignes arrivent, la quantité rebondit, les étapes plus bas attendent
+    await p.locator("aside.monte a").click();
+    await p.waitForURL(BASE + prefixe + "/panier");
+    await p.locator("form ul li").first().waitFor();
+    await pause(p, 1100);
+    verifier((await p.locator("form ul li").count()) === 1, `${langue} — panier : la ligne de l'article est là`);
+    verifier((await enAttente(p)) >= 2, `${langue} — panier : les étapes plus bas attendent d'arriver à l'écran`);
+    const ligne = p.locator("form ul li").first();
+    await ligne.locator("button").last().click();
+    await pause(p, 60);
+    verifier((await ligne.locator(".saute").innerText()).trim() === "3", `${langue} — panier : un article de plus, la quantité rebondit à 3`);
+    await pause(p, 500);
+    await ligne.locator("button").first().click();
+    await pause(p, 500);
+    await toutDefiler(p);
+    verifier((await enAttente(p)) === 0, `${langue} — panier : en faisant défiler, toutes les étapes sont arrivées`);
+    const laissesPanier = await restes(p);
+    verifier(laissesPanier.length === 0, `${langue} — panier : rien n'est resté transparent ou déplacé${laissesPanier.length ? " : " + laissesPanier.slice(0, 4).join(" | ") : ""}`);
+    verifier(!(await deborde(p)), `${langue} — panier : pas de défilement horizontal`);
+    // Choisir « Hôtel » : l'avis et le champ de l'hôtel arrivent en montant, le choix répond.
+    const hotel = p.locator('label.pastille:has(input[name="logement"][value="HOTEL"])');
+    await hotel.click();
+    await p.locator("#adresse").waitFor();
+    verifier(await p.locator("#adresse").evaluate((el) => el.closest(".apparait") !== null), `${langue} — panier : le champ de l'hôtel arrive en montant`);
+    verifier((await hotel.evaluate((el) => getComputedStyle(el).animationName)) === "appui", `${langue} — panier : le choix coché répond d'un petit appui`);
+    await pause(p, 700);
+    verifier((await restes(p)).length === 0 && !(await deborde(p)), `${langue} — panier : après ce choix, rien d'invisible, pas de défilement horizontal`);
+    if (OUT) await p.screenshot({ path: `${OUT}/mouvement-6-panier-${prefixe ? "he" : "fr"}.png` });
     await contexte.close();
   }
 
-  // 7. Qui a demandé moins d'animations à son appareil : rien n'attend, rien ne bouge
+  // 8. Qui a demandé moins d'animations à son appareil : rien n'attend, rien ne bouge
   const calme = await navigateur.newContext({ ...devices["iPhone 13"], reducedMotion: "reduce" });
   const c = await calme.newPage();
   c.on("pageerror", (e) => erreurs.push(String(e)));
@@ -151,7 +208,7 @@ try {
   verifier(duree < 0.001, "moins d'animations : les animations sont coupées");
   await calme.close();
 
-  // 8. Sans JavaScript (et pour un moteur de recherche) : toute la page est là
+  // 9. Sans JavaScript (et pour un moteur de recherche) : toute la page est là
   const sans = await navigateur.newContext({ ...devices["iPhone 13"], javaScriptEnabled: false });
   const s = await sans.newPage();
   await s.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "load" });
@@ -161,7 +218,7 @@ try {
   verifier(opacites.length > 20 && opacites.every((o) => o === 1), `sans JavaScript : les ${opacites.length} tuiles sont visibles`);
   await sans.close();
 
-  // 9. Sur ordinateur : la tuile se soulève au survol, la colonne des rayons reste collée
+  // 10. Sur ordinateur : la tuile se soulève au survol, la colonne des rayons reste collée
   const ordi = await (await navigateur.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
   ordi.on("pageerror", (e) => erreurs.push(String(e)));
   await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });

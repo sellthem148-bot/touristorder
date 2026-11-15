@@ -28,6 +28,7 @@ node tests/navigateur/largeur.mjs /tmp/captures     # aucune page plus large qu'
 node tests/navigateur/repere-wolt.mjs /tmp/captures   # le repère Wolt du gérant : nom en hébreu à copier et lien « Images » dans Ma journée, la commande et Prix rapides
 node tests/navigateur/parcours-rayons.mjs /tmp/captures   # le catalogue « comme sur Wolt » : sous-rayons, tuiles, colonne des rayons. Sur le catalogue ENTIER : base vide, puis « npx tsx tests/outils/base-complete.ts » (ne modifie rien)
 node tests/navigateur/mouvement.mjs /tmp/captures   # le mouvement côté client : rien ne reste invisible, rien n'élargit la page, la rangée collée reste collée ; sans JavaScript et avec « moins d'animations ». Sur le catalogue ENTIER, comme parcours-rayons (ne modifie rien)
+node tests/navigateur/mouvement-commande.mjs /tmp/captures   # le mouvement sur le panier et la page de suivi (ligne qui se replie, champ refusé qui se secoue, coche, barre d'avancement, halo). PASSE UNE COMMANDE : jeu de test local, serveur fraîchement démarré (le site limite le nombre de commandes par visiteur)
 node tests/navigateur/menu-gerant.mjs               # le menu du gérant : aucun lien hors de l'écran, de l'ordinateur au petit téléphone (ne modifie rien)
 ```
 

@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { PanierProvider } from "@/components/panier/PanierProvider";
 import { LangueProvider } from "@/components/LangueProvider";
 import { ChoixLangue } from "@/components/ChoixLangue";
 import { EnTete, Logo } from "@/components/EnTete";
 import { BarrePanier } from "@/components/LienPanier";
 import { EntreePage } from "@/components/EntreePage";
+import { BarreDeNavigation } from "@/components/BarreDeNavigation";
+import { Apparition } from "@/components/Apparition";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { traduction } from "@/lib/traduction";
 
@@ -15,12 +18,15 @@ export default async function LayoutBoutique({ children }: LayoutProps<"/">) {
   return (
     <LangueProvider langue={langue} t={t}>
       <PanierProvider>
+        <Suspense fallback={null}>
+          <BarreDeNavigation />
+        </Suspense>
         <EnTete t={t} langue={langue} />
         <main id="contenu" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-5 sm:pb-20 sm:pt-8">
           <EntreePage>{children}</EntreePage>
         </main>
         <footer className="border-t border-slate-200 bg-white text-slate-600">
-          <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <Apparition className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div className="space-y-3">
               <Logo />
               <p className="max-w-xs text-sm">{t.pied.slogan}</p>
@@ -46,7 +52,7 @@ export default async function LayoutBoutique({ children }: LayoutProps<"/">) {
               <p><Link href={lien("/mentions-legales")} className={survol}>{t.pied.mentions}</Link></p>
               <p><Link href={lien("/credits")} className={survol}>{t.pied.credits}</Link></p>
             </div>
-          </div>
+          </Apparition>
           <div className="border-t border-slate-200">
             <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-4 pb-24 text-xs text-slate-500 sm:pb-4">
               <p>© {new Date().getFullYear()} {NOM_DU_SITE}</p>

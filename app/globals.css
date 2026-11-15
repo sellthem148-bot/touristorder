@@ -118,6 +118,67 @@ dialog.fiche[open]::backdrop {
   from { clip-path: inset(0 var(--cache-droite, 0%) 0 var(--cache-gauche, 0%)); }
   to { clip-path: inset(0 0% 0 0%); }
 }
+/* Une valeur qui vient de changer (un montant, un prix) revient en fondu. */
+@keyframes changement {
+  from { opacity: 0.15; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+/* Un choix qu'on vient de cocher : un petit appui. */
+@keyframes appui {
+  0% { transform: scale(0.94); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+/* Un champ refusé fait « non » de la tête. */
+@keyframes secousse {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+/* Une barre qui se remplit jusqu'à sa largeur. */
+@keyframes remplissage {
+  from { width: 0; }
+}
+/* Un halo qui s'élargit et s'efface (`--halo` : sa couleur, `--portee` : jusqu'où il va). */
+@keyframes halo {
+  from { box-shadow: 0 0 0 0 var(--halo, rgb(13 19 33 / 0.3)); }
+  to { box-shadow: 0 0 0 var(--portee, 12px) transparent; }
+}
+/* Un trait qui se trace (`--longueur` : celle du trait). */
+@keyframes trace {
+  from { stroke-dasharray: var(--longueur); stroke-dashoffset: var(--longueur); }
+  to { stroke-dasharray: var(--longueur); stroke-dashoffset: 0; }
+}
+/* Le chariot du panier se balance quand un article y entre. */
+@keyframes balancement {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-14deg); }
+  60% { transform: rotate(9deg); }
+  82% { transform: rotate(-4deg); }
+}
+/* Un indicateur d'attente qui tourne. */
+@keyframes tour {
+  to { transform: rotate(360deg); }
+}
+/* Le O du logo rebondit à l'ouverture du site, et grossit un peu au survol. */
+.logo-vivant svg circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
+  animation: saut 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) 0.45s backwards;
+}
+a:hover .logo-vivant svg circle {
+  transform: scale(1.14);
+}
+/* L'en-tête prend une ombre dès qu'on fait défiler la page (posé par components/CadreEnTete.tsx). */
+header[data-defile] {
+  transition: box-shadow 0.25s ease-out;
+}
+header[data-defile="oui"] {
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.07);
+}
 /* Dans un bloc en attente, les éléments en cascade attendent aussi : ils partiront avec lui. */
 .a-venir .apparait {
   animation: none;
@@ -153,8 +214,10 @@ dialog.fiche[open]::backdrop {
   @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base text-encre placeholder:text-slate-400 focus:border-encre focus:outline-none focus:ring-2 focus:ring-encre/10;
 }
 
+/* Le champ refusé se secoue une fois, un instant après le refus (le temps que la page y amène le client). */
 @utility champ-erreur {
   @apply border-red-600 focus:border-red-600 focus:ring-red-600/15;
+  animation: secousse 0.4s ease-in-out 0.3s;
 }
 
 @utility etiquette {
@@ -190,7 +253,11 @@ dialog.fiche[open]::backdrop {
    masquée (sr-only, en position absolue) reste dans son libellé ; sinon, dans une
    rangée qui défile, elle s'en échappait et élargissait toute la page. */
 @utility pastille {
-  @apply relative inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition select-none hover:border-slate-500 has-[:checked]:border-encre has-[:checked]:bg-encre has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40;
+  @apply relative inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition select-none hover:border-slate-500 has-[:checked]:border-encre has-[:checked]:bg-encre has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40 active:scale-[0.96];
+  /* Le choix qu'on vient de faire répond d'un petit appui. */
+  &:has(:checked) {
+    animation: appui 0.26s ease-out;
+  }
 }
 
 /* Arrive en montant, à l'affichage de la page. `--i` (0, 1, 2…) décale les éléments d'une même série. */
@@ -204,9 +271,53 @@ dialog.fiche[open]::backdrop {
   animation: fondu 0.28s ease-out backwards;
 }
 
+/* Un simple fondu, pour ce qui vient d'être affiché (une photo dans une fiche). */
+@utility en-fondu {
+  animation: fondu 0.35s ease-out backwards;
+}
+
 /* Un petit rebond : une quantité qui change, un compteur de panier, un bouton qui vient de servir. */
 @utility saute {
   animation: saut 0.32s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+/* Une valeur qui vient de changer : l'élément porte `key={valeur}`. (`inline-block` pour un texte en ligne.) */
+@utility change {
+  animation: changement 0.3s ease-out;
+}
+
+/* Le chariot du panier (voir `balancement`). */
+@utility balance {
+  transform-origin: 50% 80%;
+  animation: balancement 0.5s ease-in-out;
+}
+
+/* Un indicateur d'attente : tourne tant qu'il est affiché. */
+@utility tourne {
+  animation: tour 0.8s linear infinite;
+}
+
+/* Une barre d'avancement se remplit à l'arrivée ; `--i` décale les barres d'une même série. */
+@utility se-remplit {
+  animation: remplissage 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation-delay: calc(0.25s + var(--i, 0) * 0.14s);
+}
+
+/* Ce qui attend le client « bat » doucement, en boucle : l'étape en cours d'une commande, le bouton pour payer. */
+@utility bat {
+  animation: halo 1.9s ease-out infinite;
+}
+
+/* Une coche qui se trace : le cercle, puis la coche (icône CircleCheck). */
+@utility se-trace {
+  & circle {
+    --longueur: 63;
+    animation: trace 0.6s ease-out 0.25s backwards;
+  }
+  & path {
+    --longueur: 9;
+    animation: trace 0.3s ease-out 0.8s backwards;
+  }
 }
 
 /* Se déplie de côté (voir `deploiement`). */

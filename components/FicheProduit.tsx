@@ -12,6 +12,7 @@ import { PastilleBadge, Prix } from "./Prix";
 import { useTraduction } from "./LangueProvider";
 import { LOCALE, remplir } from "@/lib/langues";
 import { nomDuRayon } from "@/lib/i18n/rayons";
+import { rangDansLaCascade } from "@/lib/cascade";
 
 /** La fiche d'un produit : la photo s'il y en a une, la description, le choix des options, la quantité. */
 export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; fermer: () => void }) {
@@ -64,7 +65,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
         <button
           type="button"
           onClick={() => ref.current?.close()}
-          className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition duration-150 hover:bg-slate-50 active:scale-90"
           aria-label={t.commun.fermer}
           autoFocus
         >
@@ -72,11 +73,13 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
         </button>
       </div>
       {produit.photoUrl && (
-        <img src={produit.photoUrl} alt={produit.nom} className="aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
+        <img src={produit.photoUrl} alt={produit.nom} className="en-fondu aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
       )}
 
       <div className="space-y-5 p-5">
-        <div className="space-y-1.5 pe-10">
+        {/* Le contenu arrive ligne après ligne, pendant que la fiche monte. (Jamais sur le bloc entier : la
+            barre « Ajouter » doit rester collée en bas de la fiche.) */}
+        <div className="apparait space-y-1.5 pe-10" style={rangDansLaCascade(1)}>
           <p className="surtitre">{nomDuRayon(produit.categorie, t)}</p>
           <h2 id={`fiche-${produit.id}`} className="text-xl font-bold leading-tight"><bdi>{produit.nom}</bdi></h2>
           <div className="flex flex-wrap items-center gap-2">
@@ -84,10 +87,10 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
             <PastilleBadge badge={produit.badge} libelle={produit.badge ? t.produit.badges[produit.badge] : undefined} />
           </div>
         </div>
-        {produit.description && <p className="whitespace-pre-line text-slate-600"><bdi>{produit.description}</bdi></p>}
+        {produit.description && <p className="apparait whitespace-pre-line text-slate-600" style={rangDansLaCascade(2)}><bdi>{produit.description}</bdi></p>}
 
-        {produit.options.map((g) => (
-          <fieldset key={g.nom} className="space-y-2">
+        {produit.options.map((g, i) => (
+          <fieldset key={g.nom} className="apparait space-y-2" style={rangDansLaCascade(i + 3)}>
             <legend className="mb-2 flex w-full items-center justify-between font-semibold">
               <bdi>{g.affiche ?? g.nom}</bdi>
               <span className="text-xs font-normal text-slate-500">{t.produit.obligatoire}</span>
@@ -121,16 +124,16 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
               <button
                 type="button"
                 onClick={() => setQuantite((q) => Math.max(1, q - 1))}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl hover:bg-slate-50"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl transition duration-150 hover:bg-slate-50 active:scale-90 active:bg-slate-100"
                 aria-label={t.produit.uneDeMoins}
               >
                 <Minus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
               </button>
-              <span className="w-6 text-center font-bold tabular-nums" aria-live="polite">{quantite}</span>
+              <span className="w-6 text-center font-bold tabular-nums" aria-live="polite"><span key={quantite} className="saute inline-block">{quantite}</span></span>
               <button
                 type="button"
                 onClick={() => setQuantite((q) => Math.min(QUANTITE_MAX, q + 1))}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl hover:bg-slate-50"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl transition duration-150 hover:bg-slate-50 active:scale-90 active:bg-slate-100"
                 aria-label={t.produit.uneDePlus}
               >
                 <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />

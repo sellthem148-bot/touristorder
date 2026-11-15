@@ -37,10 +37,11 @@ export function ChoixLangue({ compact = false, sansEtiquette = false, id = "lang
   if (compact) {
     return (
       <label
-        className={`relative hidden h-10 shrink-0 cursor-pointer min-[360px]:inline-flex items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40 ${enCours ? "opacity-60" : ""}`}
+        className={`relative hidden h-10 shrink-0 cursor-pointer min-[360px]:inline-flex items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-slate-700 transition duration-150 hover:bg-slate-100 active:scale-90 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40 ${enCours ? "opacity-60" : ""}`}
         title={t.langue.choisir}
       >
-        <Globe className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />
+        {/* Le globe tourne pendant que la page change de langue. */}
+        <Globe className={`h-5 w-5 ${enCours ? "tourne" : ""}`} strokeWidth={1.7} aria-hidden="true" />
         <span aria-hidden="true" className="hidden uppercase sm:inline">{langue}</span>
         <span className="sr-only">{t.langue.choisir}</span>
         <select id={id} value={langue} onChange={(e) => choisir(e.target.value)} disabled={enCours} className="absolute inset-0 h-full w-full cursor-pointer opacity-0">

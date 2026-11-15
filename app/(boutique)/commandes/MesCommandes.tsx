@@ -10,6 +10,7 @@ import { COULEUR_STATUT } from "@/lib/statuts";
 import { compter, remplir } from "@/lib/langues";
 import { useTraduction } from "@/components/LangueProvider";
 import { mesCommandes } from "../actions";
+import { rangDansLaCascade } from "@/lib/cascade";
 
 type Commandes = Awaited<ReturnType<typeof mesCommandes>>;
 type Etat = { etape: "chargement" } | { etape: "erreur" } | { etape: "pret"; commandes: Commandes };
@@ -35,7 +36,7 @@ export function MesCommandes() {
   }
   if (etat.commandes.length === 0) {
     return (
-      <div className="carte space-y-3 p-8 text-center">
+      <div className="carte apparait space-y-3 p-8 text-center">
         <ReceiptText className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
         <p className="font-bold">{t.commandes.aucune}</p>
         <p className="text-sm text-slate-600">{t.commandes.aucuneAide}</p>
@@ -46,9 +47,9 @@ export function MesCommandes() {
 
   return (
     <ul className="space-y-3">
-      {etat.commandes.map((c) => (
-        <li key={c.jeton}>
-          <Link href={lien(`/suivi/${c.jeton}`)} className="carte flex items-center gap-4 p-4 transition hover:border-slate-400">
+      {etat.commandes.map((c, i) => (
+        <li key={c.jeton} className="apparait" style={rangDansLaCascade(i)}>
+          <Link href={lien(`/suivi/${c.jeton}`)} className="carte flex items-center gap-4 p-4 transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.985]">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700" aria-hidden="true"><ShoppingBag className="h-5 w-5" strokeWidth={1.6} /></span>
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-2">

@@ -21,6 +21,8 @@ import { referenceDeCommande } from "@/lib/reference";
 import { IconeWhatsapp } from "@/components/Icones";
 import { ViderPanier } from "./ViderPanier";
 import { RecapMontants } from "@/components/RecapMontants";
+import { Apparition } from "@/components/Apparition";
+import { rangDansLaCascade } from "@/lib/cascade";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -99,8 +101,9 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
       <Actualiser secondes={30} />
 
       {nouvelle && (
-        <section className="flex gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
-          <CircleCheck className="mt-0.5 h-7 w-7 shrink-0 text-emerald-700" strokeWidth={1.6} aria-hidden="true" />
+        <section className="apparait flex gap-4 rounded-3xl border border-emerald-200 bg-emerald-50 p-5">
+          {/* La coche se trace : la commande est bien partie. */}
+          <CircleCheck className="se-trace mt-0.5 h-7 w-7 shrink-0 text-emerald-700" strokeWidth={1.6} aria-hidden="true" />
           <div>
             <h1 className="text-xl font-bold text-emerald-950 sm:text-2xl">{demandeEnCours ? s.merciDemande : s.merciCommande}</h1>
             <p className="mt-1 text-sm text-emerald-900 sm:text-base">
@@ -110,11 +113,12 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
         </section>
       )}
 
-      <section className="carte space-y-5 p-5 sm:p-6">
+      <section className="carte apparait space-y-5 p-5 sm:p-6" style={rangDansLaCascade(nouvelle ? 2 : 0)}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-slate-500">{remplir(s.commande, { reference })}</p>
-            <h2 className="text-xl font-extrabold">{t.statuts.libelle[commande.statut]}</h2>
+            {/* La page se relit toute seule : quand la commande avance, son état revient en fondu (sa clé change). */}
+            <h2 className="text-xl font-extrabold"><span key={commande.statut} className="change inline-block">{t.statuts.libelle[commande.statut]}</span></h2>
           </div>
           {commande.express && (
             <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-sm font-semibold text-amber-900 ring-1 ring-inset ring-amber-200">
@@ -122,13 +126,13 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
             </span>
           )}
         </div>
-        <p className="text-slate-700">{explication}</p>
+        <p key={explication} className="change text-slate-700">{explication}</p>
 
         {paiement && commande.statut !== "ANNULEE" && (
-          <div className={`space-y-3 rounded-2xl border p-4 ${TONS[paiement.ton]}`} role={paiement.ton === "attente" ? "status" : undefined}>
+          <div key={paiement.ton} className={`change space-y-3 rounded-2xl border p-4 ${TONS[paiement.ton]}`} role={paiement.ton === "attente" ? "status" : undefined}>
             <div className="flex gap-3">
               {paiement.ton === "recu" ? (
-                <CircleCheck className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.7} aria-hidden="true" />
+                <CircleCheck className="se-trace mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.7} aria-hidden="true" />
               ) : (
                 <Clock className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={1.7} aria-hidden="true" />
               )}
@@ -139,14 +143,15 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
             </div>
             {lienBit && (
               <>
-                <a href={lienBit} target="_blank" rel="noopener noreferrer" className="bouton w-full text-sm">
+                {/* Le bouton qui attend le client « bat » doucement : c'est la seule chose à faire sur cette page. */}
+                <a href={lienBit} target="_blank" rel="noopener noreferrer" className="bouton bat w-full text-sm [--portee:8px]">
                   <Wallet className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> {s.payerBit}
                 </a>
                 <p className="text-sm">{remplir(s.bitAide, { montant: prix(etat.montant), reference })}</p>
               </>
             )}
             {lienReglement && (
-              <a href={lienReglement} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp w-full text-sm">
+              <a href={lienReglement} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp bat w-full text-sm [--halo:color-mix(in_srgb,var(--color-whatsapp)_45%,transparent)] [--portee:8px]">
                 <IconeWhatsapp /> {s.recevoirCoordonnees}
               </a>
             )}
@@ -161,22 +166,28 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
         ) : (
           <ol className="relative grid grid-cols-4" aria-label={s.avancement}>
             <div aria-hidden="true" className="absolute start-[12.5%] end-[12.5%] top-5 h-1 rounded-full bg-slate-200" />
+            {/* La barre se remplit à l'arrivée sur la page, puis glisse quand la commande avance. */}
             <div
               aria-hidden="true"
-              className="absolute start-[12.5%] top-5 h-1 rounded-full bg-encre transition-all"
+              className="se-remplit absolute start-[12.5%] top-5 h-1 rounded-full bg-encre transition-all duration-700"
               style={{ width: `${(Math.max(etapeActuelle, 0) / (ETAPES.length - 1)) * 75}%` }}
             />
             {ETAPES.map((e, i) => {
               const Icone = ICONES[e as keyof typeof ICONES];
               const faite = i <= etapeActuelle;
               return (
-                <li key={e} className="relative flex flex-col items-center gap-2 text-center" aria-current={i === etapeActuelle ? "step" : undefined}>
-                  <span
-                    className={`flex h-11 w-11 items-center justify-center rounded-full ring-4 ring-white ${
-                      i === etapeActuelle ? "bg-encre text-white" : faite ? "bg-slate-200 text-encre" : "bg-slate-100 text-slate-400"
-                    }`}
-                  >
-                    {faite && i < etapeActuelle ? <Check className="h-5 w-5" strokeWidth={2} aria-hidden="true" /> : <Icone className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />}
+                <li key={e} className="apparait relative flex flex-col items-center gap-2 text-center" style={rangDansLaCascade(i + 2)} aria-current={i === etapeActuelle ? "step" : undefined}>
+                  <span className="relative">
+                    {/* L'étape en cours « bat » tant que la commande n'est pas livrée : un halo derrière le rond. */}
+                    {i === etapeActuelle && commande.statut !== "LIVREE" && <span aria-hidden="true" className="bat absolute inset-0 rounded-full [--portee:13px]" />}
+                    <span
+                      key={`${e}-${i === etapeActuelle ? "en-cours" : faite ? "faite" : "a-venir"}`}
+                      className={`relative flex h-11 w-11 items-center justify-center rounded-full ring-4 ring-white transition-colors duration-500 ${i === etapeActuelle ? "saute" : ""} ${
+                        i === etapeActuelle ? "bg-encre text-white" : faite ? "bg-slate-200 text-encre" : "bg-slate-100 text-slate-400"
+                      }`}
+                    >
+                      {faite && i < etapeActuelle ? <Check className="h-5 w-5" strokeWidth={2} aria-hidden="true" /> : <Icone className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />}
+                    </span>
                   </span>
                   <span className={`text-xs ${faite ? "font-bold text-slate-900" : "text-slate-500"}`}>{t.statuts.libelle[e]}</span>
                 </li>
@@ -200,6 +211,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
         )}
       </section>
 
+      {/* Plus bas dans la page, chaque bloc monte en fondu quand il arrive à l'écran. */}
+      <Apparition>
       <section className="carte grid gap-4 p-5 text-sm sm:grid-cols-2 sm:p-6">
         <div className="space-y-1">
           <h2 className="mb-1 text-base font-extrabold">{s.livraison}</h2>
@@ -216,7 +229,9 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           {commande.notes && <p className="whitespace-pre-line text-slate-600">{s.note} <bdi>{commande.notes}</bdi></p>}
         </div>
       </section>
+      </Apparition>
 
+      <Apparition>
       <section className="carte p-5 text-sm sm:p-6">
         <h2 className="mb-2 text-base font-extrabold">{s.articles}</h2>
         {commande.demandeLibre && (
@@ -226,8 +241,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           </p>
         )}
         <ul className="divide-y divide-slate-100">
-          {commande.lignes.map((l) => (
-            <li key={l.id} className={`flex justify-between gap-3 py-2.5 ${l.indisponible ? "text-slate-400" : ""}`}>
+          {commande.lignes.map((l, i) => (
+            <li key={l.id} className={`apparait flex justify-between gap-3 py-2.5 ${l.indisponible ? "text-slate-400" : ""}`} style={rangDansLaCascade(i)}>
               <span>
                 <span className={l.indisponible ? "line-through" : ""}>{l.quantite} × <bdi>{nomArticle(l.nom, langue)}</bdi></span>
                 {l.options && <span className="block text-xs text-slate-500"><bdi>{libelleOptions(l.options, langue)}</bdi></span>}
@@ -250,6 +265,7 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
           libelles={t.montants}
         />
       </section>
+      </Apparition>
 
       <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
         <Link href={lien("/commandes")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.mesCommandes}</Link>

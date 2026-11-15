@@ -230,8 +230,10 @@ try {
   verifier(sansPhoto > 0 && !(await deborde(admin)), `Photos rapides : ${sansPhoto} articles en ligne sans photo, pas de défilement horizontal`);
   const ligne1 = admin.locator("li", { hasText: "Pack d'eau 6 × 1,5 L" }).first();
   const recherche = await ligne1.getByRole("link", { name: "Chercher une image de Pack d'eau 6 × 1,5 L" }).getAttribute("href");
-  verifier(recherche === "https://www.google.com/search?tbm=isch&q=" + encodeURIComponent("Pack d'eau 6 × 1,5 L") && (await ligne1.getByRole("link", { name: /Chercher une image/ }).getAttribute("rel")).includes("noreferrer"),
-    "Photos rapides : chaque article a son lien « Chercher une image » (nom de l'article, sans transmettre l'adresse de l'espace gérant)");
+  // La recherche porte le nom de l'article en hébreu quand on l'a (c'est ce qui trouve l'emballage vendu en Israël), sinon son nom français.
+  const cherche = decodeURIComponent(recherche.replace("https://www.google.com/search?tbm=isch&q=", ""));
+  verifier(recherche.startsWith("https://www.google.com/search?tbm=isch&q=") && (cherche === "Pack d'eau 6 × 1,5 L" || /[\u0590-\u05ff]/.test(cherche)) && (await ligne1.getByRole("link", { name: /Chercher une image/ }).getAttribute("rel")).includes("noreferrer"),
+    `Photos rapides : chaque article a son lien « Chercher une image » (« ${cherche} », sans transmettre l'adresse de l'espace gérant)`);
   const image = await sharp({ create: { width: 900, height: 700, channels: 3, background: { r: 40, g: 120, b: 200 } } }).jpeg().toBuffer();
   await ligne1.locator('input[type="file"]').setInputFiles({ name: "eau.jpg", mimeType: "image/jpeg", buffer: image });
   await ligne1.getByText("Photo enregistrée.").waitFor();
