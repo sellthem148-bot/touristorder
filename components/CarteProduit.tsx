@@ -206,16 +206,18 @@ function useTuilesAuDefilement(actif: boolean, produits: ProduitPublic[]) {
  * - `sansBadge` : dans une sélection où tous les articles portent la même étiquette (« Les plus demandés ») ;
  * - `etroite` : à côté de la colonne des rayons, une colonne de moins ;
  * - `apercu` : pour l'aperçu d'un sous-rayon — deux lignes entières, jamais une ligne à moitié vide ;
- * - `auDefilement` : pour une longue liste — les tuiles plus bas arrivent quand on y descend.
+ * - `auDefilement` : pour une longue liste — les tuiles plus bas arrivent quand on y descend ;
+ * - `ordreRecu` : pour la recherche — les articles sont déjà rangés (ceux qui répondent le mieux d'abord) :
+ *   la grille ne fait pas passer devant un article qui a une photo mais répond moins bien.
  */
-export function GrilleProduits({ produits, sansBadge = false, etroite = false, apercu = false, auDefilement = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean; apercu?: boolean; auDefilement?: boolean }) {
+export function GrilleProduits({ produits, sansBadge = false, etroite = false, apercu = false, auDefilement = false, ordreRecu = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean; apercu?: boolean; auDefilement?: boolean; ordreRecu?: boolean }) {
   const grille = useTuilesAuDefilement(auDefilement, produits);
   const colonnes = etroite ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
   // L'aperçu reçoit huit articles : six affichés sur deux ou trois colonnes, huit sur quatre — toujours des lignes entières.
   const coupe = apercu ? (etroite ? "max-xl:[&>*:nth-child(n+7)]:hidden" : "max-lg:[&>*:nth-child(n+7)]:hidden xl:[&>*:nth-child(n+6)]:hidden") : "";
   return (
     <div ref={grille} className={`grid gap-2.5 ${colonnes} ${coupe}`}>
-      {photosDAbord(produits).map((p, i) => (
+      {(ordreRecu ? produits : photosDAbord(produits)).map((p, i) => (
         <CarteProduit key={p.id} produit={p} sansBadge={sansBadge} rang={i} />
       ))}
     </div>

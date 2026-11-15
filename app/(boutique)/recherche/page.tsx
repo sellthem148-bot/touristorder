@@ -26,9 +26,8 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
           <ArrowLeft className="h-4 w-4 transition-transform group-hover/retour:-translate-x-0.5 rtl:rotate-180 rtl:group-hover/retour:translate-x-0.5" strokeWidth={1.8} aria-hidden="true" /> {r.retour}
         </Link>
         <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{q ? remplir(r.resultats, { q }) : r.titre}</h1>
-        {q.length >= 2 && produits.length > 0 && (
-          <p className="text-sm text-slate-500">{compter(langue, produits.length, t.commun.articles)}</p>
-        )}
+        {/* Toujours là, même vide : les résultats changent pendant qu'on tape, un lecteur d'écran en annonce le nombre. */}
+        <p role="status" className="text-sm text-slate-500">{q.length >= 2 && produits.length > 0 ? compter(langue, produits.length, t.commun.articles) : ""}</p>
       </div>
       {q.length < 2 ? (
         <p className="text-slate-600">{r.minimum}</p>
@@ -42,7 +41,7 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
           <Link href={lien(`/panier?demande=${encodeURIComponent(q.slice(0, 200))}`)} className="bouton">{r.demander}</Link>
         </div>
       ) : (
-        <GrilleProduits produits={produits} auDefilement />
+        <GrilleProduits produits={produits} auDefilement ordreRecu />
       )}
     </div>
   );

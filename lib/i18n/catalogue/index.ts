@@ -3,7 +3,7 @@
 //
 // Pur, mais LOURD (une centaine de Ko par langue) : jamais importé par un composant du navigateur.
 // Les pages traduisent côté serveur (lib/catalogue.ts, lib/commande-courriels.ts) et n'envoient que le résultat.
-import { LOCALE, type Langue } from "../../langues";
+import type { Langue } from "../../langues";
 import type { GroupeOptions } from "../../options";
 import type { TraductionsCatalogue } from "./type";
 import en from "./en";
@@ -58,17 +58,4 @@ export function libelleOptions(libelle: string, langue: Langue): string {
     morceaux.push(`${nomGroupe(morceau.slice(0, i), langue)}${deuxPointsDe(langue)}${libelleChoix(morceau.slice(i + 3), langue)}`);
   }
   return morceaux.join(" · ");
-}
-
-/**
- * La recherche dans la langue du client : les noms et les descriptions FRANÇAIS (ceux de la base) dont
- * la traduction contient le texte cherché. Rien en français : la base se cherche directement.
- */
-export function chercherDansLaLangue(texte: string, langue: Langue, maximum = 200): { noms: string[]; descriptions: string[] } {
-  const t = CATALOGUES[langue];
-  const q = texte.trim().toLocaleLowerCase(LOCALE[langue]);
-  if (!t || q.length < 2) return { noms: [], descriptions: [] };
-  const trouves = (table: Record<string, string>) =>
-    Object.keys(table).filter((fr) => table[fr].toLocaleLowerCase(LOCALE[langue]).includes(q)).slice(0, maximum);
-  return { noms: trouves(t.noms), descriptions: trouves(t.descriptions) };
 }

@@ -5,8 +5,10 @@ import { lireGroupes, type GroupeOptions } from "./options";
 import { estBadge, type Badge } from "./choix-commande";
 import type { Langue } from "./langues";
 import { dictionnaire } from "./i18n";
-import { chercherDansLaLangue, descriptionArticle, nomArticle, traduireGroupes } from "./i18n/catalogue";
-import { sousRayonDe } from "./sous-rayons";
+import { descriptionArticle, nomArticle, traduireGroupes } from "./i18n/catalogue";
+import { nomDuRayon, nomDuSousRayon } from "./i18n/rayons";
+import { classer, ficheDe, motsDeRecherche, type Fiche } from "./recherche";
+import { photosDAbord, sousRayonDe } from "./sous-rayons";
 
 // Ce qu'une page PUBLIQUE lit d'un produit. Jamais le prix d'achat,
 // la boutique ni le lien Wolt : ils sont à toi seul.
@@ -106,35 +108,70 @@ export async function misEnAvant(nombre = 12, langue: Langue = "fr") {
   return liste.map((p) => versPublic(p, langue));
 }
 
-/**
- * La recherche du client. Dans une autre langue que le français, elle trouve aussi les articles dont
- * le nom ou la description TRADUITS contiennent le texte (« молоко » trouve « Lait 3 % 1 L »), et les
- * rayons par leur nom traduit ; un nom français ou une marque se cherche toujours directement.
- */
-export async function rechercher(texte: string, langue: Langue = "fr") {
-  const q = texte.trim().slice(0, 80);
-  if (q.length < 2) return [];
-  const traduits = chercherDansLaLangue(q, langue);
-  const rayons = langue === "fr"
-    ? []
-    : Object.entries(dictionnaire(langue).rayons).filter(([, nom]) => nom.toLowerCase().includes(q.toLowerCase())).map(([slug]) => slug);
-  const liste = await prisma.produit.findMany({
-    where: {
-      ...VISIBLE,
-      OR: [
-        { nom: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-        { categorie: { nom: { contains: q, mode: "insensitive" } } },
-        ...(traduits.noms.length > 0 ? [{ nom: { in: traduits.noms } }] : []),
-        ...(traduits.descriptions.length > 0 ? [{ description: { in: traduits.descriptions } }] : []),
-        ...(rayons.length > 0 ? [{ categorie: { slug: { in: rayons } } }] : []),
-      ],
-    },
+// Ce que la recherche lit de chaque article en vente : peu de chose, gardé quelques secondes. La recherche de
+// l'en-tête interroge le site pendant que le visiteur tape : sans cela, chaque lettre relirait tout le catalogue.
+type ArticleCherche = { id: string; nom: string; description: string; photoUrl: string; categorie: { nom: string; slug: string } };
+const DUREE_DU_RELEVE = 20_000;
+let releve: { lu: number; articles: ArticleCherche[]; fiches: Map<Langue, Map<string, Fiche>> } | null = null;
+
+async function articlesAChercher() {
+  if (releve && Date.now() - releve.lu < DUREE_DU_RELEVE) return releve;
+  const articles = await prisma.produit.findMany({
+    where: VISIBLE,
     orderBy: ORDRE,
-    take: 60,
-    select: PRODUIT_PUBLIC,
+    select: { id: true, nom: true, description: true, photoUrl: true, categorie: { select: { nom: true, slug: true } } },
   });
-  return liste.map((p) => versPublic(p, langue));
+  // Les articles avec photo d'abord : à réponse égale, les grandes tuiles se suivent.
+  releve = { lu: Date.now(), articles: photosDAbord(articles), fiches: new Map() };
+  return releve;
+}
+
+/** Ce qu'on cherche dans un article pour un client de cette langue : le français de la base ET sa traduction. */
+function fichesPour(langue: Langue, source: NonNullable<typeof releve>): Map<string, Fiche> {
+  const connues = source.fiches.get(langue);
+  if (connues) return connues;
+  const t = dictionnaire(langue);
+  const fiches = new Map(
+    source.articles.map((a) => [
+      a.id,
+      ficheDe(
+        [a.nom, nomArticle(a.nom, langue)],
+        [
+          a.description,
+          descriptionArticle(a.description, langue),
+          a.categorie.nom,
+          nomDuRayon(a.categorie, t),
+          nomDuSousRayon(a.categorie.slug, sousRayonDe(a.categorie.slug, a.nom), t),
+        ],
+      ),
+    ]),
+  );
+  source.fiches.set(langue, fiches);
+  return fiches;
+}
+
+/**
+ * La recherche du client (lib/recherche.ts) : sans accents ni tirets, chaque mot tapé doit se retrouver dans
+ * l'article — « coca zero » trouve « Coca-Cola Zero », « oeufs » trouve « Œufs ». Les articles dont le NOM
+ * répond passent d'abord, puis ceux que leur description, leur rayon ou leur sous-rayon font trouver (à réponse
+ * égale : ceux qui ont une photo, puis l'ordre du catalogue — la page les affiche dans cet ordre). Dans une
+ * autre langue que le français, on cherche aussi dans la traduction (« молоко » trouve « Lait 3 % 1 L ») ; un
+ * nom français ou une marque se cherche toujours directement.
+ */
+export async function rechercher(texte: string, langue: Langue = "fr", maximum = 60) {
+  const mots = motsDeRecherche(texte);
+  if (mots.length === 0) return [];
+  const source = await articlesAChercher();
+  const fiches = fichesPour(langue, source);
+  const ids = classer(source.articles, (a) => fiches.get(a.id) ?? { nom: "", autres: "" }, mots, maximum).map((a) => a.id);
+  if (ids.length === 0) return [];
+  // Relus à l'instant, avec la même condition : un article masqué depuis le relevé ne ressort pas.
+  const liste = await prisma.produit.findMany({ where: { ...VISIBLE, id: { in: ids } }, select: PRODUIT_PUBLIC });
+  const parId = new Map(liste.map((p) => [p.id, p]));
+  return ids.flatMap((id) => {
+    const p = parId.get(id);
+    return p ? [versPublic(p, langue)] : [];
+  });
 }
 
 /** Prix, options et disponibilité actuels des produits d'un panier. */

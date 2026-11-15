@@ -10,9 +10,11 @@ import { ARTICLES_WOLT_DES_CAPTURES } from "../prisma/articles-wolt-captures";
 import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE } from "../prisma/articles-wolt-captures-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "../prisma/articles-liste-dynamica";
-import { CATALOGUES, chercherDansLaLangue, descriptionArticle, libelleChoix, libelleOptions, nomArticle, nomGroupe, nomTarif, nomVille, traduireGroupes } from "@/lib/i18n/catalogue";
+import { CATALOGUES, descriptionArticle, libelleChoix, libelleOptions, nomArticle, nomGroupe, nomTarif, nomVille, traduireGroupes } from "@/lib/i18n/catalogue";
 import { libelleAffiche, lireOptionsSaisies, resoudreSelection } from "@/lib/options";
 import { CREDITS_PHOTOS } from "@/lib/credits-photos";
+import type { Langue } from "@/lib/langues";
+import { ficheDe, motsDeRecherche, rangDe } from "@/lib/recherche";
 
 const LANGUES = ["en", "ru", "he", "es"] as const;
 type Article = { nom: string; description?: string; options?: string };
@@ -108,14 +110,17 @@ describe("catalogue traduit", () => {
   });
 
   it("recherche : un mot dans la langue du client retrouve les articles par leur nom français", () => {
-    const lait = chercherDansLaLangue("milk", "en");
-    expect(lait.noms).toContain("Lait 3 % 1 L");
-    expect(chercherDansLaLangue("молок", "ru").noms).toContain("Lait 3 % 1 L");
-    expect(chercherDansLaLangue("חלב", "he").noms).toContain("Lait 3 % 1 L");
-    expect(chercherDansLaLangue("leche", "es").noms).toContain("Lait 3 % 1 L");
-    expect(chercherDansLaLangue("MILK", "en").noms).toEqual(lait.noms);
-    expect(chercherDansLaLangue("lait", "fr")).toEqual({ noms: [], descriptions: [] });
-    expect(chercherDansLaLangue("x", "en")).toEqual({ noms: [], descriptions: [] });
-    expect(chercherDansLaLangue("zzzzqqq", "en")).toEqual({ noms: [], descriptions: [] });
+    // La recherche elle-même est dans lib/recherche.ts (tests/recherche.test.ts) : elle lit le nom français
+    // de la base ET sa traduction, que ces tables donnent.
+    const trouve = (q: string, langue: Langue) => rangDe(ficheDe(["Lait 3 % 1 L", nomArticle("Lait 3 % 1 L", langue)], []), motsDeRecherche(q)) !== null;
+    expect(trouve("milk", "en")).toBe(true);
+    expect(trouve("MILK", "en")).toBe(true);
+    expect(trouve("молок", "ru")).toBe(true);
+    expect(trouve("חלב", "he")).toBe(true);
+    expect(trouve("leche", "es")).toBe(true);
+    expect(trouve("lait", "en")).toBe(true);
+    expect(trouve("milk", "fr")).toBe(false);
+    expect(trouve("x", "en")).toBe(false);
+    expect(trouve("zzzzqqq", "en")).toBe(false);
   });
 });
