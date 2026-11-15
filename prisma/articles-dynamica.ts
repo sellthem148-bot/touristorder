@@ -48,3 +48,11 @@ export const ARTICLES_DYNAMICA: ArticleWolt[] = [
   { categorie: ELEC, nom: "Manette Xbox sans fil rouge", description: "Pour Xbox Series X|S, PC, Android et iOS", prix: 299, nomWolt: "בקר אלחוטי XBOX Series 2026 X | S למחשב, אנדרואיד ו-iOS" },
   { categorie: ELEC, nom: "Télécommande MB Pro pour décodeur MasterBox", description: "Pour le décodeur MasterBox SEI500C (Android TV 4K)", prix: 59, nomWolt: "שלט MB PRO לממיר MasterBox SEI500C ATV 4K" },
 ];
+
+// Deux articles de plus, à la demande du gérant (15 novembre 2026 : « rajoute les AirPods 5 et la manette
+// blanche »), relevés sur sa capture de la page de Dynamica du 13 novembre. Un lot à part (`LOTS_WOLT`) :
+// la boutique est déjà installée, il s'ajoute sans y toucher.
+export const ARTICLES_DYNAMICA_DU_13_NOVEMBRE: ArticleWolt[] = [
+  { categorie: ELEC, nom: "Écouteurs sans fil Apple AirPods 5", description: "Écouteurs Bluetooth avec boîtier de charge", prix: 549, nomWolt: "AirPods 5" },
+  { categorie: ELEC, nom: "Manette PS5 DualSense blanche", description: "Manette sans fil pour PlayStation 5", prix: 329, nomWolt: "בקר אלחוטי Dualsense PS5 V3 | לבן" },
+];

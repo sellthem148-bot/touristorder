@@ -147,10 +147,30 @@ describe("articles de Dynamica (électronique)", () => {
     });
   });
 
+  it("deux articles de plus à la demande du gérant (capture du 13 novembre) : un lot à part, aux prix de la capture", async () => {
+    const { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE, BOUTIQUE_DYNAMICA } = await import("../prisma/articles-dynamica");
+    const { LOTS_WOLT } = await import("../prisma/remplissage");
+    expect(Object.fromEntries(ARTICLES_DYNAMICA_DU_13_NOVEMBRE.map((a) => [a.nom, enAgorot(a.prix)]))).toEqual({
+      "Écouteurs sans fil Apple AirPods 5": 54900,
+      "Manette PS5 DualSense blanche": 32900,
+    });
+    for (const a of ARTICLES_DYNAMICA_DU_13_NOVEMBRE) {
+      expect(a.categorie, a.nom).toBe("Chargeurs & électronique");
+      expect(a.nom, a.nom).not.toMatch(/[֐-׿]/);
+      expect(a.horsLigne, a.nom).toBeUndefined();
+    }
+    // Un lot à lui : la boutique étant déjà installée, il ne reprend aucun nom du premier lot (sinon il passerait pour installé).
+    const lot = LOTS_WOLT.find((l) => l.articles === ARTICLES_DYNAMICA_DU_13_NOVEMBRE)!;
+    expect(lot.boutique).toBe(BOUTIQUE_DYNAMICA);
+    expect(lot.ordre).toBeGreaterThan(0);
+    const premiers = new Set(ARTICLES_DYNAMICA.flatMap((a) => [a.nom, a.nomWolt]));
+    expect(ARTICLES_DYNAMICA_DU_13_NOVEMBRE.filter((a) => premiers.has(a.nom) || premiers.has(a.nomWolt))).toEqual([]);
+  });
+
   it("tous lots confondus : aucun nom en double, ni entre eux ni avec la base du catalogue", async () => {
     const { LOTS_WOLT } = await import("../prisma/remplissage");
     const tous = LOTS_WOLT.flatMap((l) => l.articles);
-    expect(tous).toHaveLength(745); // 207 + 73 + les 3 du relevé du 12 novembre + les 273 des premières captures du gérant + les 189 des suivantes
+    expect(tous).toHaveLength(747); // 207 + 73 + les 3 du relevé du 12 novembre + les 273 des premières captures du gérant + les 189 des suivantes + 2 de Dynamica (13 novembre)
     expect(new Set(tous.map((a) => a.nom)).size).toBe(tous.length);
     expect(new Set(tous.map((a) => a.nomWolt)).size).toBe(tous.length);
     // « Poisson » : le rayon « Boucherie & poisson » renommé quand la viande a été retirée.

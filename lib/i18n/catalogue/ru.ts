@@ -343,6 +343,8 @@ const ru: TraductionsCatalogue = {
     "Coque MagSafe transparente Dualtek iPhone 17 Pro Max": "Чехол MagSafe прозрачный Dualtek для iPhone 17 Pro Max",
     "Kit Samsung Galaxy S25 : coque React + verre trempé": "Комплект для Samsung Galaxy S25: чехол React + защитное стекло",
     "Manette PS5 DualSense rouge": "Геймпад PS5 DualSense, красный",
+    "Manette PS5 DualSense blanche": "Геймпад PS5 DualSense, белый",
+    "Écouteurs sans fil Apple AirPods 5": "Наушники беспроводные Apple AirPods 5",
     "Casque sans fil PS5 Pulse Elite noir": "Беспроводная гарнитура PS5 Pulse Elite, чёрная",
     "Manette Xbox sans fil rouge": "Геймпад Xbox беспроводной, красный",
     "Télécommande MB Pro pour décodeur MasterBox": "Пульт MB Pro для приставки MasterBox",

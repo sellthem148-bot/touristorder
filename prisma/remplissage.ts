@@ -8,7 +8,7 @@ import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
-import { ARTICLES_DYNAMICA, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
+import { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
 import { ARTICLES_DE_LA_LISTE, ARTICLES_MIS_EN_VENTE, type ArticleDeListe } from "./articles-liste";
 import { ARTICLES_DE_LA_LISTE_DYNAMICA } from "./articles-liste-dynamica";
@@ -63,6 +63,8 @@ export const LOTS_WOLT: LotWolt[] = [
   { nom: "Wolt Market, captures du 12 novembre", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_DES_CAPTURES, ordre: 700 },
   // Trois autres captures le même jour (« rajoute-moi ça, les prix et les images ») : boissons, électronique, capsules Nespresso.
   { nom: "Wolt Market, captures du 12 novembre (boissons, électronique, Nespresso)", boutique: BOUTIQUE_WOLT, articles: ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, ordre: 800 },
+  // Deux articles de Dynamica ajoutés à sa demande (15 novembre), relevés sur sa capture du 13.
+  { nom: "Dynamica, capture du 13 novembre", boutique: BOUTIQUE_DYNAMICA, articles: ARTICLES_DYNAMICA_DU_13_NOVEMBRE, ordre: 900 },
 ];
 
 /**

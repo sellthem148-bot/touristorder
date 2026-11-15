@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { CATALOGUE, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "../prisma/catalogue";
 import { ARTICLES_WOLT } from "../prisma/articles-wolt";
-import { ARTICLES_DYNAMICA } from "../prisma/articles-dynamica";
+import { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE } from "../prisma/articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "../prisma/articles-wolt-fiches";
 import { ARTICLES_DE_LA_LISTE } from "../prisma/articles-liste";
 import { ARTICLES_WOLT_DES_CAPTURES } from "../prisma/articles-wolt-captures";
@@ -16,7 +16,7 @@ import { CREDITS_PHOTOS } from "@/lib/credits-photos";
 
 const LANGUES = ["en", "ru", "he", "es"] as const;
 type Article = { nom: string; description?: string; options?: string };
-const ARTICLES = [...CATALOGUE, ...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_WOLT_FICHES, ...ARTICLES_WOLT_DU_12_NOVEMBRE, ...ARTICLES_WOLT_DES_CAPTURES, ...ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, ...REMPLACEMENTS_DU_12_NOVEMBRE, ...ARTICLES_DE_LA_LISTE, ...ARTICLES_DE_LA_LISTE_DYNAMICA] as Article[];
+const ARTICLES = [...CATALOGUE, ...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_DYNAMICA_DU_13_NOVEMBRE, ...ARTICLES_WOLT_FICHES, ...ARTICLES_WOLT_DU_12_NOVEMBRE, ...ARTICLES_WOLT_DES_CAPTURES, ...ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, ...REMPLACEMENTS_DU_12_NOVEMBRE, ...ARTICLES_DE_LA_LISTE, ...ARTICLES_DE_LA_LISTE_DYNAMICA] as Article[];
 const NOMS = [...new Set(ARTICLES.map((a) => a.nom))];
 const DESCRIPTIONS = [...new Set([
   ...ARTICLES.flatMap((a) => (a.description?.trim() ? [a.description.trim()] : [])),

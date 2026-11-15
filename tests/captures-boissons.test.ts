@@ -40,7 +40,7 @@ describe("captures du 12 novembre : boissons, électronique, capsules Nespresso"
 
   it("aucun article que le site vendait déjà : ni par son nom sur Wolt (aux guillemets près), ni par son nom", () => {
     const autres = LOTS_WOLT.filter((l) => l.articles !== LOT).flatMap((l) => l.articles);
-    expect(autres.length).toBe(556);
+    expect(autres.length).toBe(558); // dont les deux articles de Dynamica ajoutés le 15 novembre
     const dejaSurWolt = new Set(autres.map((a) => norme(a.nomWolt)));
     expect(LOT.filter((a) => dejaSurWolt.has(norme(a.nomWolt))).map((a) => a.nom)).toEqual([]);
     expect(new Set(LOT.map((a) => norme(a.nomWolt))).size).toBe(LOT.length);

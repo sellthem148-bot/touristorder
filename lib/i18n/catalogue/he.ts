@@ -343,6 +343,8 @@ const he: TraductionsCatalogue = {
     "Coque MagSafe transparente Dualtek iPhone 17 Pro Max": "כיסוי MagSafe שקוף Dualtek ל-iPhone 17 Pro Max",
     "Kit Samsung Galaxy S25 : coque React + verre trempé": "ערכה לסמסונג גלקסי S25: כיסוי React + מגן מסך זכוכית",
     "Manette PS5 DualSense rouge": "בקר PS5 DualSense אדום",
+    "Manette PS5 DualSense blanche": "בקר PS5 DualSense לבן",
+    "Écouteurs sans fil Apple AirPods 5": "אוזניות אלחוטיות Apple AirPods 5",
     "Casque sans fil PS5 Pulse Elite noir": "אוזניות אלחוטיות PS5 Pulse Elite שחור",
     "Manette Xbox sans fil rouge": "בקר אלחוטי Xbox אדום",
     "Télécommande MB Pro pour décodeur MasterBox": "שלט MB Pro לממיר MasterBox",

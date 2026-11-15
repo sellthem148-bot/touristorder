@@ -596,6 +596,8 @@ export const PHOTOS_REPERE: PhotoRepere[] = [
   { nom: "Casque sans fil PS5 Pulse Elite noir", nomWolt: "אוזניות אלחוטיות PS5 Pulse Elite | שחור", fichier: "casque-sans-fil-ps5-pulse-elite-noir.jpg" },
   { nom: "Verre trempé anti-regards PG Glass iPhone 17/18 Pro Max", nomWolt: "מגן מסך זכוכית כהה | PG Glass Privacy iPhone 17/18 Pro Max", fichier: "verre-trempe-anti-regards-pg-glass-iphone-17-18-pro-max.jpg" },
   { nom: "Verre trempé OtterBox iPhone 17/18 Pro", nomWolt: "OtterBox Glass iPhone 17/18 Pro מגן מסך זכוכית | שקוף", fichier: "verre-trempe-otterbox-iphone-17-18-pro.jpg" },
+  { nom: "Écouteurs sans fil Apple AirPods 5", nomWolt: "AirPods 5", fichier: "ecouteurs-sans-fil-apple-airpods-5.jpg" },
+  { nom: "Manette PS5 DualSense blanche", nomWolt: "בקר אלחוטי Dualsense PS5 V3 | לבן", fichier: "manette-ps5-dualsense-blanche.jpg" },
 ];
 
 export const DOSSIER_DES_REPERES = "prive/reperes-wolt";

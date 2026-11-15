@@ -38,6 +38,8 @@ describe("photos repère", () => {
     // Trois articles n'étaient plus sur la page « Les plus commandés » ce jour-là.
     expect(sansPhoto.sort()).toEqual(["Coque MagSafe transparente Dualtek iPhone 17 Pro Max", "Verre trempé OtterBox iPhone 17/18 Pro Max", "Verre trempé anti-regards PG Glass iPhone 17 Pro"]);
     expect(photoRepere("Chargeur Apple 20 W USB-C", "Apple | 20W | USB-C")).toBe("/admin/repere/chargeur-apple-20-w-usb-c.jpg");
+    // Les deux articles ajoutés d'après cette capture ont la leur.
+    for (const a of LOTS_WOLT.find((l) => l.nom === "Dynamica, capture du 13 novembre")!.articles) expect(photoRepere(a.nom, a.nomWolt), a.nom).not.toBeNull();
   });
 
   it("un article est reconnu à son nom sur Wolt (même renommé), sinon à son nom ; un autre n'a pas de photo", () => {

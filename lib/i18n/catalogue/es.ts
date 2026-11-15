@@ -343,6 +343,8 @@ const es: TraductionsCatalogue = {
     "Coque MagSafe transparente Dualtek iPhone 17 Pro Max": "Funda MagSafe transparente Dualtek iPhone 17 Pro Max",
     "Kit Samsung Galaxy S25 : coque React + verre trempé": "Kit Samsung Galaxy S25: funda React + vidrio templado",
     "Manette PS5 DualSense rouge": "Mando PS5 DualSense rojo",
+    "Manette PS5 DualSense blanche": "Mando PS5 DualSense blanco",
+    "Écouteurs sans fil Apple AirPods 5": "Auriculares inalámbricos Apple AirPods 5",
     "Casque sans fil PS5 Pulse Elite noir": "Auriculares inalámbricos PS5 Pulse Elite negros",
     "Manette Xbox sans fil rouge": "Mando inalámbrico Xbox rojo",
     "Télécommande MB Pro pour décodeur MasterBox": "Control remoto MB Pro para decodificador MasterBox",
