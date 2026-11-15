@@ -709,6 +709,19 @@ export const PHOTOS_REPERE: PhotoRepere[] = [
   { nom: "Gaufrettes Loacker Quadratini Noisette 250 g", nomWolt: "לואקר קואדרטיני קרם אגוזים", fichier: "gaufrettes-loacker-quadratini-noisette-250-g.jpg" },
   { nom: "Gaufrettes fines au citron Elite Bafle 200 g", nomWolt: "בפלות בטעם לימון", fichier: "gaufrettes-fines-au-citron-elite-bafle-200-g.jpg" },
   { nom: "Crème aigre Shamenet Shel Paam 27 % 200 g", nomWolt: "תנובה שמנת חמוצה 27% - 200 מ\"ל", fichier: "creme-aigre-shamenet-shel-paam-27-200-g.jpg" },
+  // Wolt Market, rayon chocolat et biscuits : captures d'écran du 15 novembre 2026 (plus petites que les autres).
+  { nom: "Chocolat noir Elite Splendid 70 % 100 g", nomWolt: "שוקולד ספלנדיד מריר מעולה 70%", fichier: "chocolat-noir-elite-splendid-70-100-g.jpg" },
+  { nom: "Oreo Double Crème 115 g", nomWolt: "עוגיות אוראו קרם וניל כפול", fichier: "oreo-double-creme-115-g.jpg" },
+  { nom: "Gâteaux moelleux Milka Soft Moo 140 g", nomWolt: "עוגיות רכות מילקה מו", fichier: "gateaux-moelleux-milka-soft-moo-140-g.jpg" },
+  { nom: "Cookies aux pépites de chocolat parvé 150 g", nomWolt: "עוגיות שוקולד צ׳יפס מרבה פרווה - 150 גרם", fichier: "cookies-aux-pepites-de-chocolat-parve-150-g.jpg" },
+  { nom: "Biscuits roulés à la fraise Osem 300 g", nomWolt: "ערגליות תות אסם", fichier: "biscuits-roules-a-la-fraise-osem-300-g.jpg" },
+  { nom: "Biscuits Milka au chocolat au lait 150 g", nomWolt: "מילקה ביסקוויטים מצופים שוקולד חלב", fichier: "biscuits-milka-au-chocolat-au-lait-150-g.jpg" },
+  { nom: "Cookies Milka Sensations fourrés Oreo 156 g", nomWolt: "מילקה עוגיות שוקולד צ׳יפס קקאו ממולאות בקרם אוראו", fichier: "cookies-milka-sensations-fourres-oreo-156-g.jpg" },
+  { nom: "Gaufrettes Milka au cacao × 5 (150 g)", nomWolt: "מילקה וופלים ממולאים בקרם קקאו ומצופים שוקולד חלב", fichier: "gaufrettes-milka-au-cacao-5-150-g.jpg" },
+  { nom: "Kinder Délice × 10", nomWolt: "קינדר דליס עוגות אישיות - 10 יח׳ במארז", fichier: "kinder-delice-10.jpg" },
+  { nom: "Barre chocolatée Kinder Bueno × 2", nomWolt: "קינדר בואנו - יחידה 1", fichier: "barre-chocolatee-kinder-bueno-2.jpg" },
+  { nom: "Ferrero Rocher praliné × 16", nomWolt: "פררו רושה - 200 גרם", fichier: "ferrero-rocher-praline-16.jpg" },
+  { nom: "Biscuits Ad Hatzot chocolat lait Elite 200 g", nomWolt: "עד חצות קלאסי", fichier: "biscuits-ad-hatzot-chocolat-lait-elite-200-g.jpg" },
 ];
 
 export const DOSSIER_DES_REPERES = "prive/reperes-wolt";

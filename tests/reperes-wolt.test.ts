@@ -7,7 +7,7 @@ import { repereWolt } from "@/lib/repere-wolt";
 import { LOTS_WOLT } from "../prisma/remplissage";
 import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
-import { RELEVE_DU_15_NOVEMBRE } from "../prisma/releve-wolt-1115";
+import { RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "../prisma/releve-wolt-1115";
 
 const fichiersDe = (dossier: string): string[] =>
   readdirSync(dossier, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? fichiersDe(path.join(dossier, e.name)) : [path.join(dossier, e.name)]));
@@ -28,7 +28,7 @@ describe("photos repère", () => {
 
   it("chaque photo est celle d'un article du site, avec son nom exact sur Wolt", () => {
     const connus = new Map<string, string>();
-    for (const a of [...LOTS_WOLT.flatMap((l) => l.articles), ...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...RELEVE_DU_15_NOVEMBRE, ...REMPLACEMENTS_DU_12_NOVEMBRE]) connus.set(a.nom, a.nomWolt);
+    for (const a of [...LOTS_WOLT.flatMap((l) => l.articles), ...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...RELEVE_DU_15_NOVEMBRE, ...RELEVE_DES_CHOCOLATS, ...REMPLACEMENTS_DU_12_NOVEMBRE]) connus.set(a.nom, a.nomWolt);
     for (const p of PHOTOS_REPERE) expect(connus.get(p.nom), p.nom).toBe(p.nomWolt);
   });
 
@@ -43,8 +43,9 @@ describe("photos repère", () => {
     for (const a of LOTS_WOLT.find((l) => l.nom === "Dynamica, capture du 13 novembre")!.articles) expect(photoRepere(a.nom, a.nomWolt), a.nom).not.toBeNull();
   });
 
-  it("captures de Wolt Market du 15 novembre : 110 photos de plus, 695 en tout", () => {
-    expect(PHOTOS_REPERE).toHaveLength(695);
+  it("captures de Wolt Market du 15 novembre : 110 photos, puis 12 du rayon chocolat et biscuits — 707 en tout", () => {
+    expect(PHOTOS_REPERE).toHaveLength(707);
+    expect(photoRepere("Ferrero Rocher praliné × 16", "")).toBe("/admin/repere/ferrero-rocher-praline-16.jpg");
     // Les premiers relevés de Wolt Market (10 et 11 novembre) n'avaient aucune photo : la plupart en ont une maintenant.
     const premiers = LOTS_WOLT.filter((l) => l.nom === "Wolt Market" || l.nom === "Wolt Market, fiches du 11 novembre").flatMap((l) => l.articles);
     const avec = premiers.filter((a) => photoRepere(a.nom, a.nomWolt) != null).length;

@@ -9,7 +9,7 @@ import { VIANDE_ET_VOLAILLE } from "../prisma/retrait-viande";
 import { LOTS_WOLT, RELEVES_DE_PRIX } from "../prisma/remplissage";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
-import { RELEVE_DU_15_NOVEMBRE } from "../prisma/releve-wolt-1115";
+import { RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "../prisma/releve-wolt-1115";
 import { photoRepere } from "@/lib/reperes-wolt";
 
 const HEBREU = /[֐-׿]/;
@@ -17,7 +17,7 @@ const DEJA_RELEVES = [...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_WOLT_F
 
 describe("relevé de prix du 12 novembre", () => {
   // Toutes les lignes de tous les relevés.
-  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...RELEVE_DU_15_NOVEMBRE];
+  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...RELEVE_DU_15_NOVEMBRE, ...RELEVE_DES_CHOCOLATS];
 
   it("chaque ligne vise un article que le code a installé, avec le prix qu'il lui avait posé", () => {
     for (const l of LIGNES) {
@@ -36,7 +36,7 @@ describe("relevé de prix du 12 novembre", () => {
   });
 
   it("chaque relevé a sa clé : un relevé ajouté plus tard s'applique sans rejouer les précédents", () => {
-    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, RELEVE_DES_BOISSONS, RELEVE_DU_15_NOVEMBRE]);
+    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, RELEVE_DES_BOISSONS, RELEVE_DU_15_NOVEMBRE, RELEVE_DES_CHOCOLATS]);
     expect(new Set(RELEVES_DE_PRIX.map((r) => r.cle)).size).toBe(RELEVES_DE_PRIX.length);
     const c = changementsDuReleve([produit({ nom: "Filets de rouget barbet surgelés 400 g", prix: 2890 })], RELEVE_DU_POISSON_SURGELE);
     expect(c).toEqual([{ id: "Filets de rouget barbet surgelés 400 g", nom: "Filets de rouget barbet surgelés 400 g", data: { prix: 2290, prixAchat: 2290, nomWolt: "ברבוניה פילה קפוא - 400 גרם" } }]);
@@ -113,7 +113,21 @@ describe("relevé du 15 novembre (captures de Wolt Market envoyées pour les pho
   });
 
   it("chaque article du relevé a sa photo repère", () => {
-    for (const l of RELEVE_DU_15_NOVEMBRE) expect(photoRepere(l.nom, l.nomWolt), l.nom).not.toBeNull();
+    for (const l of [...RELEVE_DU_15_NOVEMBRE, ...RELEVE_DES_CHOCOLATS]) expect(photoRepere(l.nom, l.nomWolt), l.nom).not.toBeNull();
+  });
+
+  it("le rayon chocolat et biscuits, relevé à part le même jour : trois articles de la liste, dans leur format exact", () => {
+    const liste = new Map(ARTICLES_MIS_EN_VENTE.map((a) => [a.nom, a]));
+    expect(RELEVE_DES_CHOCOLATS.map((l) => [l.nom, enAgorot(l.prix), enAgorot(liste.get(l.nom)!.prixIndicatif)])).toEqual([
+      ["Barre chocolatée Kinder Bueno × 2", 790, 690],
+      ["Ferrero Rocher praliné × 16", 3690, 2890],
+      ["Biscuits Ad Hatzot chocolat lait Elite 200 g", 1990, 1290],
+    ]);
+    // Sa clé à lui : le premier relevé du jour, déjà appliqué, ne se rejoue pas.
+    const cles = RELEVES_DE_PRIX.filter((r) => r.lignes === RELEVE_DU_15_NOVEMBRE || r.lignes === RELEVE_DES_CHOCOLATS).map((r) => r.cle);
+    expect(new Set(cles).size).toBe(2);
+    const woltDesLots = new Set(LOTS_WOLT.flatMap((l) => l.articles).map((a) => a.nomWolt));
+    expect(RELEVE_DES_CHOCOLATS.filter((l) => woltDesLots.has(l.nomWolt))).toEqual([]);
   });
 });
 

@@ -18,7 +18,7 @@ import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./a
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
-import { RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
+import { RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
 
 function options(texte: string | undefined, nom: string) {
   const lues = lireOptionsSaisies(texte ?? "");
@@ -233,6 +233,7 @@ export async function appliquerLeReleveDePrix(prisma: PrismaClient): Promise<str
 export const CLE_RELEVE_DU_POISSON_SURGELE = "releve-prix-2026-11-12-poisson-surgele";
 export const CLE_RELEVE_DES_BOISSONS = "releve-prix-2026-11-12-boissons";
 export const CLE_RELEVE_DU_15_NOVEMBRE = "releve-prix-2026-11-15";
+export const CLE_RELEVE_DES_CHOCOLATS = "releve-prix-2026-11-15-chocolats";
 
 /** Les relevés de prix, dans l'ordre : chacun a sa clé et ne s'applique qu'une fois. */
 export const RELEVES_DE_PRIX: { cle: string; titre: string; lignes: LigneDeReleve[] }[] = [
@@ -240,6 +241,7 @@ export const RELEVES_DE_PRIX: { cle: string; titre: string; lignes: LigneDeRelev
   { cle: CLE_RELEVE_DU_POISSON_SURGELE, titre: "Relevé du poisson surgelé (12 novembre)", lignes: RELEVE_DU_POISSON_SURGELE },
   { cle: CLE_RELEVE_DES_BOISSONS, titre: "Relevé des boissons (12 novembre)", lignes: RELEVE_DES_BOISSONS },
   { cle: CLE_RELEVE_DU_15_NOVEMBRE, titre: "Relevé du 15 novembre", lignes: RELEVE_DU_15_NOVEMBRE },
+  { cle: CLE_RELEVE_DES_CHOCOLATS, titre: "Relevé du chocolat et des biscuits (15 novembre)", lignes: RELEVE_DES_CHOCOLATS },
 ];
 
 async function appliquerUnReleve(prisma: PrismaClient, releve: (typeof RELEVES_DE_PRIX)[number]): Promise<string> {

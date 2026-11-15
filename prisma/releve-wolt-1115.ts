@@ -26,3 +26,16 @@ export const RELEVE_DU_15_NOVEMBRE: LigneDeReleve[] = [
   // Relevé du 10 novembre : le seul prix qui a changé depuis.
   { nom: "Mini pitas épeautre complet Agmi 450 g", nomWolt: "פיתה ביס כוסמין מלא אגמי", prix: 17.9, ancien: 18.9 },
 ];
+
+// Le même jour, 39 captures d'écran du rayon « שוקולד ועוגיות » (chocolat et biscuits, 258 articles différents) :
+// treize articles du site y sont, au bon prix, et trois articles de la liste du gérant sous la même marque et
+// le même format — le paquet Kinder Bueno de deux barres (43 g), la boîte de 16 Ferrero Rocher (200 g) et
+// les biscuits « עד חצות » au chocolat au lait (200 g). Un relevé à part, avec sa clé : le premier relevé du
+// jour était déjà appliqué.
+// Non rapprochés (autre format chez Wolt) : Milka aux noisettes (90 g), Snickers et Twix (50 g), Lotus Biscoff
+// (500 g), Raffaello (la tablette de 90 g, pas la boîte de 15).
+export const RELEVE_DES_CHOCOLATS: LigneDeReleve[] = [
+  { nom: "Barre chocolatée Kinder Bueno × 2", nomWolt: "קינדר בואנו - יחידה 1", prix: 7.9, ancien: 6.9 },
+  { nom: "Ferrero Rocher praliné × 16", nomWolt: "פררו רושה - 200 גרם", prix: 36.9, ancien: 28.9 },
+  { nom: "Biscuits Ad Hatzot chocolat lait Elite 200 g", nomWolt: "עד חצות קלאסי", prix: 19.9, ancien: 12.9 },
+];
