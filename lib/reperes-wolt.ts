@@ -722,6 +722,18 @@ export const PHOTOS_REPERE: PhotoRepere[] = [
   { nom: "Barre chocolatée Kinder Bueno × 2", nomWolt: "קינדר בואנו - יחידה 1", fichier: "barre-chocolatee-kinder-bueno-2.jpg" },
   { nom: "Ferrero Rocher praliné × 16", nomWolt: "פררו רושה - 200 גרם", fichier: "ferrero-rocher-praline-16.jpg" },
   { nom: "Biscuits Ad Hatzot chocolat lait Elite 200 g", nomWolt: "עד חצות קלאסי", fichier: "biscuits-ad-hatzot-chocolat-lait-elite-200-g.jpg" },
+  // Wolt Market, rayon boissons sans alcool : la page entière, capture du 15 novembre 2026.
+  { nom: "Coca-Cola bouteille en verre 35 cl", nomWolt: "קוקה קולה בקבוק זכוכית - 350 מ״ל", fichier: "coca-cola-bouteille-en-verre-35-cl.jpg" },
+  { nom: "Sprite Zero 50 cl", nomWolt: "ספרייט זירו בקבוק - 500 מ״ל", fichier: "sprite-zero-50-cl.jpg" },
+  { nom: "Tonic Fever-Tree 20 cl", nomWolt: "מי טוניק פיבר טרי - 200 מ״ל", fichier: "tonic-fever-tree-20-cl.jpg" },
+  { nom: "Sprite Zero canette 33 cl", nomWolt: "פחית ספרייט זירו - 330 מ״ל", fichier: "sprite-zero-canette-33-cl.jpg" },
+  { nom: "Nordic Mist soda menthe et zeste de citron 25 cl", nomWolt: "נורדיק מיסט סודה נענע גרידת לימון - 250 מ״ל", fichier: "nordic-mist-soda-menthe-et-zeste-de-citron-25-cl.jpg" },
+  { nom: "Coca-Cola cerise canette 35,5 cl", nomWolt: "פחית קוקה קולה בטעם דובדבן - 355 מ״ל", fichier: "coca-cola-cerise-canette-35-5-cl.jpg" },
+  { nom: "Eau minérale gazeuse Borjomi 75 cl", nomWolt: "מים מינרליים טבעיים מבעבעים בורז׳ומי - 750 מ״ל", fichier: "eau-minerale-gazeuse-borjomi-75-cl.jpg" },
+  { nom: "Eau minérale Ein Gedi 50 cl", nomWolt: "עין גדי מים מינרליים בקבוק - 500 מ״ל", fichier: "eau-minerale-ein-gedi-50-cl.jpg" },
+  { nom: "Fuze Tea pêche 1,5 L", nomWolt: "פיוז טי אפרסק בקבוק - 1.5 ליטר", fichier: "fuze-tea-peche-1-5-l.jpg" },
+  { nom: "Canette Red Bull Sugarfree 25 cl", nomWolt: "משקה אנרגיה רדבול ללא סוכר", fichier: "canette-red-bull-sugarfree-25-cl.jpg" },
+  { nom: "Canette Monster Energy Ultra White 50 cl", nomWolt: "משקה אנרגיה מונסטר אולטרה", fichier: "canette-monster-energy-ultra-white-50-cl.jpg" },
 ];
 
 export const DOSSIER_DES_REPERES = "prive/reperes-wolt";

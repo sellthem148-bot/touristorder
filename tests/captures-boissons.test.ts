@@ -59,21 +59,9 @@ describe("captures du 12 novembre : boissons, électronique, capsules Nespresso"
     expect(RELEVES_DE_PRIX.some((r) => r.lignes === RELEVE_DES_BOISSONS)).toBe(true);
   });
 
-  it("chaque article a sa photo repère, sauf les huit dont la capture n'avait pas encore chargé la photo", () => {
+  it("chaque article a sa photo repère : les huit que la première capture n'avait pas chargées viennent de la page entière du 15 novembre", () => {
     const avecPhoto = new Set(PHOTOS_REPERE.map((p) => p.nomWolt));
-    const sansPhoto = LOT.filter((a) => !avecPhoto.has(a.nomWolt)).map((a) => a.nom);
-    expect(sansPhoto.sort()).toEqual(
-      [
-        "Coca-Cola bouteille en verre 35 cl",
-        "Sprite Zero 50 cl",
-        "Tonic Fever-Tree 20 cl",
-        "Sprite Zero canette 33 cl",
-        "Nordic Mist soda menthe et zeste de citron 25 cl",
-        "Coca-Cola cerise canette 35,5 cl",
-        "Eau minérale gazeuse Borjomi 75 cl",
-        "Eau minérale Ein Gedi 50 cl",
-      ].sort(),
-    );
+    expect(LOT.filter((a) => !avecPhoto.has(a.nomWolt)).map((a) => a.nom)).toEqual([]);
     for (const l of RELEVE_DES_BOISSONS) expect(avecPhoto.has(l.nomWolt), l.nom).toBe(true);
   });
 });

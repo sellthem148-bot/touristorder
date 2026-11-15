@@ -39,3 +39,15 @@ export const RELEVE_DES_CHOCOLATS: LigneDeReleve[] = [
   { nom: "Ferrero Rocher praliné × 16", nomWolt: "פררו רושה - 200 גרם", prix: 36.9, ancien: 28.9 },
   { nom: "Biscuits Ad Hatzot chocolat lait Elite 200 g", nomWolt: "עד חצות קלאסי", prix: 19.9, ancien: 12.9 },
 ];
+
+// Toujours le 15 novembre, la page entière du rayon « משקאות קלים » (boissons sans alcool, 261 cartes) : 157
+// articles du site y sont, tous au bon prix, et deux canettes de la liste du gérant — remises en vente le 12
+// à sa demande, au prix de sa liste — y trouvent leur vrai prix.
+// Non rapprochés : la Monster Mango Loco (Wolt vend d'autres Monster, dont l'Ultra Fiesta à la mangue), les
+// glaçons Mister Ice 1 kg (Wolt ne vend que le sac de 2 kg, déjà sur le site), les shots (autre recette chez Wolt).
+// Absents de la page : Prigat 1 L, nectar de mangue et jus de pomme Prigat, Mei Eden 6 × 1,5 L, Evian, Perrier en
+// canette, Malt Star, kombucha, eau de coco, sirops Teisseire — et le pack Pepsi Zero 6 × 33 cl du premier relevé.
+export const RELEVE_DES_CANETTES: LigneDeReleve[] = [
+  { nom: "Canette Red Bull Sugarfree 25 cl", nomWolt: "משקה אנרגיה רדבול ללא סוכר", prix: 7.9, ancien: 8.5 },
+  { nom: "Canette Monster Energy Ultra White 50 cl", nomWolt: "משקה אנרגיה מונסטר אולטרה", prix: 10.9, ancien: 11.9 },
+];
