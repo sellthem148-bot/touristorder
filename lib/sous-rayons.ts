@@ -166,3 +166,17 @@ export function grouperParSousRayon<T extends { sousRayon: string }>(slugRayon: 
 export function photosDAbord<T extends { photoUrl: string }>(articles: T[]): T[] {
   return [...articles.filter((a) => a.photoUrl), ...articles.filter((a) => !a.photoUrl)];
 }
+
+// Une rangée qui défile se lit mieux quand ses tuiles ont la même hauteur : à partir de ce nombre
+// d'articles avec photo, elle ne montre qu'eux (l'accueil comme l'aperçu d'un sous-rayon).
+export const PHOTOS_POUR_UNE_RANGEE = 4;
+
+/**
+ * Ce que l'aperçu d'un sous-rayon montre avant « Tout voir » : UNE rangée (demande du gérant, 16 novembre
+ * 2026 : « mets-moi moins de choses par catégorie, ça fait étouffer »). Les articles avec photo seuls quand
+ * il y en a assez pour une rangée de tuiles de même hauteur ; sinon les premiers articles, photos d'abord.
+ */
+export function apercuDuSousRayon<T extends { photoUrl: string }>(articles: T[], nombre: number): T[] {
+  const avecPhoto = articles.filter((a) => a.photoUrl);
+  return (avecPhoto.length >= PHOTOS_POUR_UNE_RANGEE ? avecPhoto : photosDAbord(articles)).slice(0, nombre);
+}

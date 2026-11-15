@@ -8,7 +8,7 @@ import { dictionnaire } from "./i18n";
 import { descriptionArticle, nomArticle, traduireGroupes } from "./i18n/catalogue";
 import { nomDuRayon, nomDuSousRayon } from "./i18n/rayons";
 import { classer, ficheDe, motsDeRecherche, type Fiche } from "./recherche";
-import { photosDAbord, sousRayonDe } from "./sous-rayons";
+import { PHOTOS_POUR_UNE_RANGEE, photosDAbord, sousRayonDe } from "./sous-rayons";
 
 // Ce qu'une page PUBLIQUE lit d'un produit. Jamais le prix d'achat,
 // la boutique ni le lien Wolt : ils sont à toi seul.
@@ -75,9 +75,6 @@ export async function produitsDeLaCategorie(slug: string, langue: Langue = "fr")
   });
   return liste.map((p) => versPublic(p, langue));
 }
-
-// À partir de combien d'articles avec photo la rangée d'un rayon, sur l'accueil, ne montre qu'eux.
-const PHOTOS_POUR_UNE_RANGEE = 4;
 
 /**
  * La vitrine de l'accueil : chaque rayon et ses premiers articles. Une rangée se lit mieux quand ses tuiles

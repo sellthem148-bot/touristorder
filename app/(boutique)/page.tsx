@@ -66,9 +66,12 @@ function PointOuvert() {
   );
 }
 
+// Ce qu'une rangée de l'accueil montre d'un rayon : peu, pour que la page respire — la suite est dans « Tout voir ».
+const ARTICLES_PAR_RANGEE = 6;
+
 export default async function Accueil() {
   const { langue, t, ts, lien } = await traduction();
-  const [rayons, populaires, reglages] = await Promise.all([vitrine(10, langue), misEnAvant(undefined, langue), reglagesPublics()]);
+  const [rayons, populaires, reglages] = await Promise.all([vitrine(ARTICLES_PAR_RANGEE, langue), misEnAvant(ARTICLES_PAR_RANGEE + 2, langue), reglagesPublics()]);
   const a = t.accueil;
   // Le message d'accueil du gérant ; tant qu'il a gardé celui de départ, le client le lit dans sa langue.
   const messageAccueil = reglages.messageAccueil === MESSAGE_ACCUEIL_PAR_DEFAUT ? a.messageParDefaut : reglages.messageAccueil;
@@ -147,7 +150,7 @@ export default async function Accueil() {
   const rangees = rayons.filter((r) => r.produits.length >= 4);
 
   return (
-    <div className="space-y-9 sm:space-y-12">
+    <div className="space-y-11 sm:space-y-14">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: donneesStructurees(langue, ts.meta.description) }} />
       <section className="grid gap-6 pt-1 sm:pt-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-12">
         <div className="space-y-3.5 sm:space-y-5">
@@ -197,7 +200,7 @@ export default async function Accueil() {
           <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-3.5">
             <h2 id="titre-categories" className="apparait text-xl font-bold nuit:text-white sm:text-2xl" style={rangDansLaCascade(9)}>{a.rayons}</h2>
             {/* Des tuiles à icône, trois par ligne sur téléphone : tous les rayons tiennent sur un écran. */}
-            <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 lg:grid-cols-6">
+            <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
               {rayons.map(({ categorie, total }, i) => (
                 <li key={categorie.id} className="apparait" style={{ animationDelay: `${420 + i * 45}ms` }}>
                   {/* La tuile se soulève au survol et s'enfonce sous le doigt ; son icône suit. */}
@@ -227,7 +230,7 @@ export default async function Accueil() {
           {/* Plus bas dans la page, chaque bloc monte en fondu quand il arrive à l'écran (`Apparition`). */}
           {populaires.length > 0 && (
             <Apparition>
-              <section aria-labelledby="titre-populaires" className="space-y-3">
+              <section aria-labelledby="titre-populaires" className="space-y-3.5">
                 <h2 id="titre-populaires" className="flex items-center gap-2.5 text-xl font-bold nuit:text-white sm:text-2xl">
                   <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soleil/25 text-amber-900 nuit:bg-soleil nuit:text-encre"><Star className="h-[17px] w-[17px]" strokeWidth={1.8} /></span>
                   {a.plusDemandes}
@@ -240,7 +243,7 @@ export default async function Accueil() {
           {/* Une rangée à faire défiler par rayon, et « Tout voir ». */}
           {rangees.map(({ categorie, produits, total }) => (
             <Apparition key={categorie.id}>
-              <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3">
+              <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3.5">
                 <div className="flex items-center justify-between gap-4">
                   <h2 id={`rangee-${categorie.slug}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold nuit:text-white sm:text-xl">
                     {/* La pastille du rayon, à sa couleur : on retrouve la tuile d'en haut. */}

@@ -25,7 +25,9 @@ export function RangeeDeLiens({ cle, className, children, ...reste }: { cle: str
 
 /**
  * Une rangée de tuiles qui défile de côté, comme sur Wolt ou Uber Eats. Au doigt sur téléphone ; à la souris,
- * deux flèches apparaissent au survol (elles n'existent pas pour un lecteur d'écran, qui parcourt la rangée telle quelle).
+ * une flèche de chaque côté où il reste quelque chose à voir (elles n'existent pas pour un lecteur d'écran,
+ * qui parcourt la rangée telle quelle). Elles sont toujours visibles : sur grand écran la rangée tombe juste,
+ * aucune tuile coupée ne dit qu'il y a une suite.
  */
 export function RangeeQuiDefile({ children }: { children: ReactNode }) {
   const rangee = useRef<HTMLDivElement>(null);
@@ -54,10 +56,10 @@ export function RangeeQuiDefile({ children }: { children: ReactNode }) {
     const versLaFin = getComputedStyle(el).direction === "rtl" ? -1 : 1;
     el.scrollBy({ left: sens * versLaFin * el.clientWidth * 0.8, behavior: "smooth" });
   };
-  const fleche = "absolute top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-encre opacity-0 shadow-(--shadow-flottant) transition hover:bg-slate-50 group-hover/rangee:opacity-100 lg:flex";
+  const fleche = "absolute top-1/2 z-[12] hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-encre shadow-(--shadow-flottant) transition hover:scale-105 hover:bg-slate-50 active:scale-95 lg:flex";
   return (
     <div className="group/rangee relative">
-      <div ref={rangee} className="rail items-stretch gap-2.5">
+      <div ref={rangee} className="rail items-stretch gap-3 lg:gap-5">
         {children}
       </div>
       {reste.avant && (

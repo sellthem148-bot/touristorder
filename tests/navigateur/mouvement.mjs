@@ -347,7 +347,7 @@ try {
   verifier(repos.y - survol.y > 1 && repos.y - survol.y < 4, "ordinateur : la tuile survolée se soulève un peu");
   if (OUT) await ordi.screenshot({ path: `${OUT}/mouvement-5-ordinateur.png` });
   await ordi.mouse.move(0, 0);
-  await ordi.evaluate(() => scrollTo(0, 1600));
+  await ordi.evaluate(() => scrollTo(0, 700)); // (le rayon tient en une rangée par sous-rayon : la page est courte)
   await pause(ordi, 600);
   const ordiSerre = await mesurerEnTete(ordi);
   verifier(ordiSerre.hauteur === 65 && ordiSerre.page === ordiLarge.page, `ordinateur : page défilée, il se resserre (${ordiSerre.hauteur} px) sans décaler la page`);

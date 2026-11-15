@@ -51,9 +51,23 @@ try {
   const comptes = await sections.locator("h2 [data-compte]").allInnerTexts(); // (le titre porte aussi son repère de couleur)
   verifier(comptes.reduce((s, n) => s + Number(n), 0) === total, "les sous-rayons se partagent tous les articles du rayon, sans en perdre");
   const affiches = await visibles(tel.locator("main"));
-  verifier(affiches < total / 2 && affiches <= 6 * (await sections.count()), `l'aperçu montre ${affiches} tuiles sur ${total} : au plus trois lignes par sous-rayon`);
-  const deux = await tel.locator("section[aria-labelledby^=sous-rayon-] article").evaluateAll((l) => l.slice(0, 2).map((a) => Math.round(a.getBoundingClientRect().top)));
-  verifier(deux[0] === deux[1], "sur téléphone : deux tuiles par ligne");
+  verifier(affiches < total / 3 && affiches <= 6 * (await sections.count()), `l'aperçu montre ${affiches} tuiles sur ${total} : six au plus par sous-rayon`);
+  // Une seule rangée par sous-rayon (« moins de choses par catégorie ») : ses tuiles sont sur une même ligne,
+  // la rangée défile de côté, et « Tout voir » mène au reste dès que la rangée ne montre pas tout.
+  const apercus = await sections.evaluateAll((l) => l.map((s) => {
+    const tuiles = [...s.querySelectorAll("article")];
+    const rail = s.querySelector(".rail");
+    return {
+      lignes: new Set(tuiles.map((a) => Math.round(a.getBoundingClientRect().top))).size,
+      tuiles: tuiles.length,
+      compte: Number(s.querySelector("h2 [data-compte]").textContent),
+      defile: !!rail && rail.scrollWidth > rail.clientWidth + 50,
+      toutVoir: [...s.querySelectorAll("a")].some((a) => a.textContent.trim() === "Tout voir"),
+    };
+  }));
+  verifier(apercus.every((a) => a.lignes === 1), "sur téléphone : une seule rangée de tuiles par sous-rayon");
+  verifier(apercus.filter((a) => a.tuiles >= 3).every((a) => a.defile), "la rangée d'un sous-rayon défile de côté");
+  verifier(apercus.every((a) => a.toutVoir === a.compte > a.tuiles), "« Tout voir » est là dès que la rangée ne montre pas tout le sous-rayon");
   verifier(!(await deborde(tel)), "rayon : pas de défilement horizontal de la page");
   if (OUT) await tel.screenshot({ path: `${OUT}/rayons-2-rayon.png` });
 
@@ -109,25 +123,34 @@ try {
   await tel.goto(BASE + "/categorie/surgeles-glaces", { waitUntil: "networkidle" });
   verifier((await tel.getByRole("navigation", { name: "Sous-rayons" }).count()) === 0 && (await visibles(tel.locator("main"))) >= 1, "petit rayon : pas de sous-rayons, tous les articles");
 
-  // 8. Sur ordinateur : la colonne des rayons, celui-ci ouvert sur ses sous-rayons ; quatre tuiles par ligne
+  // 8. Sur ordinateur : la colonne des rayons, celui-ci ouvert sur ses sous-rayons ; une rangée par sous-rayon
   await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
   const colonne = ordi.locator("aside nav");
   verifier(await colonne.isVisible() && (await colonne.locator("> ul > li").count()) >= 10, "ordinateur : la colonne des rayons");
   const sous = await colonne.locator("ul ul a").allInnerTexts();
   verifier(sous.length === nomsDesPuces.length - 1 && sous.reduce((s, l) => s + Number(l.match(/\d+$/)[0]), 0) === total, "le rayon ouvert liste ses sous-rayons, avec le nombre d'articles de chacun");
   verifier(!(await ordi.getByRole("navigation", { name: "Sous-rayons" }).isVisible()), "ordinateur : pas de rangée de puces, la colonne suffit");
-  const ligne = await ordi.locator("section[aria-labelledby^=sous-rayon-]").first().locator("article").evaluateAll((l) => l.filter((a) => a.offsetParent !== null).map((a) => Math.round(a.getBoundingClientRect().top)));
-  verifier(ligne.filter((y) => y === ligne[0]).length === 4 && ligne.length <= 8, "ordinateur : quatre tuiles par ligne, deux lignes par sous-rayon");
+  const rangeesOrdi = await ordi.locator("section[aria-labelledby^=sous-rayon-]").evaluateAll((l) => l.map((s) => {
+    const tuiles = [...s.querySelectorAll("article")];
+    const bord = s.querySelector(".rail").getBoundingClientRect().right;
+    return { lignes: new Set(tuiles.map((a) => Math.round(a.getBoundingClientRect().top))).size, tuiles: tuiles.length, entieres: tuiles.filter((a) => a.getBoundingClientRect().right <= bord + 1).length };
+  }));
+  verifier(rangeesOrdi.every((r) => r.lignes === 1 && r.tuiles <= 6 && r.entieres === Math.min(4, r.tuiles)), "ordinateur : une seule rangée par sous-rayon, quatre tuiles entières à l'écran, aucune coupée");
   await colonne.locator("ul ul a").nth(1).click();
   await ordi.waitForURL(/\?s=/);
   verifier((await colonne.locator('ul ul a[aria-current="page"]').count()) === 1, "ordinateur : un clic dans la colonne ouvre le sous-rayon");
   if (OUT) await ordi.screenshot({ path: `${OUT}/rayons-3-ordinateur.png` });
   // L'accueil sur ordinateur : les flèches d'une rangée
   await ordi.goto(BASE + "/", { waitUntil: "networkidle" });
-  const rangeeOrdi = ordi.locator("section", { has: ordi.getByRole("link", { name: /^Tout voir/ }) }).first();
-  await rangeeOrdi.locator(".rail").hover();
+  // La rangée d'un rayon tombe juste : six tuiles entières, aucune coupée au bord, rien à faire défiler.
+  const justes = await ordi.locator("section[aria-labelledby^=rangee-] .rail").evaluateAll((l) => l.map((el) => ({ tuiles: el.querySelectorAll("article").length, defile: el.scrollWidth > el.clientWidth + 1 })));
+  verifier(justes.length >= 5 && justes.every((r) => r.tuiles <= 6 && !r.defile), "ordinateur : la rangée d'un rayon montre six tuiles entières au plus, sans tuile coupée");
+  // « Les plus demandés » en montre davantage : une flèche, toujours visible, mène à la suite.
+  const rangeeOrdi = ordi.locator("section[aria-labelledby=titre-populaires]");
+  const flecheSuite = rangeeOrdi.locator("button[aria-hidden=true]").last();
+  verifier(await flecheSuite.isVisible() && Number(await flecheSuite.evaluate((el) => getComputedStyle(el).opacity)) === 1, "ordinateur : la flèche de la rangée se voit sans survol");
   const avant = await rangeeOrdi.locator(".rail").evaluate((el) => el.scrollLeft);
-  await rangeeOrdi.locator("button[aria-hidden=true]").last().click();
+  await flecheSuite.click();
   await ordi.waitForTimeout(700);
   verifier((await rangeeOrdi.locator(".rail").evaluate((el) => el.scrollLeft)) > avant + 100, "ordinateur : la flèche fait défiler la rangée");
 

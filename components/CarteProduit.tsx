@@ -204,18 +204,16 @@ function useTuilesAuDefilement(actif: boolean, produits: ProduitPublic[]) {
  * Une grille de tuiles : deux par ligne sur téléphone, jusqu'à cinq sur grand écran.
  * - `sansBadge` : dans une sélection où tous les articles portent la même étiquette (« Les plus demandés ») ;
  * - `etroite` : à côté de la colonne des rayons, une colonne de moins ;
- * - `apercu` : pour l'aperçu d'un sous-rayon — deux lignes entières, jamais une ligne à moitié vide ;
  * - `auDefilement` : pour une longue liste — les tuiles plus bas arrivent quand on y descend ;
  * - `ordreRecu` : pour la recherche — les articles sont déjà rangés (ceux qui répondent le mieux d'abord) :
  *   la grille ne fait pas passer devant un article qui a une photo mais répond moins bien.
  */
-export function GrilleProduits({ produits, sansBadge = false, etroite = false, apercu = false, auDefilement = false, ordreRecu = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean; apercu?: boolean; auDefilement?: boolean; ordreRecu?: boolean }) {
+export function GrilleProduits({ produits, sansBadge = false, etroite = false, auDefilement = false, ordreRecu = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean; auDefilement?: boolean; ordreRecu?: boolean }) {
   const grille = useTuilesAuDefilement(auDefilement, produits);
   const colonnes = etroite ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
-  // L'aperçu reçoit huit articles : six affichés sur deux ou trois colonnes, huit sur quatre — toujours des lignes entières.
-  const coupe = apercu ? (etroite ? "max-xl:[&>*:nth-child(n+7)]:hidden" : "max-lg:[&>*:nth-child(n+7)]:hidden xl:[&>*:nth-child(n+6)]:hidden") : "";
+  // Les tuiles ne se touchent pas : un écart franc entre elles (le site « étouffait »).
   return (
-    <div ref={grille} className={`grid gap-2.5 ${colonnes} ${coupe}`}>
+    <div ref={grille} className={`grid gap-3 sm:gap-4 lg:gap-5 ${colonnes}`}>
       {(ordreRecu ? produits : photosDAbord(produits)).map((p, i) => (
         <CarteProduit key={p.id} produit={p} sansBadge={sansBadge} rang={i} />
       ))}
@@ -223,12 +221,19 @@ export function GrilleProduits({ produits, sansBadge = false, etroite = false, a
   );
 }
 
-/** Une rangée de tuiles qui défile de côté (les sélections de l'accueil), comme sur Wolt ou Uber Eats. */
-export function RailProduits({ produits, sansBadge = false }: { produits: ProduitPublic[]; sansBadge?: boolean }) {
+/**
+ * Une rangée de tuiles qui défile de côté, comme sur Wolt ou Uber Eats : les sélections de l'accueil et
+ * l'aperçu de chaque sous-rayon. Une seule ligne par bloc : la page respire, la suite est à un geste.
+ */
+export function RailProduits({ produits, sansBadge = false, etroite = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean }) {
+  // Sur grand écran la rangée tombe juste, sans tuile coupée au bord : six tuiles sur la largeur de la page,
+  // quatre à côté de la colonne des rayons (`etroite`) — la largeur moins les écarts de la rangée (1,25 rem
+  // chacun, voir `RangeeQuiDefile`). S'il y en a davantage, une flèche mène à la suite.
+  const largeur = etroite ? "lg:w-[calc((100%_-_3.75rem)/4)]" : "lg:w-[calc((100%_-_6.25rem)/6)]";
   return (
     <RangeeQuiDefile>
       {photosDAbord(produits).map((p, i) => (
-        <div key={p.id} className="w-[9.75rem] shrink-0 snap-start sm:w-48">
+        <div key={p.id} className={`w-[9.75rem] shrink-0 snap-start sm:w-48 ${largeur}`}>
           <CarteProduit produit={p} sansBadge={sansBadge} rang={i} />
         </div>
       ))}

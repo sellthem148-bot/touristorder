@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { AUTRES, RAYONS_A_SOUS_RAYONS, clesDesRegles, grouperParSousRayon, photosDAbord, sansAccents, sousRayonDe, sousRayonsDe } from "@/lib/sous-rayons";
+import { AUTRES, PHOTOS_POUR_UNE_RANGEE, RAYONS_A_SOUS_RAYONS, apercuDuSousRayon, clesDesRegles, grouperParSousRayon, photosDAbord, sansAccents, sousRayonDe, sousRayonsDe } from "@/lib/sous-rayons";
 import { DICTIONNAIRES, dictionnaire } from "@/lib/i18n";
 import { nomDuSousRayon } from "@/lib/i18n/rayons";
 import { LANGUES } from "@/lib/langues";
@@ -114,6 +114,24 @@ describe("sous-rayons", () => {
     const articles = [{ nom: "a", photoUrl: "" }, { nom: "b", photoUrl: "/b.jpg" }, { nom: "c", photoUrl: "" }, { nom: "d", photoUrl: "/d.jpg" }];
     expect(photosDAbord(articles).map((a) => a.nom).join("")).toBe("bdac");
     expect(articles.map((a) => a.nom).join("")).toBe("abcd");
+  });
+
+  it("l'aperçu d'un sous-rayon est une seule rangée : peu d'articles, les photos seules quand il y en a assez", () => {
+    const article = (nom: string, photo = false) => ({ nom, photoUrl: photo ? `/p/${nom}.jpg` : "" });
+    const noms = (l: { nom: string }[]) => l.map((a) => a.nom).join("");
+    // Assez de photos pour une rangée de tuiles de même hauteur : elles seules, dans leur ordre.
+    const garni = [article("a"), article("b", true), article("c", true), article("d"), article("e", true), article("f", true), article("g", true)];
+    expect(PHOTOS_POUR_UNE_RANGEE).toBe(4);
+    expect(noms(apercuDuSousRayon(garni, 6))).toBe("bcefg");
+    expect(noms(apercuDuSousRayon(garni, 3))).toBe("bce");
+    // Trop peu de photos : les premiers articles, photos d'abord — jamais plus que demandé.
+    const maigre = [article("a"), article("b", true), article("c"), article("d"), article("e"), article("f"), article("g"), article("h")];
+    expect(noms(apercuDuSousRayon(maigre, 6))).toBe("bacdef");
+    // Un petit sous-rayon : tout, et la liste reçue n'est pas modifiée.
+    const petit = [article("a"), article("b")];
+    expect(noms(apercuDuSousRayon(petit, 6))).toBe("ab");
+    expect(noms(petit)).toBe("ab");
+    expect(apercuDuSousRayon([], 6)).toEqual([]);
   });
 
   it("le sous-rayon se lit sur le nom FRANÇAIS de la base, avant sa traduction", () => {

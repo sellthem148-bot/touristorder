@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { GrilleProduits } from "@/components/CarteProduit";
+import { GrilleProduits, RailProduits } from "@/components/CarteProduit";
 import { Apparition } from "@/components/Apparition";
 import { IconeRayon } from "@/components/IconeRayon";
 import { couleurDuRayon } from "@/lib/couleurs-rayons";
@@ -10,15 +10,16 @@ import { categoriesVisibles, produitsDeLaCategorie } from "@/lib/catalogue";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { adressesParLangue, compter, remplir } from "@/lib/langues";
 import { nomDuRayon, nomDuSousRayon } from "@/lib/i18n/rayons";
-import { grouperParSousRayon, photosDAbord } from "@/lib/sous-rayons";
+import { apercuDuSousRayon, grouperParSousRayon } from "@/lib/sous-rayons";
 import { traduction } from "@/lib/traduction";
 
 export const dynamic = "force-dynamic";
 
 // En dessous, un rayon tient sur un écran ou deux : ses articles s'affichent tous, sans sous-rayons.
 const SEUIL_DES_SOUS_RAYONS = 12;
-// Ce que l'aperçu d'un sous-rayon montre avant « Tout voir » (deux lignes de tuiles).
-const APERCU = 8;
+// Ce que l'aperçu d'un sous-rayon montre avant « Tout voir » : UNE rangée, à faire défiler de côté
+// (demande du gérant : « moins de choses par catégorie, ça fait étouffer »).
+const APERCU = 6;
 
 /** Le sous-rayon demandé par l'adresse (« ?s=colas »), s'il existe dans ce rayon. */
 const sousRayonDemande = (s: string | string[] | undefined, cles: string[]) => (typeof s === "string" && cles.includes(s) ? s : null);
@@ -107,7 +108,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
         </nav>
       </aside>
 
-      <div className="min-w-0 space-y-5">
+      <div className="min-w-0 space-y-6">
         {/* Sur téléphone : les rayons en rangée qui défile. */}
         <nav aria-label={t.categorie.navAria} className="lg:hidden">
           <RangeeDeLiens cle={slug} className="rail gap-2">
@@ -176,28 +177,31 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
           </section>
         ) : avecSousRayons ? (
           // Le rayon entier : un aperçu de chaque sous-rayon, et « Tout voir ».
-          <div className="space-y-8">
-            {groupes.map((g) => (
+          <div className="space-y-10 pt-1 sm:space-y-12">
+            {groupes.map((g) => {
+              const apercu = apercuDuSousRayon(g.articles, APERCU);
+              return (
               // Chaque sous-rayon monte en fondu quand il arrive à l'écran, ses tuiles l'une après l'autre.
               <Apparition key={g.cle}>
-              <section aria-labelledby={`sous-rayon-${g.cle}`} className="scroll-mt-32 space-y-3">
+              <section aria-labelledby={`sous-rayon-${g.cle}`} className="scroll-mt-32 space-y-3.5">
                 <div className="flex items-center justify-between gap-4">
                   {/* Un repère à la couleur du rayon devant chaque sous-rayon ; « Tout voir » dans une pastille de la même teinte. */}
                   <h2 id={`sous-rayon-${g.cle}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold nuit:text-white sm:text-xl">
                     <span aria-hidden="true" className={`h-5 w-1.5 shrink-0 rounded-full ${couleur.repere}`} />
                     <span className="min-w-0"><span data-nom>{nomSous(g.cle)}</span> <span data-compte className="ms-1 text-sm font-normal tabular-nums text-slate-500 nuit:text-slate-400">{g.articles.length}</span></span>
                   </h2>
-                  {g.articles.length > 6 && (
+                  {g.articles.length > apercu.length && (
                     <Link href={adresse(g.cle)} className={`group shrink-0 rounded-full px-3 py-1 text-sm font-semibold transition ${couleur.pastille} ${couleur.survol}`}>
                       {t.categorie.toutVoir}
                     </Link>
                   )}
                 </div>
-                {/* L'aperçu montre d'abord les articles qui ont une photo. */}
-                <GrilleProduits produits={photosDAbord(g.articles).slice(0, APERCU)} etroite apercu />
+                {/* Une seule rangée par sous-rayon, les articles qui ont une photo d'abord ; la suite derrière « Tout voir ». */}
+                <RailProduits produits={apercu} etroite />
               </section>
               </Apparition>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <GrilleProduits produits={produits} etroite auDefilement />
