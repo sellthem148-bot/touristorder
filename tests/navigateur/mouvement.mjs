@@ -1,0 +1,188 @@
+// Le mouvement du site côté client : ce qui arrive à l'écran monte en fondu, ce qu'on touche répond.
+// Ce parcours vérifie surtout ce que le mouvement ne doit JAMAIS faire : laisser un bloc invisible, élargir la
+// page, décrocher ce qui reste collé à l'écran, s'imposer à qui a demandé moins d'animations, cacher le site
+// à un navigateur sans JavaScript.
+// À lancer sur le catalogue ENTIER, comme parcours-rayons.mjs :
+//   base vide, puis  npx tsx tests/outils/base-complete.ts
+// Ne modifie rien dans la base (le panier reste dans le navigateur).
+import { chromium, devices } from "playwright";
+
+const BASE = process.env.BASE_URL || "http://localhost:3100";
+const OUT = process.argv[2];
+const erreurs = [];
+const ok = (m) => console.log("✓", m);
+const verifier = (cond, m) => { if (!cond) throw new Error("ÉCHEC : " + m); ok(m); };
+const deborde = (p) => p.evaluate(() => innerWidth > screen.width || document.documentElement.scrollWidth > innerWidth + 1);
+const pause = (p, ms) => p.waitForTimeout(ms);
+
+/** Ce que le mouvement a laissé derrière lui une fois les animations finies (rien ne doit l'être) :
+ *  un élément animé resté transparent, coupé ou déplacé. */
+const restes = (p) =>
+  p.evaluate(() =>
+    // (Un bloc encore en attente plus bas dans la page n'est pas un reste : `enAttente` le compte à part.)
+    [...document.querySelectorAll(".apparait, .arrive, .entree-page, .saute, .monte, .deploie")]
+      .filter((el) => {
+        const s = getComputedStyle(el);
+        return el.getClientRects().length > 0 && (Number(s.opacity) < 1 || s.clipPath !== "none" || s.transform !== "none");
+      })
+      .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 60)}`),
+  );
+const enAttente = (p) => p.locator(".a-venir").count();
+
+/** Fait défiler toute la page, écran par écran, comme un doigt. */
+async function toutDefiler(p) {
+  const hauteur = await p.evaluate(() => document.documentElement.scrollHeight);
+  for (let y = 0; y <= hauteur; y += 500) {
+    await p.evaluate((v) => scrollTo(0, v), y);
+    await pause(p, 120);
+  }
+  await pause(p, 800);
+}
+
+const navigateur = await chromium.launch();
+try {
+  for (const [langue, prefixe] of [["français", ""], ["hébreu", "/he"]]) {
+    const contexte = await navigateur.newContext({ ...devices["iPhone 13"] });
+    const p = await contexte.newPage();
+    p.on("pageerror", (e) => erreurs.push(String(e)));
+
+    // 1. L'accueil : le haut de page arrive en cascade, le bas attend d'être à l'écran
+    await p.goto(BASE + prefixe + "/", { waitUntil: "networkidle" });
+    const enCascade = await p.locator(".apparait").count();
+    verifier(enCascade >= 15, `${langue} — accueil : ${enCascade} éléments arrivent en cascade`);
+    if (OUT && !prefixe) {
+      // Pour l'œil : la page rechargée, prise en plein mouvement.
+      await p.reload({ waitUntil: "commit" });
+      await p.waitForSelector("#rayons li");
+      await pause(p, 260);
+      await p.screenshot({ path: `${OUT}/mouvement-1-en-cours.png` });
+      await p.waitForLoadState("networkidle");
+    }
+    await pause(p, 1500);
+    const attente = await enAttente(p);
+    verifier(attente >= 3, `${langue} — accueil : ${attente} blocs plus bas attendent d'arriver à l'écran`);
+    verifier(
+      await p.evaluate(() => [...document.querySelectorAll(".a-venir")].every((el) => el.getBoundingClientRect().top >= innerHeight)),
+      `${langue} — aucun bloc en attente n'est déjà à l'écran (rien ne disparaît sous les yeux)`,
+    );
+    verifier(!(await deborde(p)), `${langue} — accueil : pas de défilement horizontal`);
+    if (OUT) await p.screenshot({ path: `${OUT}/mouvement-2-accueil-${prefixe ? "he" : "fr"}.png` });
+
+    // 2. En faisant défiler : chaque bloc arrive, plus rien n'attend, rien ne reste à moitié visible
+    await toutDefiler(p);
+    verifier((await enAttente(p)) === 0, `${langue} — après avoir fait défiler la page, plus aucun bloc n'attend`);
+    const arrives = await p.locator(".arrive").count();
+    verifier(arrives === attente, `${langue} — les ${arrives} blocs sont arrivés`);
+    const laisses = await restes(p);
+    verifier(laisses.length === 0, `${langue} — rien n'est resté transparent ou coupé${laisses.length ? " : " + laisses.slice(0, 4).join(" | ") : ""}`);
+    verifier(!(await deborde(p)), `${langue} — toujours pas de défilement horizontal`);
+
+    // 3. Le « + » : le « − 1 + » se déplie à sa place, la barre du panier monte, les compteurs suivent
+    await p.evaluate(() => scrollTo(0, 0));
+    await p.goto(BASE + prefixe + "/categorie/fruits-legumes", { waitUntil: "networkidle" });
+    await pause(p, 900);
+    const tuile = p.locator("article", { has: p.locator("img") }).first();
+    const plus = tuile.locator("button").first();
+    const avant = await plus.boundingBox();
+    await plus.click();
+    const compteur = tuile.locator(".deploie");
+    await compteur.waitFor();
+    if (OUT && !prefixe) { await pause(p, 90); await p.screenshot({ path: `${OUT}/mouvement-3-ajout-en-cours.png` }); }
+    await pause(p, 600);
+    const apres = await compteur.boundingBox();
+    verifier(Math.abs(apres.x - avant.x) < 1 && Math.abs(apres.y - avant.y) < 1, `${langue} — le « − 1 + » est à la place du « + » (coin haut gauche de la photo)`);
+    verifier((await compteur.evaluate((el) => getComputedStyle(el).clipPath)) === "none", `${langue} — une fois déplié, le « − 1 + » est entier`);
+    verifier((await compteur.locator("[aria-live]").innerText()).trim() === "1", `${langue} — il affiche 1`);
+    const barre = p.locator("aside.monte");
+    verifier(await barre.isVisible(), `${langue} — la barre du panier est montée en bas de l'écran`);
+    const bas = await barre.boundingBox();
+    const ecran = p.viewportSize();
+    verifier(Math.abs(bas.y + bas.height - ecran.height) < 1, `${langue} — elle est posée au bord bas de l'écran, pas décalée`);
+    await compteur.locator("button").last().click();
+    await pause(p, 500);
+    verifier((await compteur.locator("[aria-live]").innerText()).trim() === "2", `${langue} — un second appui : 2`);
+    verifier((await barre.locator(".saute").innerText()).trim() === "2", `${langue} — le compteur de la barre suit : 2`);
+    verifier((await restes(p)).length === 0, `${langue} — rien n'est resté transparent ou coupé après l'ajout`);
+    if (OUT) await p.screenshot({ path: `${OUT}/mouvement-4-panier-${prefixe ? "he" : "fr"}.png` });
+
+    // 4. La tuile ouvre toujours la fiche, qui monte par-dessus la page
+    await tuile.locator("h3 button").click();
+    const fiche = p.locator("dialog.fiche[open]");
+    await fiche.waitFor();
+    await pause(p, 500);
+    const cadre = await fiche.boundingBox();
+    verifier(cadre.y + cadre.height <= ecran.height + 1 && cadre.x >= 0 && cadre.width <= ecran.width, `${langue} — la fiche produit s'ouvre dans l'écran`);
+    await p.keyboard.press("Escape");
+    await pause(p, 200);
+
+    // 5. Un rayon à sous-rayons : la rangée des sous-rayons reste collée sous l'en-tête pendant le mouvement
+    await p.goto(BASE + prefixe + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
+    await pause(p, 1200);
+    verifier((await enAttente(p)) >= 3, `${langue} — crèmerie : les sous-rayons plus bas attendent`);
+    await p.evaluate(() => scrollTo(0, 1400));
+    await pause(p, 700);
+    const collee = await p.locator('main nav[class*="z-[15]"]').boundingBox(); // la rangée du téléphone, pas la colonne du grand écran
+    const entete = await p.locator("header").first().boundingBox();
+    verifier(Math.abs(collee.y - (entete.y + entete.height)) <= 2, `${langue} — la rangée des sous-rayons reste collée sous l'en-tête`);
+    await toutDefiler(p);
+    verifier((await enAttente(p)) === 0 && (await restes(p)).length === 0, `${langue} — crèmerie : tout est arrivé, rien n'est resté invisible`);
+    verifier(!(await deborde(p)), `${langue} — crèmerie : pas de défilement horizontal`);
+
+    // 6. D'une page à l'autre : le fondu rejoue, et le panier n'a pas bougé
+    await p.evaluate(() => scrollTo(0, 0));
+    await p.evaluate(() => { window.__fondus = 0; document.querySelector(".entree-page").addEventListener("animationstart", (e) => { if (e.animationName === "fondu" && e.target === e.currentTarget) window.__fondus += 1; }); });
+    await p.locator("header a").first().click();
+    await p.waitForURL(BASE + (prefixe || "/"));
+    await pause(p, 700);
+    verifier((await p.evaluate(() => window.__fondus)) === 1, `${langue} — en changeant de page, le contenu arrive en fondu (une fois)`);
+    verifier((await p.locator("aside.monte .saute").innerText()).trim() === "2", `${langue} — le panier est resté tel quel d'une page à l'autre`);
+    await contexte.close();
+  }
+
+  // 7. Qui a demandé moins d'animations à son appareil : rien n'attend, rien ne bouge
+  const calme = await navigateur.newContext({ ...devices["iPhone 13"], reducedMotion: "reduce" });
+  const c = await calme.newPage();
+  c.on("pageerror", (e) => erreurs.push(String(e)));
+  await c.goto(BASE + "/", { waitUntil: "networkidle" });
+  await pause(c, 400);
+  verifier((await enAttente(c)) === 0, "moins d'animations : aucun bloc n'est mis en attente");
+  verifier((await restes(c)).length === 0, "moins d'animations : toute la page est visible tout de suite");
+  const duree = await c.locator(".apparait").first().evaluate((el) => parseFloat(getComputedStyle(el).animationDuration));
+  verifier(duree < 0.001, "moins d'animations : les animations sont coupées");
+  await calme.close();
+
+  // 8. Sans JavaScript (et pour un moteur de recherche) : toute la page est là
+  const sans = await navigateur.newContext({ ...devices["iPhone 13"], javaScriptEnabled: false });
+  const s = await sans.newPage();
+  await s.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "load" });
+  await pause(s, 1500);
+  verifier((await enAttente(s)) === 0, "sans JavaScript : aucun bloc n'est caché");
+  const opacites = await s.locator("main article").evaluateAll((l) => l.filter((a) => a.offsetParent !== null).map((a) => Number(getComputedStyle(a).opacity)));
+  verifier(opacites.length > 20 && opacites.every((o) => o === 1), `sans JavaScript : les ${opacites.length} tuiles sont visibles`);
+  await sans.close();
+
+  // 9. Sur ordinateur : la tuile se soulève au survol, la colonne des rayons reste collée
+  const ordi = await (await navigateur.newContext({ viewport: { width: 1280, height: 900 } })).newPage();
+  ordi.on("pageerror", (e) => erreurs.push(String(e)));
+  await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
+  await pause(ordi, 1300);
+  const carte = ordi.locator("main article").first();
+  const repos = await carte.boundingBox();
+  await carte.hover({ position: { x: 20, y: 150 } });
+  await pause(ordi, 350);
+  const survol = await carte.boundingBox();
+  verifier(repos.y - survol.y > 1 && repos.y - survol.y < 4, "ordinateur : la tuile survolée se soulève un peu");
+  if (OUT) await ordi.screenshot({ path: `${OUT}/mouvement-5-ordinateur.png` });
+  await ordi.mouse.move(0, 0);
+  await ordi.evaluate(() => scrollTo(0, 1600));
+  await pause(ordi, 600);
+  const colonne = await ordi.locator("aside nav").first().boundingBox();
+  verifier(colonne.y > 60 && colonne.y < 120, "ordinateur : la colonne des rayons reste collée pendant le défilement");
+  await toutDefiler(ordi);
+  verifier((await enAttente(ordi)) === 0 && (await restes(ordi)).length === 0, "ordinateur : tout est arrivé, rien n'est resté invisible");
+
+  console.log("Erreurs JS :", erreurs.length ? erreurs : "aucune");
+  if (erreurs.length) process.exitCode = 1;
+} finally {
+  await navigateur.close();
+}

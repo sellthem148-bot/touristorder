@@ -11,10 +11,15 @@ import { useTraduction } from "./LangueProvider";
 import { RangeeQuiDefile } from "./Rangee";
 import { photosDAbord } from "@/lib/sous-rayons";
 import { remplir } from "@/lib/langues";
+import { rangDansLaCascade } from "@/lib/cascade";
 
 // Le bouton posé dans le coin haut GAUCHE de la photo, dans toutes les langues (décision du gérant : en
 // hébreu aussi, comme sur Wolt). Arrondi comme la photo côté coin, et à l'opposé : la forme de Wolt.
 const COIN = "rounded-tl-2xl rounded-br-xl";
+
+// Les premières tuiles d'une grille ou d'une rangée arrivent l'une après l'autre ; les suivantes, plus bas
+// dans la page, sont simplement là (animer des centaines de tuiles à la fois ferait peiner un téléphone).
+const EN_CASCADE = 15;
 
 function articleSansOptions(p: ProduitPublic) {
   return { produitId: p.id, nom: p.nom, optionsLibelle: "", prix: p.prix, photoUrl: p.photoUrl, emoji: p.categorie.emoji };
@@ -34,20 +39,26 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
 
   if (!avecOptions && quantite > 0) {
     return (
-      <div className={`flex items-center bg-encre text-white ${surPhoto ? COIN : "rounded-xl"}`}>
+      // Le « − 1 + » se déplie depuis le « + » qu'il remplace : vers la droite sur une photo (le bouton y est
+      // à gauche dans toutes les langues), sinon depuis le côté fin de la tuile.
+      <div className={`deploie flex items-center bg-encre text-white ${surPhoto ? `[--cache-droite:58%] ${COIN}` : "rounded-xl ltr:[--cache-gauche:58%] rtl:[--cache-droite:58%]"}`}>
         <button
           type="button"
           onClick={() => panier.changerQuantite(produit.id, quantite - 1)}
-          className={`flex h-9 items-center justify-center hover:bg-white/10 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
+          className={`flex h-9 items-center justify-center transition-colors hover:bg-white/10 active:bg-white/25 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
           aria-label={remplir(t.produit.retirerUn, { nom: produit.nom })}
         >
           <Minus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
         </button>
-        <span className="min-w-5 text-center text-sm font-bold tabular-nums" aria-live="polite">{quantite}</span>
+        {/* La clé du chiffre change avec la quantité : il rebondit à chaque ajout ou retrait. La zone annoncée
+            aux lecteurs d'écran, elle, reste la même. */}
+        <span className="min-w-5 text-center text-sm font-bold tabular-nums" aria-live="polite">
+          <span key={quantite} className="saute inline-block">{quantite}</span>
+        </span>
         <button
           type="button"
           onClick={() => panier.ajouter(articleSansOptions(produit))}
-          className={`flex h-9 items-center justify-center hover:bg-white/10 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
+          className={`flex h-9 items-center justify-center transition-colors hover:bg-white/10 active:bg-white/25 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
           aria-label={remplir(t.produit.ajouterUn, { nom: produit.nom })}
         >
           <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
@@ -63,14 +74,14 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
       onClick={() => (avecOptions ? ouvrir() : panier.ajouter(articleSansOptions(produit)))}
       className={
         surPhoto
-          ? `flex h-9 min-w-9 items-center justify-center bg-encre px-2 text-sm font-bold tabular-nums text-white transition hover:bg-encre/90 active:scale-95 ${COIN}`
-          : `flex h-9 min-w-9 items-center justify-center rounded-xl border px-2 text-sm font-bold tabular-nums transition active:scale-95 ${
+          ? `flex h-9 min-w-9 items-center justify-center bg-encre px-2 text-sm font-bold tabular-nums text-white transition duration-150 hover:bg-encre/90 active:scale-90 ${COIN}`
+          : `flex h-9 min-w-9 items-center justify-center rounded-xl border px-2 text-sm font-bold tabular-nums transition duration-150 active:scale-90 ${
               dejaChoisi ? "border-encre bg-encre text-white" : "border-slate-300 bg-white text-encre hover:border-encre hover:bg-slate-50"
             }`
       }
       aria-label={remplir(avecOptions ? t.produit.choisirOptions : t.produit.ajouterAuPanier, { nom: produit.nom })}
     >
-      {dejaChoisi ? quantite : <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />}
+      {dejaChoisi ? <span key={quantite} className="saute inline-block">{quantite}</span> : <Plus className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />}
     </button>
   );
 }
@@ -82,20 +93,25 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
  * Avec une photo : elle porte le bouton « + » dans son coin haut gauche — en hébreu aussi, comme sur Wolt.
  * Sans photo : pas d'image de remplacement, la tuile est plus basse et le bouton est en bas, côté fin.
  */
-export function CarteProduit({ produit, sansBadge = false }: { produit: ProduitPublic; sansBadge?: boolean }) {
+export function CarteProduit({ produit, sansBadge = false, rang }: { produit: ProduitPublic; sansBadge?: boolean; rang?: number }) {
   const [ouvert, setOuvert] = useState(false);
   const { langue, t } = useTraduction();
   const detail = produit.description || (produit.options.length > 0 ? remplir(t.produit.auChoix, { options: produit.options.map((g) => g.affiche ?? g.nom).join(", ") }) : "");
+  const enCascade = rang !== undefined && rang < EN_CASCADE;
 
   return (
-    <article className={`relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white transition hover:border-slate-400 ${produit.epuise ? "bg-slate-50" : ""}`}>
+    // La tuile répond : elle se soulève au survol (ordinateur) et s'enfonce un peu sous le doigt.
+    <article
+      className={`group/tuile relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.985] ${enCascade ? "apparait" : ""} ${produit.epuise ? "bg-slate-50" : ""}`}
+      style={enCascade ? rangDansLaCascade(rang) : undefined}
+    >
       {produit.photoUrl && (
-        <div className="relative">
+        <div className="relative overflow-hidden rounded-t-2xl">
           <img
             src={produit.photoUrl}
             alt=""
             loading="lazy"
-            className={`aspect-[4/3] w-full rounded-t-2xl border-b border-slate-100 bg-white object-contain p-2 ${produit.epuise ? "opacity-50 grayscale" : ""}`}
+            className={`aspect-[4/3] w-full border-b border-slate-100 bg-white object-contain p-2 transition-transform duration-300 group-hover/tuile:scale-[1.05] ${produit.epuise ? "opacity-50 grayscale" : ""}`}
           />
           {/* Le « + » en haut à gauche de la photo, quelle que soit la langue : la seule position qui ne se retourne pas en hébreu. */}
           <div className="absolute left-0 top-0 z-10">
@@ -145,8 +161,8 @@ export function GrilleProduits({ produits, sansBadge = false, etroite = false, a
   const coupe = apercu ? (etroite ? "max-xl:[&>*:nth-child(n+7)]:hidden" : "max-lg:[&>*:nth-child(n+7)]:hidden xl:[&>*:nth-child(n+6)]:hidden") : "";
   return (
     <div className={`grid gap-2.5 ${colonnes} ${coupe}`}>
-      {photosDAbord(produits).map((p) => (
-        <CarteProduit key={p.id} produit={p} sansBadge={sansBadge} />
+      {photosDAbord(produits).map((p, i) => (
+        <CarteProduit key={p.id} produit={p} sansBadge={sansBadge} rang={i} />
       ))}
     </div>
   );
@@ -156,9 +172,9 @@ export function GrilleProduits({ produits, sansBadge = false, etroite = false, a
 export function RailProduits({ produits, sansBadge = false }: { produits: ProduitPublic[]; sansBadge?: boolean }) {
   return (
     <RangeeQuiDefile>
-      {photosDAbord(produits).map((p) => (
+      {photosDAbord(produits).map((p, i) => (
         <div key={p.id} className="w-[9.75rem] shrink-0 snap-start sm:w-48">
-          <CarteProduit produit={p} sansBadge={sansBadge} />
+          <CarteProduit produit={p} sansBadge={sansBadge} rang={i} />
         </div>
       ))}
     </RangeeQuiDefile>

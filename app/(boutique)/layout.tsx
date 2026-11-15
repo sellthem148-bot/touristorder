@@ -4,6 +4,7 @@ import { LangueProvider } from "@/components/LangueProvider";
 import { ChoixLangue } from "@/components/ChoixLangue";
 import { EnTete, Logo } from "@/components/EnTete";
 import { BarrePanier } from "@/components/LienPanier";
+import { EntreePage } from "@/components/EntreePage";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { traduction } from "@/lib/traduction";
 
@@ -16,7 +17,7 @@ export default async function LayoutBoutique({ children }: LayoutProps<"/">) {
       <PanierProvider>
         <EnTete t={t} langue={langue} />
         <main id="contenu" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-5 sm:pb-20 sm:pt-8">
-          {children}
+          <EntreePage>{children}</EntreePage>
         </main>
         <footer className="border-t border-slate-200 bg-white text-slate-600">
           <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">

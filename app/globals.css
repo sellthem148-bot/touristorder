@@ -78,14 +78,70 @@ dialog.fiche::backdrop {
   background: rgb(9 9 11 / 0.5);
 }
 dialog.fiche[open] {
-  animation: monter 0.22s ease-out;
+  animation: monter 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+dialog.fiche[open]::backdrop {
+  animation: fondu 0.2s ease-out;
 }
 @keyframes monter {
   from { transform: translateY(24px); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
+
+/*
+ * Le mouvement du site (demande du gérant, 15 novembre 2026 : « c'est très plat »). Ce qui arrive à l'écran
+ * monte en fondu, ce qu'on touche répond (tuile, « + », quantité, panier). Trois règles :
+ * - rien n'est jamais caché par la feuille de style seule : `a-venir` n'est posé que par le navigateur
+ *   (components/Apparition.tsx), sur un bloc qui n'est pas encore à l'écran ;
+ * - les animations se terminent sans rien laisser derrière elles (`backwards`, jamais `forwards`) ;
+ * - tout est coupé pour qui a demandé moins d'animations à son appareil, et à l'impression.
+ */
+@keyframes apparition {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fondu {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes saut {
+  0% { transform: scale(0.8); }
+  55% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+@keyframes montee {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+/* Le « − 1 + » se déplie depuis le « + » qu'il remplace : `--cache-droite` ou `--cache-gauche` dit de quel côté. */
+@keyframes deploiement {
+  from { clip-path: inset(0 var(--cache-droite, 0%) 0 var(--cache-gauche, 0%)); }
+  to { clip-path: inset(0 0% 0 0%); }
+}
+/* Dans un bloc en attente, les éléments en cascade attendent aussi : ils partiront avec lui. */
+.a-venir .apparait {
+  animation: none;
+}
 @media (prefers-reduced-motion: reduce) {
-  dialog.fiche[open] { animation: none; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .a-venir {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+@media print {
+  .a-venir {
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /*
@@ -106,15 +162,15 @@ dialog.fiche[open] {
 }
 
 @utility bouton {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-encre px-5 py-3 font-semibold text-white transition hover:bg-slate-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-encre px-5 py-3 font-semibold text-white transition duration-150 hover:bg-slate-800 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100;
 }
 
 @utility bouton-secondaire {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 font-semibold text-encre transition hover:border-slate-400 hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45;
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 font-semibold text-encre transition duration-150 hover:border-slate-400 hover:bg-slate-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-45;
 }
 
 @utility bouton-whatsapp {
-  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-whatsapp px-5 py-3 font-semibold text-white transition hover:bg-whatsapp-fonce active:scale-[0.99];
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-whatsapp px-5 py-3 font-semibold text-white transition duration-150 hover:bg-whatsapp-fonce active:scale-[0.97];
 }
 
 @utility bouton-danger {
@@ -135,6 +191,43 @@ dialog.fiche[open] {
    rangée qui défile, elle s'en échappait et élargissait toute la page. */
 @utility pastille {
   @apply relative inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition select-none hover:border-slate-500 has-[:checked]:border-encre has-[:checked]:bg-encre has-[:checked]:text-white has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40;
+}
+
+/* Arrive en montant, à l'affichage de la page. `--i` (0, 1, 2…) décale les éléments d'une même série. */
+@utility apparait {
+  animation: apparition 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation-delay: calc(min(var(--i, 0), 14) * 45ms);
+}
+
+/* Le contenu d'une page, à chaque changement de page : un simple fondu. */
+@utility entree-page {
+  animation: fondu 0.28s ease-out backwards;
+}
+
+/* Un petit rebond : une quantité qui change, un compteur de panier, un bouton qui vient de servir. */
+@utility saute {
+  animation: saut 0.32s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+/* Se déplie de côté (voir `deploiement`). */
+@utility deploie {
+  animation: deploiement 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Monte depuis le bas de l'écran (la barre du panier quand le premier article arrive). */
+@utility monte {
+  animation: montee 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+/* Un bloc plus bas dans la page, en attente d'arriver à l'écran : posé et retiré par Apparition seulement. */
+@utility a-venir {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+/* Le même bloc au moment où il arrive à l'écran. */
+@utility arrive {
+  animation: apparition 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
 }
 
 /* Rangée qui défile horizontalement (rayons, catégories). */

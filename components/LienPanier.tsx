@@ -20,7 +20,8 @@ export function LienPanier() {
       <ShoppingCart className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
       <span className="hidden sm:inline" aria-hidden="true">{t.entete.panier}</span>
       {nombre > 0 && (
-        <span className="min-w-5 rounded-md bg-white px-1 text-center text-xs font-bold leading-5 text-encre tabular-nums" aria-hidden="true">
+        // La clé change avec le nombre d'articles : le compteur rebondit à chaque ajout.
+        <span key={nombre} className="saute min-w-5 rounded-md bg-white px-1 text-center text-xs font-bold leading-5 text-encre tabular-nums" aria-hidden="true">
           {nombre > 99 ? "99+" : nombre}
         </span>
       )}
@@ -36,13 +37,14 @@ export function BarrePanier() {
   const chemin = langueDuChemin(usePathname()).chemin;
   if (nombre === 0 || chemin === "/panier" || chemin.startsWith("/suivi")) return null;
   return (
-    <aside aria-label={t.entete.panier} className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+    // `monte` : la barre arrive par le bas quand le premier article entre au panier.
+    <aside aria-label={t.entete.panier} className="monte fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
       <Link href={lien("/panier")} className="bouton w-full justify-between py-3.5">
         <span className="flex items-center gap-2.5">
-          <span className="flex h-6 min-w-6 items-center justify-center rounded-md bg-white/15 px-1.5 text-sm tabular-nums">{nombre}</span>
+          <span key={nombre} className="saute flex h-6 min-w-6 items-center justify-center rounded-md bg-white/15 px-1.5 text-sm tabular-nums">{nombre}</span>
           {t.entete.voirLePanier}
         </span>
-        <span className="tabular-nums">{formatPrix(sousTotal, langue)}</span>
+        <span key={sousTotal} className="entree-page tabular-nums">{formatPrix(sousTotal, langue)}</span>
       </Link>
     </aside>
   );

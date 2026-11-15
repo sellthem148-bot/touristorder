@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { GrilleProduits } from "@/components/CarteProduit";
+import { Apparition } from "@/components/Apparition";
 import { IconeRayon } from "@/components/IconeRayon";
 import { RangeeDeLiens } from "@/components/Rangee";
 import { categoriesVisibles, produitsDeLaCategorie } from "@/lib/catalogue";
@@ -123,7 +124,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
           </RangeeDeLiens>
         </nav>
 
-        <header className="flex items-center gap-3.5">
+        <header className="apparait flex items-center gap-3.5">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700">
             <IconeRayon slug={c.slug} className="h-6 w-6" />
           </span>
@@ -172,7 +173,9 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
           // Le rayon entier : un aperçu de chaque sous-rayon, et « Tout voir ».
           <div className="space-y-8">
             {groupes.map((g) => (
-              <section key={g.cle} aria-labelledby={`sous-rayon-${g.cle}`} className="scroll-mt-32 space-y-3">
+              // Chaque sous-rayon monte en fondu quand il arrive à l'écran, ses tuiles l'une après l'autre.
+              <Apparition key={g.cle}>
+              <section aria-labelledby={`sous-rayon-${g.cle}`} className="scroll-mt-32 space-y-3">
                 <div className="flex items-baseline justify-between gap-4">
                   <h2 id={`sous-rayon-${g.cle}`} className="text-lg font-bold sm:text-xl">
                     {nomSous(g.cle)} <span className="ms-1 text-sm font-normal tabular-nums text-slate-500">{g.articles.length}</span>
@@ -186,6 +189,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
                 {/* L'aperçu montre d'abord les articles qui ont une photo. */}
                 <GrilleProduits produits={photosDAbord(g.articles).slice(0, APERCU)} etroite apercu />
               </section>
+              </Apparition>
             ))}
           </div>
         ) : (

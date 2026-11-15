@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { CalendarClock, ChevronRight, Clock, MapPin, Truck, Wallet, type LucideIcon } from "lucide-react";
 import { RailProduits } from "@/components/CarteProduit";
+import { rangDansLaCascade } from "@/lib/cascade";
+import { Apparition } from "@/components/Apparition";
 import { IconeRayon } from "@/components/IconeRayon";
 import { misEnAvant, vitrine } from "@/lib/catalogue";
 import { libelleDuMode, nomDuRayon } from "@/lib/i18n/rayons";
@@ -129,18 +131,19 @@ export default async function Accueil() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: donneesStructurees(langue, ts.meta.description) }} />
       <section className="grid gap-6 pt-1 sm:pt-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-12">
         <div className="space-y-3.5 sm:space-y-5">
-          <p className="surtitre">{a.surtitre}</p>
-          <h1 className="text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]">
+          {/* Le haut de page arrive ligne après ligne (`apparait`, dans l'ordre de `--i`). */}
+          <p className="surtitre apparait">{a.surtitre}</p>
+          <h1 className="apparait text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]" style={rangDansLaCascade(1)}>
             {a.titre}
           </h1>
-          {messageAccueil && <p className="max-w-xl text-pretty text-[15px] text-slate-600 sm:text-lg">{messageAccueil}</p>}
+          {messageAccueil && <p className="apparait max-w-xl text-pretty text-[15px] text-slate-600 sm:text-lg" style={rangDansLaCascade(2)}>{messageAccueil}</p>}
           {!reglages.ouvert && (
             <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
               {a.ferme}
             </p>
           )}
           {/* Sur téléphone : l'essentiel de la livraison en deux pastilles ; le détail est plus bas. */}
-          <ul className="flex flex-wrap gap-2 lg:hidden">
+          <ul className="apparait flex flex-wrap gap-2 lg:hidden" style={rangDansLaCascade(3)}>
             {faits.slice(amplitude ? 1 : 0, amplitude ? 3 : 2).map((f) => (
               <li key={f.titre} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold">
                 <f.icone className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.7} aria-hidden="true" />
@@ -149,13 +152,13 @@ export default async function Accueil() {
             ))}
           </ul>
           {rayons.length > 0 && (
-            <div className="hidden flex-wrap gap-2.5 pt-1 lg:flex">
+            <div className="apparait hidden flex-wrap gap-2.5 pt-1 lg:flex" style={rangDansLaCascade(3)}>
               <a href="#rayons" className="bouton px-5">{a.voirRayons}</a>
               <a href="#etapes" className="bouton-secondaire px-5">{a.commentCaMarche}</a>
             </div>
           )}
         </div>
-        <div className="hidden lg:block">{reperes}</div>
+        <div className="apparait hidden lg:block" style={rangDansLaCascade(3)}>{reperes}</div>
       </section>
 
       {rayons.length === 0 ? (
@@ -163,16 +166,17 @@ export default async function Accueil() {
       ) : (
         <>
           <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-3.5">
-            <h2 id="titre-categories" className="text-xl font-bold sm:text-2xl">{a.rayons}</h2>
+            <h2 id="titre-categories" className="apparait text-xl font-bold sm:text-2xl" style={rangDansLaCascade(4)}>{a.rayons}</h2>
             {/* Des tuiles à icône, trois par ligne sur téléphone : tous les rayons tiennent sur un écran. */}
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 lg:grid-cols-6">
-              {rayons.map(({ categorie, total }) => (
-                <li key={categorie.id}>
+              {rayons.map(({ categorie, total }, i) => (
+                <li key={categorie.id} className="apparait" style={rangDansLaCascade(i + 4)}>
+                  {/* La tuile se soulève au survol et s'enfonce sous le doigt ; son icône suit. */}
                   <Link
                     href={lien(`/categorie/${categorie.slug}`)}
-                    className="group flex h-full flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3.5 text-center transition hover:border-slate-400 sm:py-4"
+                    className="group flex h-full flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3.5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.96] sm:py-4"
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition group-hover:bg-encre group-hover:text-white">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition duration-200 group-hover:scale-110 group-hover:bg-encre group-hover:text-white group-active:bg-encre group-active:text-white">
                       <IconeRayon slug={categorie.slug} className="h-[22px] w-[22px]" />
                     </span>
                     <span className="min-w-0">
@@ -190,43 +194,50 @@ export default async function Accueil() {
             </p>
           </section>
 
+          {/* Plus bas dans la page, chaque bloc monte en fondu quand il arrive à l'écran (`Apparition`). */}
           {populaires.length > 0 && (
-            <section aria-labelledby="titre-populaires" className="space-y-3">
-              <h2 id="titre-populaires" className="text-xl font-bold sm:text-2xl">{a.plusDemandes}</h2>
-              <RailProduits produits={populaires} sansBadge />
-            </section>
+            <Apparition>
+              <section aria-labelledby="titre-populaires" className="space-y-3">
+                <h2 id="titre-populaires" className="text-xl font-bold sm:text-2xl">{a.plusDemandes}</h2>
+                <RailProduits produits={populaires} sansBadge />
+              </section>
+            </Apparition>
           )}
 
           {/* Une rangée à faire défiler par rayon, et « Tout voir ». */}
           {rangees.map(({ categorie, produits, total }) => (
-            <section key={categorie.id} aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3">
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 id={`rangee-${categorie.slug}`} className="text-lg font-bold sm:text-xl">
-                  <Link href={lien(`/categorie/${categorie.slug}`)} className="hover:underline">{nomDuRayon(categorie, t)}</Link>
-                </h2>
-                <Link href={lien(`/categorie/${categorie.slug}`)} className="inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-encre hover:underline">
-                  {t.categorie.toutVoir} <span className="font-normal tabular-nums text-slate-500">({total})</span>
-                  <ChevronRight className="h-4 w-4 rtl:rotate-180" strokeWidth={1.8} aria-hidden="true" />
-                </Link>
-              </div>
-              <RailProduits produits={produits} />
-            </section>
+            <Apparition key={categorie.id}>
+              <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3">
+                <div className="flex items-baseline justify-between gap-4">
+                  <h2 id={`rangee-${categorie.slug}`} className="text-lg font-bold sm:text-xl">
+                    <Link href={lien(`/categorie/${categorie.slug}`)} className="hover:underline">{nomDuRayon(categorie, t)}</Link>
+                  </h2>
+                  <Link href={lien(`/categorie/${categorie.slug}`)} className="group/lien inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-encre hover:underline">
+                    {t.categorie.toutVoir} <span className="font-normal tabular-nums text-slate-500">({total})</span>
+                    <ChevronRight className="h-4 w-4 transition-transform group-hover/lien:translate-x-0.5 rtl:rotate-180 rtl:group-hover/lien:-translate-x-0.5" strokeWidth={1.8} aria-hidden="true" />
+                  </Link>
+                </div>
+                <RailProduits produits={produits} />
+              </section>
+            </Apparition>
           ))}
 
-          <div className="lg:hidden">{reperes}</div>
+          <Apparition className="lg:hidden">{reperes}</Apparition>
 
-          <section id="etapes" aria-labelledby="titre-etapes" className="scroll-mt-24 space-y-4">
-            <h2 id="titre-etapes" className="text-xl font-bold sm:text-2xl">{a.commentTitre}</h2>
-            <ol className="grid gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
-              {a.etapes.map((e, i) => (
-                <li key={e.titre} className="space-y-2 bg-white p-5">
-                  <span className="text-sm font-semibold tabular-nums text-slate-400">0{i + 1}</span>
-                  <span className="block font-semibold">{e.titre}</span>
-                  <span className="block text-sm text-slate-600">{e.texte}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
+          <Apparition>
+            <section id="etapes" aria-labelledby="titre-etapes" className="scroll-mt-24 space-y-4">
+              <h2 id="titre-etapes" className="text-xl font-bold sm:text-2xl">{a.commentTitre}</h2>
+              <ol className="grid gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
+                {a.etapes.map((e, i) => (
+                  <li key={e.titre} className="space-y-2 bg-white p-5">
+                    <span className="text-sm font-semibold tabular-nums text-slate-400">0{i + 1}</span>
+                    <span className="block font-semibold">{e.titre}</span>
+                    <span className="block text-sm text-slate-600">{e.texte}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          </Apparition>
         </>
       )}
     </div>
