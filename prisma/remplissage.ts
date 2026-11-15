@@ -17,6 +17,7 @@ import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
 import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./articles-wolt-captures-boissons";
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
 import { ABSENTS_DE_WOLT } from "./absents-de-wolt";
+import { MASQUAGES } from "./masquages-1115";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 import { RELEVE_DES_CANETTES, RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
@@ -376,6 +377,30 @@ export async function supprimerLesAbsentsDeWolt(prisma: PrismaClient): Promise<s
       noterOperation(prisma, liste.cle),
     ]);
     bilans.push(`${liste.titre} : ${supprimes.count} supprimé(s) sur ${liste.deLaListe.length + liste.releves.length}.`);
+  }
+  return bilans.join(" ");
+}
+
+/**
+ * Ce que le gérant fait masquer « pour le moment » (15 novembre 2026 : prisma/masquages-1115.ts) — le poisson
+ * surgelé, les boissons que Wolt n'affiche plus, et les articles jamais vus sur ses captures de Wolt.
+ * Chaque liste une seule fois, et rien n'est supprimé : il remet en vente ce qu'il veut. Un article de sa liste
+ * dont il a noté lui-même le prix d'achat n'est pas touché : c'est qu'il l'a trouvé sur Wolt.
+ */
+export async function masquerCeQuiManque(prisma: PrismaClient): Promise<string> {
+  const bilans: string[] = [];
+  for (const m of MASQUAGES) {
+    const faite = await operationFaite(prisma, m.cle);
+    if (faite === null) { bilans.push(`${m.titre} : réglages pas encore créés, rien masqué.`); continue; }
+    if (faite) { bilans.push(`${m.titre} : déjà masqués, rien de changé.`); continue; }
+    const [masques] = await prisma.$transaction([
+      prisma.produit.updateMany({
+        where: { actif: true, OR: [{ nom: { in: m.releves } }, { nom: { in: m.deLaListe }, prixAchat: null }] },
+        data: { actif: false },
+      }),
+      noterOperation(prisma, m.cle),
+    ]);
+    bilans.push(`${m.titre} : ${masques.count} masqué(s) sur ${m.releves.length + m.deLaListe.length}.`);
   }
   return bilans.join(" ");
 }

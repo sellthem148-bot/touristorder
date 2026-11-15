@@ -1,6 +1,7 @@
 // Le catalogue « comme sur Wolt » : des sous-rayons, des tuiles, une colonne des rayons — pour qu'un rayon de
 // plusieurs centaines d'articles reste facile à parcourir, sur téléphone comme sur ordinateur.
-// À lancer sur le catalogue ENTIER (pas le jeu de test, trop petit pour avoir des sous-rayons) :
+// À lancer sur le catalogue ENTIER (pas le jeu de test, trop petit pour avoir des sous-rayons) ; le grand rayon
+// suivi est la Crèmerie (235 articles), restée longue quand le gérant a fait masquer ce que Wolt ne montrait pas :
 //   base vide, puis  npx tsx tests/outils/base-complete.ts
 // Ne modifie rien dans la base.
 import { chromium, devices } from "playwright";
@@ -39,11 +40,11 @@ try {
   if (OUT) await tel.screenshot({ path: `${OUT}/rayons-1-accueil.png` });
 
   // 2. Un grand rayon sur téléphone : ses sous-rayons, un aperçu de chacun, « Tout voir »
-  await tel.goto(BASE + "/categorie/courses-epicerie", { waitUntil: "networkidle" });
+  await tel.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
   const total = Number(espaces(await tel.locator("header p").first().innerText()).match(/\d+/)[0]);
   const puces = tel.getByRole("navigation", { name: "Sous-rayons" }).getByRole("link");
   const nomsDesPuces = await puces.allInnerTexts();
-  verifier(total > 60 && nomsDesPuces.length >= 6 && nomsDesPuces[0] === "Tout", `Courses & épicerie : ${total} articles, sous-rayons ${nomsDesPuces.slice(1).join(", ")}`);
+  verifier(total > 60 && nomsDesPuces.length >= 6 && nomsDesPuces[0] === "Tout", `Crèmerie & œufs : ${total} articles, sous-rayons ${nomsDesPuces.slice(1).join(", ")}`);
   verifier((await puces.first().getAttribute("aria-current")) === "page", "« Tout » est la vue ouverte");
   const sections = tel.locator("section[aria-labelledby^=sous-rayon-]");
   verifier((await sections.count()) === nomsDesPuces.length - 1, "une section par sous-rayon");
@@ -71,14 +72,17 @@ try {
   const nomSous = espaces(await section.locator("h2").evaluate((h) => h.firstChild.textContent));
   const attendu = Number(await section.locator("h2 span").innerText());
   await section.getByRole("link", { name: "Tout voir" }).click();
-  await tel.waitForURL(/\/categorie\/courses-epicerie\?s=[a-z-]+$/);
+  await tel.waitForURL(/\/categorie\/cremerie-oeufs\?s=[a-z-]+$/);
   await tel.locator("#titre-sous-rayon").waitFor();
   verifier(espaces(await tel.locator("#titre-sous-rayon").innerText()).startsWith(nomSous) && (await visibles(tel.locator("main"))) === attendu, `« ${nomSous} » : ses ${attendu} articles, tous affichés`);
-  verifier((await tel.title()).startsWith(`${nomSous} — Courses & épicerie`), "le titre de la page nomme le sous-rayon");
+  // Le titre de l'onglet suit le changement de page un instant après l'adresse : on l'attend.
+  const titreAttendu = `${nomSous} — Crèmerie & œufs`;
+  const titreMis = await tel.waitForFunction((debut) => document.title.startsWith(debut), titreAttendu, { timeout: 5000 }).then(() => true, () => false);
+  verifier(titreMis, "le titre de la page nomme le sous-rayon");
   const active = tel.getByRole("navigation", { name: "Sous-rayons" }).locator('[aria-current="page"]');
   verifier(espaces(await active.innerText()) === nomSous, "la puce du sous-rayon ouvert est marquée");
-  await tel.getByRole("link", { name: "Tout le rayon Courses & épicerie" }).click();
-  await tel.waitForURL(/\/categorie\/courses-epicerie$/);
+  await tel.getByRole("link", { name: "Tout le rayon Crèmerie & œufs" }).click();
+  await tel.waitForURL(/\/categorie\/cremerie-oeufs$/);
   ok("« Tout le rayon » revient à l'aperçu");
 
   // 5. La puce ouverte est amenée dans l'écran, même la dernière
@@ -90,7 +94,7 @@ try {
   verifier(puce.x >= 0 && puce.x + puce.width <= 390, `la puce « ${derniere} », en bout de rangée, est amenée dans l'écran`);
 
   // 6. Une tuile : le « + » ajoute au panier, le nom ouvre la fiche
-  await tel.goto(BASE + "/categorie/courses-epicerie", { waitUntil: "networkidle" });
+  await tel.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
   const tuile = tel.locator("section[aria-labelledby^=sous-rayon-] article").first();
   const nomArticle = espaces(await tuile.locator("h3").innerText());
   await tuile.getByRole("button", { name: `Ajouter ${nomArticle} au panier` }).click();
@@ -102,11 +106,11 @@ try {
   await tel.keyboard.press("Escape");
 
   // 7. Un petit rayon : tous ses articles, sans sous-rayons
-  await tel.goto(BASE + "/categorie/shabbat-casher", { waitUntil: "networkidle" });
+  await tel.goto(BASE + "/categorie/surgeles-glaces", { waitUntil: "networkidle" });
   verifier((await tel.getByRole("navigation", { name: "Sous-rayons" }).count()) === 0 && (await visibles(tel.locator("main"))) >= 1, "petit rayon : pas de sous-rayons, tous les articles");
 
   // 8. Sur ordinateur : la colonne des rayons, celui-ci ouvert sur ses sous-rayons ; quatre tuiles par ligne
-  await ordi.goto(BASE + "/categorie/courses-epicerie", { waitUntil: "networkidle" });
+  await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
   const colonne = ordi.locator("aside nav");
   verifier(await colonne.isVisible() && (await colonne.locator("> ul > li").count()) >= 10, "ordinateur : la colonne des rayons");
   const sous = await colonne.locator("ul ul a").allInnerTexts();
@@ -135,7 +139,7 @@ try {
   verifier((await tel.locator('a[href^="/categorie"]').count()) === 0, "hébreu : tous les liens du rayon restent en hébreu");
 
   // 10. Sur un tout petit téléphone (320 px) : rien ne dépasse, même avec un article au panier
-  for (const adresse of ["/", "/categorie/courses-epicerie", "/categorie/courses-epicerie?s=sauces-epices", "/recherche?q=sauce"]) {
+  for (const adresse of ["/", "/categorie/cremerie-oeufs", "/categorie/cremerie-oeufs?s=yaourts", "/recherche?q=yaourt"]) {
     await petit.goto(BASE + adresse, { waitUntil: "networkidle" });
     if (adresse.includes("?s=")) await petit.locator("main article").first().getByRole("button", { name: /^Ajouter/ }).click();
     const sorties = await petit.locator("main article").evaluateAll((l) => l.filter((a) => a.offsetParent !== null && [...a.querySelectorAll("button, p")].some((e) => e.getBoundingClientRect().right > a.getBoundingClientRect().right + 1)).length);
