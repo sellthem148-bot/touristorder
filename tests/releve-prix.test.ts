@@ -9,13 +9,15 @@ import { VIANDE_ET_VOLAILLE } from "../prisma/retrait-viande";
 import { LOTS_WOLT, RELEVES_DE_PRIX } from "../prisma/remplissage";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type ProduitReleve } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
+import { RELEVE_DU_15_NOVEMBRE } from "../prisma/releve-wolt-1115";
+import { photoRepere } from "@/lib/reperes-wolt";
 
 const HEBREU = /[֐-׿]/;
 const DEJA_RELEVES = [...ARTICLES_WOLT, ...ARTICLES_DYNAMICA, ...ARTICLES_WOLT_FICHES];
 
 describe("relevé de prix du 12 novembre", () => {
   // Toutes les lignes de tous les relevés.
-  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS];
+  const LIGNES = [...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...RELEVE_DU_15_NOVEMBRE];
 
   it("chaque ligne vise un article que le code a installé, avec le prix qu'il lui avait posé", () => {
     for (const l of LIGNES) {
@@ -34,7 +36,7 @@ describe("relevé de prix du 12 novembre", () => {
   });
 
   it("chaque relevé a sa clé : un relevé ajouté plus tard s'applique sans rejouer les précédents", () => {
-    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, RELEVE_DES_BOISSONS]);
+    expect(RELEVES_DE_PRIX.map((r) => r.lignes)).toEqual([RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, RELEVE_DES_BOISSONS, RELEVE_DU_15_NOVEMBRE]);
     expect(new Set(RELEVES_DE_PRIX.map((r) => r.cle)).size).toBe(RELEVES_DE_PRIX.length);
     const c = changementsDuReleve([produit({ nom: "Filets de rouget barbet surgelés 400 g", prix: 2890 })], RELEVE_DU_POISSON_SURGELE);
     expect(c).toEqual([{ id: "Filets de rouget barbet surgelés 400 g", nom: "Filets de rouget barbet surgelés 400 g", data: { prix: 2290, prixAchat: 2290, nomWolt: "ברבוניה פילה קפוא - 400 גרם" } }]);
@@ -68,6 +70,50 @@ describe("relevé de prix du 12 novembre", () => {
 
   it("les prix relevés sont en agorot entiers", () => {
     for (const l of LIGNES) expect(Number.isInteger(enAgorot(l.prix)) && Number.isInteger(enAgorot(l.ancien)), l.nom).toBe(true);
+  });
+});
+
+describe("relevé du 15 novembre (captures de Wolt Market envoyées pour les photos repère)", () => {
+  it("onze articles de la liste du gérant, sous la même marque et le même format, et un prix du premier relevé qui a baissé", () => {
+    expect(RELEVE_DU_15_NOVEMBRE).toHaveLength(12);
+    const liste = new Map(ARTICLES_MIS_EN_VENTE.map((a) => [a.nom, a]));
+    const deLaListe = RELEVE_DU_15_NOVEMBRE.filter((l) => liste.has(l.nom));
+    expect(deLaListe).toHaveLength(11);
+    // Aucun nom Wolt déjà porté par un article d'un lot : sinon ce serait un doublon, pas un rapprochement.
+    const woltDesLots = new Set(LOTS_WOLT.flatMap((l) => l.articles).map((a) => a.nomWolt));
+    expect(deLaListe.filter((l) => woltDesLots.has(l.nomWolt)).map((l) => l.nom)).toEqual([]);
+    expect(RELEVE_DU_15_NOVEMBRE.filter((l) => !liste.has(l.nom))).toEqual([
+      { nom: "Mini pitas épeautre complet Agmi 450 g", nomWolt: "פיתה ביס כוסמין מלא אגמי", prix: 17.9, ancien: 18.9 },
+    ]);
+    // Le prix NORMAL de Wolt (le prix barré quand la carte est en promotion), tel que les captures le montrent.
+    expect(Object.fromEntries(deLaListe.map((l) => [l.nom, enAgorot(l.prix)]))).toEqual({
+      "Bamba Osem classique 80 g": 590,
+      "Menthe fraîche Nana, la botte": 590,
+      "Biscuits Petit Beurre classiques Osem 500 g": 1390,
+      "Canette Red Bull Energy Drink 25 cl": 790,
+      "Betteraves rouges cuites sous vide 500 g": 930,
+      "Ketchup Heinz classique 700 g": 1590,
+      "Burekas aux pommes de terre Maadanot 800 g": 2650,
+      "Lait d'avoine Barista Oatly 1 L": 1790,
+      "Gaufrettes Loacker Quadratini Noisette 250 g": 1890,
+      "Gaufrettes fines au citron Elite Bafle 200 g": 890,
+      "Crème aigre Shamenet Shel Paam 27 % 200 g": 550,
+    });
+  });
+
+  it("un article de la liste resté au prix de la liste prend le prix de Wolt et sort de « Prix à vérifier » ; un prix changé par le gérant reste", () => {
+    const produit = (p: Partial<ProduitReleve> & { nom: string }): ProduitReleve => ({ id: p.nom, nomWolt: "", prix: 0, prixAchat: null, ...p });
+    expect(changementsDuReleve([produit({ nom: "Ketchup Heinz classique 700 g", prix: 1490 })], RELEVE_DU_15_NOVEMBRE)).toEqual([
+      { id: "Ketchup Heinz classique 700 g", nom: "Ketchup Heinz classique 700 g", data: { prix: 1590, prixAchat: 1590, nomWolt: "קטשופ היינץ - 700 גרם" } },
+    ]);
+    // Même prix que la liste : seul le prix d'achat (le repère « vérifié ») et le nom Wolt sont posés.
+    expect(changementsDuReleve([produit({ nom: "Biscuits Petit Beurre classiques Osem 500 g", prix: 1390 })], RELEVE_DU_15_NOVEMBRE)[0].data).toEqual({ prix: 1390, prixAchat: 1390, nomWolt: "פתי בר קלאסי אסם - 500 גרם" });
+    expect(changementsDuReleve([produit({ nom: "Canette Red Bull Energy Drink 25 cl", prix: 990 })], RELEVE_DU_15_NOVEMBRE)[0].data).toEqual({ nomWolt: "משקה אנרגיה רדבול" });
+    expect(changementsDuReleve([produit({ nom: "Mini pitas épeautre complet Agmi 450 g", nomWolt: "פיתה ביס כוסמין מלא אגמי", prix: 1890, prixAchat: 1890 })], RELEVE_DU_15_NOVEMBRE)[0].data).toEqual({ prix: 1790, prixAchat: 1790 });
+  });
+
+  it("chaque article du relevé a sa photo repère", () => {
+    for (const l of RELEVE_DU_15_NOVEMBRE) expect(photoRepere(l.nom, l.nomWolt), l.nom).not.toBeNull();
   });
 });
 

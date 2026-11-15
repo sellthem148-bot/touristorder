@@ -7,6 +7,7 @@ import { repereWolt } from "@/lib/repere-wolt";
 import { LOTS_WOLT } from "../prisma/remplissage";
 import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
+import { RELEVE_DU_15_NOVEMBRE } from "../prisma/releve-wolt-1115";
 
 const fichiersDe = (dossier: string): string[] =>
   readdirSync(dossier, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? fichiersDe(path.join(dossier, e.name)) : [path.join(dossier, e.name)]));
@@ -27,7 +28,7 @@ describe("photos repère", () => {
 
   it("chaque photo est celle d'un article du site, avec son nom exact sur Wolt", () => {
     const connus = new Map<string, string>();
-    for (const a of [...LOTS_WOLT.flatMap((l) => l.articles), ...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...REMPLACEMENTS_DU_12_NOVEMBRE]) connus.set(a.nom, a.nomWolt);
+    for (const a of [...LOTS_WOLT.flatMap((l) => l.articles), ...RELEVE_DU_12_NOVEMBRE, ...RELEVE_DU_POISSON_SURGELE, ...RELEVE_DES_BOISSONS, ...RELEVE_DU_15_NOVEMBRE, ...REMPLACEMENTS_DU_12_NOVEMBRE]) connus.set(a.nom, a.nomWolt);
     for (const p of PHOTOS_REPERE) expect(connus.get(p.nom), p.nom).toBe(p.nomWolt);
   });
 
@@ -40,6 +41,15 @@ describe("photos repère", () => {
     expect(photoRepere("Chargeur Apple 20 W USB-C", "Apple | 20W | USB-C")).toBe("/admin/repere/chargeur-apple-20-w-usb-c.jpg");
     // Les deux articles ajoutés d'après cette capture ont la leur.
     for (const a of LOTS_WOLT.find((l) => l.nom === "Dynamica, capture du 13 novembre")!.articles) expect(photoRepere(a.nom, a.nomWolt), a.nom).not.toBeNull();
+  });
+
+  it("captures de Wolt Market du 15 novembre : 110 photos de plus, 695 en tout", () => {
+    expect(PHOTOS_REPERE).toHaveLength(695);
+    // Les premiers relevés de Wolt Market (10 et 11 novembre) n'avaient aucune photo : la plupart en ont une maintenant.
+    const premiers = LOTS_WOLT.filter((l) => l.nom === "Wolt Market" || l.nom === "Wolt Market, fiches du 11 novembre").flatMap((l) => l.articles);
+    const avec = premiers.filter((a) => photoRepere(a.nom, a.nomWolt) != null).length;
+    expect(avec).toBeGreaterThanOrEqual(160);
+    expect(photoRepere("Ketchup Heinz classique 700 g", "")).toBe("/admin/repere/ketchup-heinz-classique-700-g.jpg");
   });
 
   it("un article est reconnu à son nom sur Wolt (même renommé), sinon à son nom ; un autre n'a pas de photo", () => {
