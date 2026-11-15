@@ -105,7 +105,10 @@ try {
     verifier((await compteur.locator("[aria-live]").innerText()).trim() === "2", `${langue} — un second appui : 2`);
     verifier((await barre.locator(".saute").innerText()).trim() === "2", `${langue} — le compteur de la barre suit : 2`);
     verifier((await p.locator("header a[href$='/panier'] svg").count()) === 1, `${langue} — en-tête : un seul chariot, qui se balance à chaque ajout`);
-    verifier((await restes(p)).length === 0, `${langue} — rien n'est resté transparent ou coupé après l'ajout`);
+    // Le chariot de l'en-tête se balance une demi-seconde à chaque ajout : on le laisse finir.
+    await pause(p, 500);
+    const apresAjout = await restes(p);
+    verifier(apresAjout.length === 0, `${langue} — rien n'est resté transparent ou coupé après l'ajout${apresAjout.length ? " : " + apresAjout.slice(0, 4).join(" | ") : ""}`);
     if (OUT) await p.screenshot({ path: `${OUT}/mouvement-4-panier-${prefixe ? "he" : "fr"}.png` });
 
     // 4. La tuile ouvre toujours la fiche, qui monte par-dessus la page
