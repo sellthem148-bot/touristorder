@@ -74,14 +74,17 @@ try {
     p.on("console", (m) => { if (m.type() === "error" && !/Failed to load resource/.test(m.text())) erreurs.push(m.text().slice(0, 300)); });
 
     // 1. L'accueil : le haut de page arrive en cascade, le bas attend d'être à l'écran
-    await p.goto(BASE + prefixe + "/", { waitUntil: "networkidle" });
-    // Le logo de l'en-tête : à l'ouverture, la tuile se pose, le T descend, le O se lève.
+    // Le logo de l'en-tête : à l'ouverture, la tuile se pose, le T descend, le O se lève. On le regarde dès
+    // que la page s'affiche (feuille de style arrivée) : une fois tout chargé, l'animation est déjà finie.
+    await p.goto(BASE + prefixe + "/", { waitUntil: "commit" });
+    await p.waitForFunction(() => { const e = document.querySelector("header.entete"); return e && getComputedStyle(e).position === "fixed" && e.querySelector(".logo-vivant svg circle"); });
     const logo = await p.evaluate(() => {
       const svg = document.querySelector("header.entete .logo-vivant svg");
       return { tuile: getComputedStyle(svg).animationName, lettre: getComputedStyle(svg.querySelector("path")).animationName, soleil: getComputedStyle(svg.querySelector("circle")).animationName, ailleurs: [...document.querySelectorAll("footer svg circle")].map((c) => getComputedStyle(c).animationName).join() };
     });
     verifier(logo.tuile === "logo-tuile" && logo.lettre === "logo-lettre" && logo.soleil === "logo-soleil", `${langue} — à l'ouverture, le logo de l'en-tête s'anime (la tuile, le T, puis le O qui se lève)`);
     verifier(!logo.ailleurs.includes("logo-"), `${langue} — le logo du pied de page, lui, reste immobile`);
+    await p.waitForLoadState("networkidle");
     // L'en-tête au large, en haut de page : le nom à côté du logo, la recherche sur toute la largeur.
     await pause(p, 400);
     const large = await mesurerEnTete(p);
