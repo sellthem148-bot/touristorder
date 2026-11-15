@@ -268,8 +268,8 @@ export default async function Suivi({ params, searchParams }: PageProps<"/suivi/
       </Apparition>
 
       <div className="flex flex-wrap justify-center gap-4 text-sm font-bold">
-        <Link href={lien("/commandes")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.mesCommandes}</Link>
-        <Link href={lien("/")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{s.retourCatalogue}</Link>
+        <Link href={lien("/commandes")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre nuit:text-white nuit:decoration-white/40 nuit:hover:decoration-white">{s.mesCommandes}</Link>
+        <Link href={lien("/")} className="text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre nuit:text-white nuit:decoration-white/40 nuit:hover:decoration-white">{s.retourCatalogue}</Link>
       </div>
     </div>
   );

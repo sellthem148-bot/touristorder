@@ -15,7 +15,7 @@ export function LienPanier() {
     <Link
       href={lien("/panier")}
       data-cible-panier="entete"
-      className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-encre px-3 text-sm font-semibold text-white transition duration-150 hover:bg-slate-800 active:scale-95"
+      className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-encre px-3 text-sm font-semibold text-white transition duration-150 hover:bg-slate-800 active:scale-95 nuit:bg-soleil nuit:text-encre nuit:hover:bg-soleil/90"
       aria-label={compter(langue, nombre, t.entete.panierAria)}
     >
       {/* Le chariot se balance à chaque article qui entre ou sort (sa clé change avec le nombre). Sa clé et
@@ -24,7 +24,7 @@ export function LienPanier() {
       <span className="hidden sm:inline" aria-hidden="true">{t.entete.panier}</span>
       {nombre > 0 && (
         // La clé change avec le nombre d'articles : le compteur rebondit à chaque ajout.
-        <span key={`compteur-${nombre}`} className="saute min-w-5 rounded-md bg-soleil px-1 text-center text-xs font-bold leading-5 text-encre tabular-nums" aria-hidden="true">
+        <span key={`compteur-${nombre}`} className="saute min-w-5 rounded-md bg-soleil px-1 text-center text-xs font-bold leading-5 text-encre tabular-nums nuit:bg-encre nuit:text-white" aria-hidden="true">
           {nombre > 99 ? "99+" : nombre}
         </span>
       )}
@@ -41,10 +41,10 @@ export function BarrePanier() {
   if (nombre === 0 || chemin === "/panier" || chemin.startsWith("/suivi")) return null;
   return (
     // `monte` : la barre arrive par le bas quand le premier article entre au panier.
-    <aside aria-label={t.entete.panier} data-cible-panier="barre" className="monte fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
-      <Link href={lien("/panier")} className="bouton w-full justify-between py-3.5">
+    <aside aria-label={t.entete.panier} data-cible-panier="barre" className="monte fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-[white] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] nuit:border-white/10 nuit:bg-encre sm:hidden">
+      <Link href={lien("/panier")} className="bouton w-full justify-between py-3.5 nuit:bg-soleil nuit:text-encre nuit:hover:bg-soleil/90">
         <span className="flex items-center gap-2.5">
-          <span key={nombre} data-compteur className="saute flex h-6 min-w-6 items-center justify-center rounded-md bg-soleil px-1.5 text-sm font-bold text-encre tabular-nums">{nombre}</span>
+          <span key={nombre} data-compteur className="saute flex h-6 min-w-6 items-center justify-center rounded-md bg-soleil px-1.5 text-sm font-bold text-encre tabular-nums nuit:bg-encre nuit:text-white">{nombre}</span>
           {t.entete.voirLePanier}
         </span>
         <span key={sousTotal} className="change tabular-nums">{formatPrix(sousTotal, langue)}</span>

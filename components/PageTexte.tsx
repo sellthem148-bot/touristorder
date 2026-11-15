@@ -13,7 +13,8 @@ export const LIEN_TEXTE = "font-semibold text-encre underline decoration-slate-3
  */
 export function PageTexte({ titre, accueil, retour = "/", misAJour, avis, children }: { titre: string; accueil: string; retour?: string; misAJour?: string; avis?: string; children: React.ReactNode }) {
   return (
-    <article className="mx-auto max-w-3xl">
+    // Une feuille blanche : le texte se lit de la même façon quel que soit le fond de la boutique.
+    <article className="carte mx-auto max-w-3xl p-5 sm:p-8">
       <Link href={retour} className="apparait group/retour inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover/retour:-translate-x-0.5 rtl:rotate-180 rtl:group-hover/retour:translate-x-0.5" strokeWidth={1.8} aria-hidden="true" /> {accueil}
       </Link>

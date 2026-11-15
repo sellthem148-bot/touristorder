@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, ChevronRight, Clock, MapPin, Truck, Wallet, type LucideIcon } from "lucide-react";
+import { CalendarClock, ChevronRight, Clock, MapPin, Star, Truck, Wallet, type LucideIcon } from "lucide-react";
 import { RailProduits } from "@/components/CarteProduit";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { Apparition } from "@/components/Apparition";
@@ -152,16 +152,16 @@ export default async function Accueil() {
       <section className="grid gap-6 pt-1 sm:pt-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-12">
         <div className="space-y-3.5 sm:space-y-5">
           {/* Le haut de page arrive ligne après ligne (`apparait`, dans l'ordre de `--i`). */}
-          <p className="surtitre apparait">{a.surtitre}</p>
+          <p className="surtitre apparait nuit:text-slate-400">{a.surtitre}</p>
           {/* Le titre arrive mot à mot (chaque mot est un bloc qui monte ; le texte lu reste le même). */}
-          <h1 className="text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]">
+          <h1 className="text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] nuit:text-white sm:text-5xl sm:leading-[1.08]">
             {a.titre.split(" ").map((mot, i) => (
               <Fragment key={i}>
                 <span className="apparait inline-block" style={{ animationDelay: `${70 + i * 55}ms` }}>{mot}</span>{" "}
               </Fragment>
             ))}
           </h1>
-          {messageAccueil && <p className="apparait max-w-xl text-pretty text-[15px] text-slate-600 sm:text-lg" style={rangDansLaCascade(6)}>{messageAccueil}</p>}
+          {messageAccueil && <p className="apparait max-w-xl text-pretty text-[15px] text-slate-600 nuit:text-slate-300 sm:text-lg" style={rangDansLaCascade(6)}>{messageAccueil}</p>}
           {!reglages.ouvert && (
             <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
               {a.ferme}
@@ -181,8 +181,9 @@ export default async function Accueil() {
           </ul>
           {rayons.length > 0 && (
             <div className="apparait hidden flex-wrap gap-2.5 pt-1 lg:flex" style={rangDansLaCascade(8)}>
-              <a href="#rayons" className="bouton px-5">{a.voirRayons}</a>
-              <a href="#etapes" className="bouton-secondaire px-5">{a.commentCaMarche}</a>
+              {/* Sur le fond sombre : le bouton d'action au jaune du logo, l'autre en simple contour. */}
+              <a href="#rayons" className="bouton px-5 nuit:bg-soleil nuit:text-encre nuit:hover:bg-soleil/90">{a.voirRayons}</a>
+              <a href="#etapes" className="bouton-secondaire px-5 nuit:border-white/25 nuit:bg-transparent nuit:text-white nuit:hover:border-white/50 nuit:hover:bg-white/10">{a.commentCaMarche}</a>
             </div>
           )}
         </div>
@@ -194,7 +195,7 @@ export default async function Accueil() {
       ) : (
         <>
           <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-3.5">
-            <h2 id="titre-categories" className="apparait text-xl font-bold sm:text-2xl" style={rangDansLaCascade(9)}>{a.rayons}</h2>
+            <h2 id="titre-categories" className="apparait text-xl font-bold nuit:text-white sm:text-2xl" style={rangDansLaCascade(9)}>{a.rayons}</h2>
             {/* Des tuiles à icône, trois par ligne sur téléphone : tous les rayons tiennent sur un écran. */}
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 lg:grid-cols-6">
               {rayons.map(({ categorie, total }, i) => (
@@ -216,9 +217,9 @@ export default async function Accueil() {
                 </li>
               ))}
             </ul>
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 nuit:text-slate-300">
               {t.commun.introuvableQuestion}{" "}
-              <Link href={lien("/panier?demande=")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre">{t.commun.demandezLe}</Link>
+              <Link href={lien("/panier?demande=")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre nuit:text-white nuit:decoration-white/40 nuit:hover:decoration-white">{t.commun.demandezLe}</Link>
               {t.commun.introuvableSuite}
             </p>
           </section>
@@ -227,7 +228,10 @@ export default async function Accueil() {
           {populaires.length > 0 && (
             <Apparition>
               <section aria-labelledby="titre-populaires" className="space-y-3">
-                <h2 id="titre-populaires" className="text-xl font-bold sm:text-2xl">{a.plusDemandes}</h2>
+                <h2 id="titre-populaires" className="flex items-center gap-2.5 text-xl font-bold nuit:text-white sm:text-2xl">
+                  <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soleil/25 text-amber-900 nuit:bg-soleil nuit:text-encre"><Star className="h-[17px] w-[17px]" strokeWidth={1.8} /></span>
+                  {a.plusDemandes}
+                </h2>
                 <RailProduits produits={populaires} sansBadge />
               </section>
             </Apparition>
@@ -238,15 +242,15 @@ export default async function Accueil() {
             <Apparition key={categorie.id}>
               <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3">
                 <div className="flex items-center justify-between gap-4">
-                  <h2 id={`rangee-${categorie.slug}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold sm:text-xl">
+                  <h2 id={`rangee-${categorie.slug}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold nuit:text-white sm:text-xl">
                     {/* La pastille du rayon, à sa couleur : on retrouve la tuile d'en haut. */}
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${couleurDuRayon(categorie.slug).pastille}`}>
                       <IconeRayon slug={categorie.slug} className="h-[17px] w-[17px]" />
                     </span>
                     <Link href={lien(`/categorie/${categorie.slug}`)} className="min-w-0 truncate hover:underline">{nomDuRayon(categorie, t)}</Link>
                   </h2>
-                  <Link href={lien(`/categorie/${categorie.slug}`)} className="group/lien inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-encre hover:underline">
-                    {t.categorie.toutVoir} <span className="font-normal tabular-nums text-slate-500">({total})</span>
+                  <Link href={lien(`/categorie/${categorie.slug}`)} className={`group group/lien inline-flex shrink-0 items-center gap-0.5 rounded-full py-1 ps-3 pe-2 text-sm font-semibold transition ${couleurDuRayon(categorie.slug).pastille} ${couleurDuRayon(categorie.slug).survol}`}>
+                    {t.categorie.toutVoir} <span className="font-normal tabular-nums opacity-70">({total})</span>
                     <ChevronRight className="h-4 w-4 transition-transform group-hover/lien:translate-x-0.5 rtl:rotate-180 rtl:group-hover/lien:-translate-x-0.5" strokeWidth={1.8} aria-hidden="true" />
                   </Link>
                 </div>
@@ -259,7 +263,7 @@ export default async function Accueil() {
 
           <Apparition>
             <section id="etapes" aria-labelledby="titre-etapes" className="scroll-mt-24 space-y-4">
-              <h2 id="titre-etapes" className="text-xl font-bold sm:text-2xl">{a.commentTitre}</h2>
+              <h2 id="titre-etapes" className="text-xl font-bold nuit:text-white sm:text-2xl">{a.commentTitre}</h2>
               <ol className="grid gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
                 {a.etapes.map((e, i) => (
                   <li key={e.titre} className="bg-white p-5">

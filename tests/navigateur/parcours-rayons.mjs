@@ -48,7 +48,7 @@ try {
   verifier((await puces.first().getAttribute("aria-current")) === "page", "« Tout » est la vue ouverte");
   const sections = tel.locator("section[aria-labelledby^=sous-rayon-]");
   verifier((await sections.count()) === nomsDesPuces.length - 1, "une section par sous-rayon");
-  const comptes = await sections.locator("h2 span").allInnerTexts();
+  const comptes = await sections.locator("h2 [data-compte]").allInnerTexts(); // (le titre porte aussi son repère de couleur)
   verifier(comptes.reduce((s, n) => s + Number(n), 0) === total, "les sous-rayons se partagent tous les articles du rayon, sans en perdre");
   const affiches = await visibles(tel.locator("main"));
   verifier(affiches < total / 2 && affiches <= 6 * (await sections.count()), `l'aperçu montre ${affiches} tuiles sur ${total} : au plus trois lignes par sous-rayon`);
@@ -69,8 +69,8 @@ try {
   // 4. « Tout voir » ouvre le sous-rayon entier, à sa propre adresse
   await tel.evaluate(() => window.scrollTo(0, 0));
   const section = sections.filter({ has: tel.getByRole("link", { name: "Tout voir" }) }).first();
-  const nomSous = espaces(await section.locator("h2").evaluate((h) => h.firstChild.textContent));
-  const attendu = Number(await section.locator("h2 span").innerText());
+  const nomSous = espaces(await section.locator("h2 [data-nom]").innerText()); // (le titre commence par son repère de couleur)
+  const attendu = Number(await section.locator("h2 [data-compte]").innerText());
   await section.getByRole("link", { name: "Tout voir" }).click();
   await tel.waitForURL(/\/categorie\/cremerie-oeufs\?s=[a-z-]+$/);
   await tel.locator("#titre-sous-rayon").waitFor();

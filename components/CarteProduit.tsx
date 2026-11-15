@@ -84,9 +84,8 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
       className={
         surPhoto
           ? `flex h-9 min-w-9 items-center justify-center bg-encre px-2 text-sm font-bold tabular-nums text-white transition duration-150 hover:bg-encre/90 active:scale-90 ${COIN}`
-          : `flex h-9 min-w-9 items-center justify-center rounded-xl border px-2 text-sm font-bold tabular-nums transition duration-150 active:scale-90 ${
-              dejaChoisi ? "border-encre bg-encre text-white" : "border-slate-300 bg-white text-encre hover:border-encre hover:bg-slate-50"
-            }`
+          : // Sans photo aussi, le « + » est plein, aux couleurs du site : on le voit, on a envie d'appuyer.
+            "flex h-9 min-w-9 items-center justify-center rounded-xl bg-encre px-2 text-sm font-bold tabular-nums text-white transition duration-150 hover:bg-encre/90 active:scale-90"
       }
       aria-label={remplir(avecOptions ? t.produit.choisirOptions : t.produit.ajouterAuPanier, { nom: produit.nom })}
     >
@@ -143,7 +142,7 @@ export function CarteProduit({ produit, sansBadge = false, rang }: { produit: Pr
         {detail && <p className="mt-0.5 line-clamp-1 text-xs text-slate-500"><bdi>{detail}</bdi></p>}
         {/* Sur un écran étroit, « − 1 + » passe sous le prix plutôt que de sortir de la tuile. */}
         <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-2.5">
-          <Prix prix={produit.prix} prixBarre={produit.prixBarre} langue={langue} auLieuDe={t.produit.auLieuDe} />
+          <Prix prix={produit.prix} prixBarre={produit.prixBarre} etiquette langue={langue} auLieuDe={t.produit.auLieuDe} />
           {!produit.photoUrl && (
             <div className="relative z-10 ms-auto">
               <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} />

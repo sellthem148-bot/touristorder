@@ -37,7 +37,7 @@ export function ChoixLangue({ compact = false, sansEtiquette = false, id = "lang
   if (compact) {
     return (
       <label
-        className={`relative hidden h-10 shrink-0 cursor-pointer min-[360px]:inline-flex items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-slate-700 transition duration-150 hover:bg-slate-100 active:scale-90 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40 ${enCours ? "opacity-60" : ""}`}
+        className={`relative hidden h-10 shrink-0 cursor-pointer min-[360px]:inline-flex items-center justify-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-slate-700 transition duration-150 hover:bg-slate-100 active:scale-90 nuit:text-slate-200 nuit:hover:bg-white/10 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-marque/40 ${enCours ? "opacity-60" : ""}`}
         title={t.langue.choisir}
       >
         {/* Le globe tourne pendant que la page change de langue. */}
@@ -53,7 +53,7 @@ export function ChoixLangue({ compact = false, sansEtiquette = false, id = "lang
 
   return (
     <div>
-      <label htmlFor={id} className={sansEtiquette ? "sr-only" : "etiquette"}>{t.langue.titre}</label>
+      <label htmlFor={id} className={sansEtiquette ? "sr-only" : "etiquette nuit:text-slate-300"}>{t.langue.titre}</label>
       <select id={id} value={langue} onChange={(e) => choisir(e.target.value)} disabled={enCours} className="champ max-w-xs">
         {options}
       </select>

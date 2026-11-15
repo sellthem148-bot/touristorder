@@ -52,7 +52,7 @@ export function CadreEnTete({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <header ref={cadre} data-defile={defile ? "oui" : "non"} className="entete fixed inset-x-0 top-0 z-20 border-b border-slate-200 bg-white">
+      <header ref={cadre} data-defile={defile ? "oui" : "non"} className="entete fixed inset-x-0 top-0 z-20 border-b border-slate-200 bg-[white] nuit:border-white/10 nuit:bg-encre">
         {children}
       </header>
       {/* La place de l'en-tête dans la page (il est fixe, donc hors de la page). */}

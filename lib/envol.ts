@@ -1,5 +1,5 @@
 /**
- * L'envol vers le panier : au toucher d'un « + », une pastille (la photo de l'article, sinon un rond encre)
+ * L'envol vers le panier : au toucher d'un « + », une pastille (la photo de l'article, sinon un rond au jaune du logo)
  * part de l'endroit touché et file vers le panier — la barre du bas sur téléphone, le panier de l'en-tête
  * sinon (repérés par `data-cible-panier`, components/LienPanier.tsx).
  *
@@ -53,7 +53,7 @@ export function envolVersLePanier(depart: DOMRect | null | undefined, photo?: st
       pastille.alt = "";
       Object.assign(pastille.style, { width: "100%", height: "100%", objectFit: "contain", background: "#fff", border: "1px solid var(--color-slate-200)", borderRadius: "12px", boxShadow: "0 8px 20px rgb(0 0 0 / 0.18)" });
     } else {
-      Object.assign(pastille.style, { width: "26px", height: "26px", margin: "9px", background: "var(--color-encre)", borderRadius: "9999px", boxShadow: "0 8px 20px rgb(0 0 0 / 0.22)" });
+      Object.assign(pastille.style, { width: "26px", height: "26px", margin: "9px", background: "var(--color-soleil)", borderRadius: "9999px", boxShadow: "0 8px 20px rgb(0 0 0 / 0.22)" });
     }
     porteur.appendChild(pastille);
     document.body.appendChild(porteur);

@@ -11,7 +11,7 @@ export default async function PageMesCommandes() {
   const { t } = await traduction();
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <h1 className="apparait text-2xl font-extrabold sm:text-3xl">{t.commandes.titre}</h1>
+      <h1 className="apparait text-2xl font-extrabold nuit:text-white sm:text-3xl">{t.commandes.titre}</h1>
       <MesCommandes />
     </div>
   );

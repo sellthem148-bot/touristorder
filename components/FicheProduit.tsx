@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- photos venant du stockage (Supabase ou /uploads en local) */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +14,8 @@ import { nomDuRayon } from "@/lib/i18n/rayons";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { envolVersLePanier } from "@/lib/envol";
 import { Photo } from "./Photo";
+import { IconeRayon } from "./IconeRayon";
+import { couleurDuRayon } from "@/lib/couleurs-rayons";
 
 /** La fiche d'un produit : la photo s'il y en a une, la description, le choix des options, la quantité. */
 export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; fermer: () => void }) {
@@ -33,6 +34,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
   const choix = resoudreSelection(produit.options, selection);
   const manquants = produit.options.filter((g) => !selection[g.nom]).map((g) => (g.affiche ?? g.nom).toLocaleLowerCase(LOCALE[langue]));
   const prixUnitaire = produit.prix + (choix.ok ? choix.supplement : 0);
+  const couleur = couleurDuRayon(produit.categorie.slug);
 
   // La fiche redescend avant de se fermer (règles `dialog.fiche[data-se-ferme]` de app/globals.css) ;
   // elle se ferme tout de suite pour qui a demandé moins d'animations.
@@ -97,18 +99,28 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
           <X className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
-      {produit.photoUrl && (
+      {produit.photoUrl ? (
         <Photo src={produit.photoUrl} alt={produit.nom} paresseuse={false} className="en-fondu aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
+      ) : (
+        // Sans photo : un bandeau à la couleur du rayon (pas une image de remplacement : il ne montre pas l'article).
+        <div aria-hidden="true" className={`en-fondu flex h-20 items-center border-b px-5 ${couleur.bandeau}`}>
+          <span className={`flex h-11 w-11 items-center justify-center rounded-full bg-white ${couleur.trait}`}>
+            <IconeRayon slug={produit.categorie.slug} className="h-6 w-6" />
+          </span>
+        </div>
       )}
 
       <div className="space-y-5 p-5">
         {/* Le contenu arrive ligne après ligne, pendant que la fiche monte. (Jamais sur le bloc entier : la
             barre « Ajouter » doit rester collée en bas de la fiche.) */}
         <div className="apparait space-y-1.5 pe-10" style={rangDansLaCascade(1)}>
-          <p className="surtitre">{nomDuRayon(produit.categorie, t)}</p>
+          {/* Le rayon, dans une pastille à sa couleur. */}
+          <p className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${couleur.pastille}`}>
+            <IconeRayon slug={produit.categorie.slug} className="h-3.5 w-3.5" /> {nomDuRayon(produit.categorie, t)}
+          </p>
           <h2 id={`fiche-${produit.id}`} className="text-xl font-bold leading-tight"><bdi>{produit.nom}</bdi></h2>
           <div className="flex flex-wrap items-center gap-2">
-            <Prix prix={produit.prix} prixBarre={produit.prixBarre} grand langue={langue} auLieuDe={t.produit.auLieuDe} />
+            <Prix prix={produit.prix} prixBarre={produit.prixBarre} grand etiquette langue={langue} auLieuDe={t.produit.auLieuDe} />
             <PastilleBadge badge={produit.badge} libelle={produit.badge ? t.produit.badges[produit.badge] : undefined} />
           </div>
         </div>

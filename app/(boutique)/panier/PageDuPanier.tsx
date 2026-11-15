@@ -201,7 +201,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   }
 
   if (!panier.pret) {
-    return <p className="py-16 text-center text-slate-500">{p.chargement}</p>;
+    return <p className="py-16 text-center text-slate-500 nuit:text-slate-400">{p.chargement}</p>;
   }
 
   const panierVide = panier.articles.length === 0;
@@ -227,7 +227,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   return (
     <form action={envoyer} noValidate className="grid grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0 space-y-5">
-        <h1 className="apparait text-2xl font-bold sm:text-3xl">{panierVide ? p.titreDemande : p.titreCommande}</h1>
+        <h1 className="apparait text-2xl font-bold nuit:text-white sm:text-3xl">{panierVide ? p.titreDemande : p.titreCommande}</h1>
         {avis && <p className="apparait rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">{avis}</p>}
 
         <Section titre={panierVide ? p.sectionDemande : p.sectionPanier} numero={1}>

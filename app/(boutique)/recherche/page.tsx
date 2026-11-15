@@ -22,15 +22,15 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
   return (
     <div className="space-y-6">
       <div className="apparait">
-        <Link href={lien("/")} className="group/retour inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre">
+        <Link href={lien("/")} className="group/retour inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-encre nuit:text-slate-300 nuit:hover:text-white">
           <ArrowLeft className="h-4 w-4 transition-transform group-hover/retour:-translate-x-0.5 rtl:rotate-180 rtl:group-hover/retour:translate-x-0.5" strokeWidth={1.8} aria-hidden="true" /> {r.retour}
         </Link>
-        <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{q ? remplir(r.resultats, { q }) : r.titre}</h1>
+        <h1 className="mt-3 text-2xl font-bold nuit:text-white sm:text-3xl">{q ? remplir(r.resultats, { q }) : r.titre}</h1>
         {/* Toujours là, même vide : les résultats changent pendant qu'on tape, un lecteur d'écran en annonce le nombre. */}
-        <p role="status" className="text-sm text-slate-500">{q.length >= 2 && produits.length > 0 ? compter(langue, produits.length, t.commun.articles) : ""}</p>
+        <p role="status" className="text-sm text-slate-500 nuit:text-slate-400">{q.length >= 2 && produits.length > 0 ? compter(langue, produits.length, t.commun.articles) : ""}</p>
       </div>
       {q.length < 2 ? (
-        <p className="text-slate-600">{r.minimum}</p>
+        <p className="text-slate-600 nuit:text-slate-300">{r.minimum}</p>
       ) : produits.length === 0 ? (
         <div className="carte apparait space-y-3 p-8 text-center" style={{ animationDelay: "90ms" }}>
           <SearchX className="balance mx-auto h-8 w-8 text-slate-400" strokeWidth={1.5} aria-hidden="true" />

@@ -125,7 +125,7 @@ export function ChampRecherche({ adresse, label, placeholder }: { adresse: strin
     };
   }, []);
 
-  const icone = "pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500";
+  const icone = "pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 nuit:text-slate-400";
   return (
     <form action={adresse} method="get" role="search" onSubmit={aLEnvoi} className="entete-recherche min-w-0 sm:relative sm:max-w-md sm:flex-1">
       <label htmlFor="recherche" className="sr-only">{label}</label>
@@ -148,7 +148,7 @@ export function ChampRecherche({ adresse, label, placeholder }: { adresse: strin
         onInput={(e) => programmer(e.currentTarget.value)}
         onKeyDown={auClavier}
         onBlur={aLaSortie}
-        className="w-full rounded-xl border border-transparent bg-slate-100 py-2.5 ps-9 pe-3 text-sm transition duration-200 placeholder:text-slate-500 focus:border-encre focus:bg-white focus:outline-none focus:ring-4 focus:ring-encre/10"
+        className="w-full rounded-xl border border-transparent bg-slate-100 py-2.5 ps-9 pe-3 text-sm transition duration-200 placeholder:text-slate-500 focus:border-encre focus:bg-white focus:outline-none focus:ring-4 focus:ring-encre/10 nuit:bg-white/10 nuit:text-white nuit:placeholder:text-slate-400 nuit:focus:border-white/40 nuit:focus:bg-white/15 nuit:focus:ring-white/10"
       />
     </form>
   );

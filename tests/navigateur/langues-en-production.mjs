@@ -17,7 +17,7 @@ await p.locator("#rayons li a").first().click();
 await p.waitForURL(/\/he\/categorie\//);
 await p.waitForLoadState("networkidle");
 const nomHe = (await p.locator("article h3").first().innerText()).trim();
-await p.locator("article button.border-slate-300").first().click();
+await p.locator("article button.bg-encre[aria-label]").first().click(); // le « + » d'une tuile
 await p.locator('header a[href="/he/panier"]').click();
 await p.waitForURL(/\/he\/panier$/);
 await p.waitForSelector("#nomClient");

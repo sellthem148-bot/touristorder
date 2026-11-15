@@ -40,6 +40,21 @@
   --shadow-flottant: 0 12px 32px rgb(0 0 0 / 0.16);
 }
 
+/*
+ * `nuit:` — ce qui est écrit DIRECTEMENT sur le fond sombre de la boutique (un titre, une phrase, un lien)
+ * passe en clair : `text-encre nuit:text-white`. La variante ne s'applique jamais dans une surface claire
+ * (une tuile, une carte, une fiche, tout élément `bg-white` ou marqué `clair`) : un composant partagé peut
+ * la porter sans risque d'écrire en blanc sur du blanc. Un élément qui doit lui-même s'assombrir (l'en-tête,
+ * le pied de page) écrit donc son blanc `bg-[white]`, pas `bg-white`. À l'écran seulement.
+ */
+@custom-variant nuit {
+  @media screen {
+    &:where([data-fond="nuit"] *):not(:where(.bg-white, .bg-white *, .carte, .carte *, article, article *, dialog, dialog *, .clair, .clair *)) {
+      @slot;
+    }
+  }
+}
+
 :root {
   color-scheme: light;
 }
@@ -54,6 +69,27 @@ html,
 body {
   background: var(--color-fond);
   color: var(--color-encre);
+}
+
+/*
+ * Le fond de la BOUTIQUE (demandes du gérant, 16 novembre 2026 : « un fond de couleur différent — ça fait
+ * trop brut, ça ne donne pas envie de commander », puis « Wolt a mis un fond noir pour faire ressortir les
+ * produits »). Il se choisit dans lib/fond.ts et se lit ici dans `data-fond`, posé par le cadre de la
+ * boutique : on redéfinit la variable `fond`, et tout ce qui s'y appuie suit (la rangée collée des
+ * sous-rayons…). L'espace gérant garde son gris ; à l'impression, le fond sombre redevient clair.
+ */
+html:has([data-fond="ivoire"]) {
+  --color-fond: #faf5ec;
+}
+@media screen {
+  html:has([data-fond="nuit"]) {
+    --color-fond: #0d1321;
+  }
+  /* Sur le fond sombre, l'anneau du clavier est au jaune du logo (le bleu ne s'y voit pas) — sauf dans une
+     surface claire, où il reste bleu. */
+  [data-fond="nuit"] :focus-visible:not(:where(.bg-white, .bg-white *, .carte, .carte *, article, article *, dialog, dialog *, .clair, .clair *)) {
+    outline-color: var(--color-soleil);
+  }
 }
 
 body {
@@ -254,6 +290,11 @@ header.entete {
 header.entete[data-defile="oui"] {
   height: calc(var(--entete-serree) + 1px);
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.07);
+}
+@media screen {
+  [data-fond="nuit"] header.entete[data-defile="oui"] {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+  }
 }
 .entete-place {
   height: calc(var(--entete-pleine) + 1px);

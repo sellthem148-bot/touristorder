@@ -7,6 +7,7 @@ import { LienPanier } from "./LienPanier";
 import { ChoixLangue } from "./ChoixLangue";
 import { Sigle } from "./Sigle";
 import { CadreEnTete } from "./CadreEnTete";
+import { FOND_SOMBRE } from "@/lib/fond";
 import { ChampRecherche } from "./ChampRecherche";
 
 /**
@@ -36,14 +37,15 @@ export function EnTete({ t, langue }: { t: Dictionnaire; langue: Langue }) {
           Les résultats s'affichent pendant qu'on tape (`ChampRecherche`). */}
       <div className="entete-rang relative mx-auto flex max-w-6xl items-center gap-2.5 px-4 sm:gap-5">
         <Link href={lien("/")} className="shrink-0 transition duration-150 active:scale-95" aria-label={remplir(t.entete.accueilAria, { site: NOM_DU_SITE })}>
-          <Logo vivant />
+          {/* Sur le fond sombre : la tuile claire du sigle (T encre, O soleil) et le nom en blanc. */}
+          <Logo vivant clair={FOND_SOMBRE} />
         </Link>
         <ChampRecherche adresse={lien("/recherche")} label={t.entete.rechercherLabel} placeholder={t.entete.rechercherPlaceholder} />
         <div data-entete-boutons className="ms-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
           <ChoixLangue compact id="langue-entete" />
           <Link
             href={lien("/compte")}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-2 text-sm font-semibold text-slate-700 transition duration-150 hover:bg-slate-100 active:scale-90 sm:px-2.5"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl px-2 text-sm font-semibold text-slate-700 transition duration-150 hover:bg-slate-100 active:scale-90 nuit:text-slate-200 nuit:hover:bg-white/10 sm:px-2.5"
             aria-label={t.entete.monEspace}
             title={t.entete.monEspace}
           >

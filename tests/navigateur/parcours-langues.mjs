@@ -120,7 +120,7 @@ try {
   await p.goto(adresse("he", "/categorie/courses-epicerie"), { waitUntil: "networkidle" });
   const nomHe = (await p.locator("article h3").first().innerText()).trim();
   verifier(/[\u0590-\u05ff]/.test(nomHe) && nomHe !== nomFr, `catalogue en hébreu : « ${nomFr} » → « ${nomHe} »`);
-  await p.locator("article button.border-slate-300").first().click();
+  await p.locator("article button.bg-encre[aria-label]").first().click(); // le « + » d'une tuile
   // Un article à options : la fiche montre « Taille » et ses choix dans la langue du client
   await p.goto(adresse("he", "/categorie/bebe-enfants"), { waitUntil: "networkidle" });
   await p.locator("article").nth(rangCouches).locator("h3 button").click();

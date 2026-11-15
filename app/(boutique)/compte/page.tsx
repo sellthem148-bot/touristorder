@@ -63,9 +63,9 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
     <div className="space-y-8">
       <section className="space-y-5">
         <div className="apparait">
-          <p className="surtitre">{c0.surtitre}</p>
-          <h1 className="mt-1 text-2xl font-bold sm:text-4xl">{prenomDe(client.nom) ? remplir(c0.bonjour, { prenom: prenomDe(client.nom) }) : c0.bienvenue}</h1>
-          <p className="mt-1 text-sm text-slate-500"><bdi dir="ltr">{client.email}</bdi> · {remplir(c0.clientDepuis, { date: dateLongue(client.createdAt, langue) })}</p>
+          <p className="surtitre nuit:text-slate-400">{c0.surtitre}</p>
+          <h1 className="mt-1 text-2xl font-bold nuit:text-white sm:text-4xl">{prenomDe(client.nom) ? remplir(c0.bonjour, { prenom: prenomDe(client.nom) }) : c0.bienvenue}</h1>
+          <p className="mt-1 text-sm text-slate-500 nuit:text-slate-400"><bdi dir="ltr">{client.email}</bdi> · {remplir(c0.clientDepuis, { date: dateLongue(client.createdAt, langue) })}</p>
         </div>
         <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-4">
           {[
@@ -85,7 +85,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
 
       {enCours.length > 0 && (
         <section aria-labelledby="t-encours" className="space-y-3">
-          <h2 id="t-encours" className="text-xl font-extrabold">{c0.enCours}</h2>
+          <h2 id="t-encours" className="text-xl font-extrabold nuit:text-white">{c0.enCours}</h2>
           {enCours.map((c) => {
             const etape = ETAPES.indexOf(c.statut);
             return (
@@ -119,7 +119,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
       {preferes.length > 0 && (
         <Apparition>
         <section aria-labelledby="t-preferes" className="space-y-3">
-          <h2 id="t-preferes" className="text-xl font-extrabold">{c0.preferes}</h2>
+          <h2 id="t-preferes" className="text-xl font-extrabold nuit:text-white">{c0.preferes}</h2>
           <RailProduits produits={preferes} />
         </section>
         </Apparition>
@@ -127,7 +127,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
 
       <Apparition>
       <section aria-labelledby="t-historique" className="space-y-3">
-        <h2 id="t-historique" className="text-xl font-extrabold">{c0.historique}</h2>
+        <h2 id="t-historique" className="text-xl font-extrabold nuit:text-white">{c0.historique}</h2>
         {commandes.length === 0 ? (
           <div className="carte space-y-3 p-8 text-center">
             <Receipt className="mx-auto h-9 w-9 text-slate-400" strokeWidth={1.4} aria-hidden="true" />
@@ -219,7 +219,7 @@ export default async function EspaceClient({ searchParams }: PageProps<"/compte"
           <button type="submit" className="bouton-secondaire">{c0.deconnexion}</button>
         </form>
         <details id="supprimer" className="max-w-md text-sm" open={params.erreur === "confirmation"}>
-          <summary className="cursor-pointer text-slate-500 hover:underline">{c0.supprimer}</summary>
+          <summary className="cursor-pointer text-slate-500 hover:underline nuit:text-slate-400">{c0.supprimer}</summary>
           <form action={supprimerMonEspace} className="mt-3 space-y-2 rounded-2xl border border-red-200 bg-white p-4">
             <p>{c0.supprimerTexte}</p>
             <label htmlFor="confirmation" className="etiquette">{remplir(c0.supprimerLabel, { mot: c0.motSupprimer })}</label>

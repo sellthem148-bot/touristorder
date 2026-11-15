@@ -30,7 +30,7 @@ export function MesCommandes() {
     };
   }, []);
 
-  if (etat.etape === "chargement") return <p className="py-10 text-center text-slate-500">{t.commun.chargement}</p>;
+  if (etat.etape === "chargement") return <p className="py-10 text-center text-slate-500 nuit:text-slate-400">{t.commun.chargement}</p>;
   if (etat.etape === "erreur") {
     return <p className="carte p-6 text-center text-slate-700">{t.commandes.erreur}</p>;
   }
