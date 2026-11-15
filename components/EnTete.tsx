@@ -8,14 +8,18 @@ import { ChoixLangue } from "./ChoixLangue";
 import { Sigle } from "./Sigle";
 import { CadreEnTete } from "./CadreEnTete";
 
-/** Le logo : le sigle (un T et un O couleur soleil dans une tuile), et le nom. */
-export function Logo({ clair = false, sansNom = false, compactSurMobile = false }: { clair?: boolean; sansNom?: boolean; compactSurMobile?: boolean }) {
+/**
+ * Le logo : le sigle (un T et un O couleur soleil dans une tuile), et le nom.
+ * `vivant` (l'en-tête de la boutique seulement) : à l'ouverture du site la tuile se pose, le T descend à sa
+ * place et le O se lève ; le O bat pendant qu'une page se charge (classe `logo-vivant`, app/globals.css —
+ * le SVG du sigle, lui, reste sans classe).
+ */
+export function Logo({ clair = false, sansNom = false, compactSurMobile = false, vivant = false }: { clair?: boolean; sansNom?: boolean; compactSurMobile?: boolean; vivant?: boolean }) {
   return (
-    // `logo-vivant` : le O du sigle rebondit à l'ouverture du site et grossit un peu au survol (app/globals.css).
-    <span className="logo-vivant flex items-center gap-2.5">
+    <span className={`flex items-center gap-2.5 ${vivant ? "logo-vivant" : ""}`}>
       <Sigle taille={36} clair={clair} />
       {!sansNom && (
-        <span className={`text-[17px] font-bold tracking-tight ${clair ? "text-white" : "text-encre"} ${compactSurMobile ? "hidden sm:inline" : ""}`}>{NOM_DU_SITE}</span>
+        <span className={`nom-du-site text-[17px] font-bold tracking-tight ${clair ? "text-white" : "text-encre"} ${compactSurMobile ? "hidden sm:inline" : ""}`}>{NOM_DU_SITE}</span>
       )}
     </span>
   );
@@ -26,12 +30,13 @@ export function EnTete({ t, langue }: { t: Dictionnaire; langue: Langue }) {
   const lien = (chemin: string) => lienPour(langue, chemin);
   return (
     <CadreEnTete>
-      <div className="mx-auto flex max-w-6xl items-center gap-2.5 px-4 py-2.5 sm:gap-5 sm:py-3">
+      {/* Une rangée : le logo, la recherche, les boutons. Sur téléphone la recherche est posée par la feuille
+          de style (`entete-recherche`) : sous la rangée en haut de page, entre le logo et les boutons ensuite. */}
+      <div className="entete-rang relative mx-auto flex max-w-6xl items-center gap-2.5 px-4 sm:gap-5">
         <Link href={lien("/")} className="shrink-0 transition duration-150 active:scale-95" aria-label={remplir(t.entete.accueilAria, { site: NOM_DU_SITE })}>
-          <span className="sm:hidden"><Logo sansNom /></span>
-          <span className="hidden sm:block"><Logo /></span>
+          <Logo vivant />
         </Link>
-        <form action={lien("/recherche")} method="get" role="search" className="relative min-w-0 flex-1 sm:max-w-md">
+        <form action={lien("/recherche")} method="get" role="search" className="entete-recherche min-w-0 sm:relative sm:max-w-md sm:flex-1">
           <label htmlFor="recherche" className="sr-only">{t.entete.rechercherLabel}</label>
           <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" strokeWidth={1.8} aria-hidden="true" />
           <input
@@ -42,7 +47,7 @@ export function EnTete({ t, langue }: { t: Dictionnaire; langue: Langue }) {
             className="w-full rounded-xl border border-transparent bg-slate-100 py-2.5 ps-9 pe-3 text-sm transition duration-200 placeholder:text-slate-500 focus:border-encre focus:bg-white focus:outline-none focus:ring-4 focus:ring-encre/10"
           />
         </form>
-        <div className="flex shrink-0 items-center gap-0.5 sm:ms-auto sm:gap-2">
+        <div data-entete-boutons className="ms-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
           <ChoixLangue compact id="langue-entete" />
           <Link
             href={lien("/compte")}

@@ -64,7 +64,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
     <div className="lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
       {/* Sur grand écran : la colonne des rayons, celui-ci ouvert sur ses sous-rayons (comme sur Wolt). */}
       <aside className="hidden lg:block">
-        <nav aria-label={t.categorie.navAria} className="sticky top-[5.5rem] max-h-[calc(100dvh-7rem)] overflow-y-auto pe-1">
+        <nav aria-label={t.categorie.navAria} className="sticky top-[calc(var(--entete-haut)+1.45rem)] max-h-[calc(100dvh-7rem)] overflow-y-auto pe-1">
           <p className="surtitre mb-2 px-2.5">{t.accueil.rayons}</p>
           <ul className="space-y-0.5">
             {categories.map((x) => (
@@ -136,7 +136,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
 
         {/* Les sous-rayons : sur téléphone, une rangée qui reste sous l'en-tête pendant qu'on fait défiler. */}
         {avecSousRayons && (
-          <nav aria-label={t.categorie.sousRayonsAria} className="sticky top-[61px] z-[15] -mx-4 border-b border-slate-200 bg-fond/95 backdrop-blur sm:top-[65px] lg:hidden">
+          <nav aria-label={t.categorie.sousRayonsAria} className="sticky top-(--entete-haut) z-[15] -mx-4 border-b border-slate-200 bg-fond/95 backdrop-blur lg:hidden">
             <RangeeDeLiens cle={`${slug}/${choisi ?? ""}`} className="flex gap-1.5 overflow-x-auto px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {[null, ...groupes.map((g) => g.cle)].map((cle) => (
                 <Link

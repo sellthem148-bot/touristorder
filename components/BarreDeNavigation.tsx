@@ -49,6 +49,14 @@ export function BarreDeNavigation() {
     };
   }, []);
 
+  // Pendant le chargement, le O du logo bat (règle `html[data-page-en-route]` de app/globals.css).
+  useEffect(() => {
+    const racine = document.documentElement;
+    if (etat === "depart" || etat === "charge") racine.setAttribute("data-page-en-route", "");
+    else racine.removeAttribute("data-page-en-route");
+    return () => racine.removeAttribute("data-page-en-route");
+  }, [etat]);
+
   // Posée à zéro, puis lancée deux images plus tard : le navigateur a vu le point de départ.
   useEffect(() => {
     if (etat !== "depart") return;

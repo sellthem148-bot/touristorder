@@ -176,22 +176,139 @@ dialog.fiche[data-se-ferme]::backdrop {
 @keyframes tour {
   to { transform: rotate(360deg); }
 }
-/* Le O du logo rebondit à l'ouverture du site, et grossit un peu au survol. */
+/*
+ * Le logo de l'en-tête (`Logo vivant`, components/EnTete.tsx — demande du gérant, 16 novembre 2026 : « une
+ * animation avec le logo »). À l'ouverture du site : la tuile se pose, le T descend à sa place, le O — le
+ * soleil de la marque — se lève du bas de la tuile. Pendant qu'une page se charge, le O bat
+ * (`data-page-en-route`, posé par components/BarreDeNavigation.tsx). Au survol, il grossit un peu.
+ * L'animation d'ouverture ne joue qu'une fois : `data-logo-leve` (components/CadreEnTete.tsx) la retire
+ * ensuite, sinon elle rejouerait à la fin de chaque battement.
+ */
+.logo-vivant svg {
+  border-radius: 25%; /* l'arrondi de la tuile : le soleil qui se lève ne dépasse pas de ses coins */
+}
+.logo-vivant svg path,
 .logo-vivant svg circle {
   transform-box: fill-box;
   transform-origin: center;
+}
+.logo-vivant svg circle {
   transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
-  animation: saut 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) 0.45s backwards;
 }
 a:hover .logo-vivant svg circle {
   transform: scale(1.14);
 }
-/* L'en-tête prend une ombre dès qu'on fait défiler la page (posé par components/CadreEnTete.tsx). */
-header[data-defile] {
-  transition: box-shadow 0.25s ease-out;
+html:not([data-logo-leve]) .logo-vivant svg {
+  animation: logo-tuile 0.5s cubic-bezier(0.3, 1.3, 0.5, 1) backwards;
 }
-header[data-defile="oui"] {
+html:not([data-logo-leve]) .logo-vivant svg path {
+  animation: logo-lettre 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s backwards;
+}
+html:not([data-logo-leve]) .logo-vivant svg circle {
+  animation: logo-soleil 0.9s cubic-bezier(0.25, 1.35, 0.4, 1) 0.4s backwards;
+}
+html[data-page-en-route] .logo-vivant svg circle {
+  animation: logo-battement 0.7s ease-in-out infinite;
+}
+@keyframes logo-tuile {
+  from { transform: scale(0.5); opacity: 0; }
+}
+@keyframes logo-lettre {
+  from { transform: translateY(-70%); opacity: 0; }
+}
+@keyframes logo-soleil {
+  from { transform: translateY(190%); }
+}
+@keyframes logo-battement {
+  50% { transform: scale(0.76); }
+}
+
+/*
+ * L'en-tête « respire » (même demande : « faire respirer le header ») — components/CadreEnTete.tsx.
+ * En haut de page, il prend ses aises : le nom du site à côté du logo et la recherche sur toute la largeur
+ * sur téléphone, plus de hauteur sur ordinateur. Dès qu'on fait défiler, il se resserre en une rangée
+ * (la recherche glisse entre le logo et les boutons) et prend une ombre.
+ * Il est FIXE, sa place réservée dans la page par `entete-place` : sa hauteur change sans décaler la page.
+ * `--entete-haut` = sa hauteur du moment, trait compris : ce qui reste collé sous lui s'y cale (rangée des
+ * sous-rayons, colonne des rayons, récapitulatif du panier). Sans JavaScript, il reste au large.
+ */
+:root {
+  --entete-rang: 60px; /* la rangée du logo et des boutons, sur téléphone */
+  --entete-pleine: 112px; /* au large : la rangée, puis la recherche */
+  --entete-serree: 60px; /* resserré : une seule rangée */
+  --entete-haut: calc(var(--entete-pleine) + 1px);
+}
+@media (min-width: 640px) {
+  :root {
+    --entete-pleine: 82px;
+    --entete-serree: 64px;
+  }
+}
+html[data-defile="oui"] {
+  --entete-haut: calc(var(--entete-serree) + 1px);
+}
+header.entete {
+  height: calc(var(--entete-pleine) + 1px);
+  transition: height 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease-out;
+}
+header.entete[data-defile="oui"] {
+  height: calc(var(--entete-serree) + 1px);
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.07);
+}
+.entete-place {
+  height: calc(var(--entete-pleine) + 1px);
+  flex-shrink: 0;
+}
+.entete-rang {
+  height: var(--entete-rang);
+}
+/* Au large, le sigle est un peu plus grand (sa vraie taille change : le nom et la recherche gardent leur écart). */
+header.entete .logo-vivant svg {
+  transition: width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+header.entete:not([data-defile="oui"]) .logo-vivant svg {
+  width: 40px;
+  height: 40px;
+}
+@media (min-width: 640px) {
+  .entete-rang {
+    height: 100%;
+  }
+}
+@media (max-width: 639.98px) {
+  .entete-recherche {
+    position: absolute;
+    top: var(--entete-rang);
+    inset-inline: 1rem;
+    transition:
+      top 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+      inset-inline-start 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+      inset-inline-end 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  /* Resserré : du logo (le sigle seul, 36 px et son écart) aux boutons de droite (`--icones`, mesuré). */
+  header.entete[data-defile="oui"] .entete-recherche {
+    top: 9px;
+    inset-inline-start: calc(1rem + 46px + 0.5rem);
+    inset-inline-end: calc(1rem + var(--icones, 9.5rem) + 0.625rem);
+  }
+  header.entete .nom-du-site {
+    max-width: 9rem;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 0.3s ease, opacity 0.2s ease;
+  }
+  header.entete[data-defile="oui"] .nom-du-site {
+    max-width: 0;
+    opacity: 0;
+  }
+}
+@media print {
+  header.entete {
+    position: static;
+  }
+  .entete-place {
+    display: none;
+  }
 }
 /* Une photo d'article qui charge encore reste transparente, puis arrive en fondu (components/Photo.tsx :
    l'état n'est posé que dans le navigateur). `venue` n'a pas d'arrivée : la photo retrouve sa propre opacité. */

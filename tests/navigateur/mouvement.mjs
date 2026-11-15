@@ -35,6 +35,21 @@ const photosCoincees = (p) =>
 /** Les éléments à l'écran encore transparents (une tuile ou une photo qui n'est pas encore arrivée). */
 const transparentsALEcran = (p) =>
   p.evaluate(() => [...document.querySelectorAll("main article")].filter((a) => { const r = a.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0 && Number(getComputedStyle(a).opacity) < 1; }).length);
+/** L'en-tête : sa hauteur, où sont le logo, la recherche et les boutons, et la hauteur de la page. */
+const mesurerEnTete = (p) =>
+  p.evaluate(() => {
+    const boite = (el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y, l: r.width, h: r.height, fin: r.right, bas: r.bottom }; };
+    const nom = document.querySelector("header.entete .nom-du-site");
+    return {
+      hauteur: Math.round(document.querySelector("header.entete").getBoundingClientRect().height),
+      logo: boite(document.querySelector("header.entete a svg")),
+      recherche: boite(document.querySelector(".entete-recherche")),
+      boutons: boite(document.querySelector("[data-entete-boutons]")),
+      nomVisible: nom.getBoundingClientRect().width > 20 && getComputedStyle(nom).opacity === "1",
+      page: document.documentElement.scrollHeight,
+      etat: document.documentElement.dataset.defile ?? "",
+    };
+  });
 /** Un coup de pouce : la page descend de `distance` pixels en un tiers de seconde. */
 const coupDePouce = (p, distance) =>
   p.evaluate((d) => new Promise((fini) => { const y0 = scrollY; const t0 = performance.now(); const pas = (t) => { const k = Math.min(1, (t - t0) / 330); scrollTo(0, y0 + d * k); if (k < 1) requestAnimationFrame(pas); else fini(); }; requestAnimationFrame(pas); }), distance);
@@ -60,6 +75,19 @@ try {
 
     // 1. L'accueil : le haut de page arrive en cascade, le bas attend d'être à l'écran
     await p.goto(BASE + prefixe + "/", { waitUntil: "networkidle" });
+    // Le logo de l'en-tête : à l'ouverture, la tuile se pose, le T descend, le O se lève.
+    const logo = await p.evaluate(() => {
+      const svg = document.querySelector("header.entete .logo-vivant svg");
+      return { tuile: getComputedStyle(svg).animationName, lettre: getComputedStyle(svg.querySelector("path")).animationName, soleil: getComputedStyle(svg.querySelector("circle")).animationName, ailleurs: [...document.querySelectorAll("footer svg circle")].map((c) => getComputedStyle(c).animationName).join() };
+    });
+    verifier(logo.tuile === "logo-tuile" && logo.lettre === "logo-lettre" && logo.soleil === "logo-soleil", `${langue} — à l'ouverture, le logo de l'en-tête s'anime (la tuile, le T, puis le O qui se lève)`);
+    verifier(!logo.ailleurs.includes("logo-"), `${langue} — le logo du pied de page, lui, reste immobile`);
+    // L'en-tête au large, en haut de page : le nom à côté du logo, la recherche sur toute la largeur.
+    await pause(p, 400);
+    const large = await mesurerEnTete(p);
+    const ecranL = p.viewportSize().width;
+    verifier(large.etat === "non" && large.hauteur === 113 && large.nomVisible, `${langue} — en haut de page, l'en-tête est au large (${large.hauteur} px, le nom du site à côté du logo)`);
+    verifier(large.recherche.l >= ecranL - 34 && large.recherche.y >= large.logo.bas && large.recherche.bas <= large.hauteur, `${langue} — la recherche tient toute la largeur, sous le logo et les boutons`);
     const enCascade = await p.locator(".apparait").count();
     verifier(enCascade >= 15, `${langue} — accueil : ${enCascade} éléments arrivent en cascade`);
     const mots = await p.locator("h1 span.apparait").allInnerTexts();
@@ -81,6 +109,19 @@ try {
     );
     verifier(!(await deborde(p)), `${langue} — accueil : pas de défilement horizontal`);
     if (OUT) await p.screenshot({ path: `${OUT}/mouvement-2-accueil-${prefixe ? "he" : "fr"}.png` });
+
+    // 1 bis. Dès qu'on fait défiler, l'en-tête se resserre en une rangée — sans décaler la page
+    await p.evaluate(() => scrollTo(0, 60));
+    await pause(p, 600);
+    const serre = await mesurerEnTete(p);
+    verifier(serre.etat === "oui" && serre.hauteur === 61 && !serre.nomVisible, `${langue} — page défilée : l'en-tête se resserre (${serre.hauteur} px, le sigle seul)`);
+    const entre = (a, b) => (prefixe ? b.fin <= a.x + 1 : a.fin <= b.x + 1); // en hébreu, tout est retourné
+    verifier(entre(serre.logo, serre.recherche) && entre(serre.recherche, serre.boutons) && serre.recherche.l > 100 && serre.recherche.y > 0 && serre.recherche.bas < 61, `${langue} — la recherche a glissé entre le logo et les boutons (${Math.round(serre.recherche.l)} px de large)`);
+    verifier(serre.page === large.page && (await p.evaluate(() => scrollY)) === 60, `${langue} — la page n'a pas bougé pendant ce temps (même hauteur, même endroit)`);
+    verifier(!(await deborde(p)), `${langue} — en-tête resserré : pas de défilement horizontal`);
+    await p.evaluate(() => scrollTo(0, 0));
+    await pause(p, 600);
+    verifier((await mesurerEnTete(p)).hauteur === 113, `${langue} — revenu tout en haut, il reprend ses aises`);
 
     // 2. En faisant défiler : chaque bloc arrive, plus rien n'attend, rien ne reste à moitié visible
     await toutDefiler(p);
@@ -182,6 +223,11 @@ try {
         const etat = b ? b.dataset.barreNavigation : "repos";
         if (window.__barre.at(-1) !== etat) window.__barre.push(etat);
       }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-barre-navigation"] });
+      // Pendant le chargement, le O du logo bat.
+      window.__battement = "";
+      new MutationObserver(() => {
+        if (document.documentElement.hasAttribute("data-page-en-route")) window.__battement = getComputedStyle(document.querySelector("header.entete svg circle")).animationName;
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-page-en-route"] });
     });
     await p.evaluate(() => { window.__fondus = 0; document.querySelector(".entree-page").addEventListener("animationstart", (e) => { if (e.animationName === "fondu" && e.target === e.currentTarget) window.__fondus += 1; }); });
     await p.locator("header a").first().click();
@@ -193,6 +239,8 @@ try {
     const barre2 = await p.evaluate(() => window.__barre.join(" → "));
     // (« charge » manque quand la page arrive tout de suite : la barre va droit au bout.)
     verifier(/^depart( → charge)? → fin → repos$/.test(barre2), `${langue} — la barre de chargement part, avance, finit et se retire (${barre2})`);
+    const battement = await p.evaluate(() => [window.__battement, document.documentElement.hasAttribute("data-page-en-route"), getComputedStyle(document.querySelector("header.entete svg circle")).animationName]);
+    verifier(battement[0] === "logo-battement" && battement[1] === false && battement[2] === "none", `${langue} — pendant le chargement le O du logo bat, puis s'arrête (sans rejouer son lever)`);
     if (!prefixe) {
       const depart = await p.evaluate(() => new Promise((fini) => {
         new MutationObserver((_, o) => { const b = document.querySelector("[data-barre-navigation]"); if (b) { o.disconnect(); const r = b.getBoundingClientRect(); fini({ x: r.x, y: r.y }); } }).observe(document.body, { childList: true, subtree: true });
@@ -266,6 +314,11 @@ try {
   verifier((await enAttente(s)) === 0, "sans JavaScript : aucun bloc n'est caché");
   const opacites = await s.locator("main article").evaluateAll((l) => l.filter((a) => a.offsetParent !== null).map((a) => Number(getComputedStyle(a).opacity)));
   verifier(opacites.length > 20 && opacites.every((o) => o === 1), `sans JavaScript : les ${opacites.length} tuiles sont visibles`);
+  await s.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "load" });
+  await s.evaluate(() => scrollTo(0, 1400));
+  await pause(s, 400);
+  const sansJs = await s.evaluate(() => ({ entete: Math.round(document.querySelector("header.entete").getBoundingClientRect().height), collee: Math.round(document.querySelector('main nav[class*="z-[15]"]').getBoundingClientRect().top) }));
+  verifier(sansJs.entete === 113 && sansJs.collee === 113, `sans JavaScript : l'en-tête reste au large (${sansJs.entete} px) et la rangée des sous-rayons se colle juste dessous`);
   await s.goto(BASE + "/categorie/cremerie-oeufs?s=yaourts", { waitUntil: "load" });
   await pause(s, 1200);
   const liste = await s.locator("main article").evaluateAll((l) => l.map((a) => Number(getComputedStyle(a).opacity)));
@@ -281,6 +334,8 @@ try {
   ordi.on("pageerror", (e) => erreurs.push(String(e)));
   await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
   await pause(ordi, 1300);
+  const ordiLarge = await mesurerEnTete(ordi);
+  verifier(ordiLarge.hauteur === 83 && ordiLarge.nomVisible && ordiLarge.recherche.x - ordiLarge.logo.fin > 100, `ordinateur : en haut de page l'en-tête est plus haut (${ordiLarge.hauteur} px), le nom entre le logo et la recherche`);
   const carte = ordi.locator("main article").first();
   const repos = await carte.boundingBox();
   await carte.hover({ position: { x: 20, y: 150 } });
@@ -291,6 +346,8 @@ try {
   await ordi.mouse.move(0, 0);
   await ordi.evaluate(() => scrollTo(0, 1600));
   await pause(ordi, 600);
+  const ordiSerre = await mesurerEnTete(ordi);
+  verifier(ordiSerre.hauteur === 65 && ordiSerre.page === ordiLarge.page, `ordinateur : page défilée, il se resserre (${ordiSerre.hauteur} px) sans décaler la page`);
   const colonne = await ordi.locator("aside nav").first().boundingBox();
   verifier(colonne.y > 60 && colonne.y < 120, "ordinateur : la colonne des rayons reste collée pendant le défilement");
   await toutDefiler(ordi);

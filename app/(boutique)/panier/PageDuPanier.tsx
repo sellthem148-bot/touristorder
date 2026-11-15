@@ -533,7 +533,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
       </div>
 
       <aside className="lg:pt-[3.25rem]">
-        <div className="carte apparait space-y-4 p-5 lg:sticky lg:top-20" style={rangDansLaCascade(2)}>
+        <div className="carte apparait space-y-4 p-5 lg:sticky lg:top-[calc(var(--entete-haut)+0.95rem)]" style={rangDansLaCascade(2)}>
           <h2 className="text-lg font-bold">{panierVide ? p.sectionDemande : p.recap}</h2>
           {!panierVide && (
             <RecapMontants
