@@ -16,6 +16,7 @@ import { RAYON_BOUCHERIE, RAYON_POISSON, VIANDE_ET_VOLAILLE } from "./retrait-vi
 import { ARTICLES_WOLT_DES_CAPTURES } from "./articles-wolt-captures";
 import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./articles-wolt-captures-boissons";
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
+import { ABSENTS_DE_WOLT } from "./absents-de-wolt";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 import { RELEVE_DES_CANETTES, RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
@@ -356,6 +357,27 @@ export async function supprimerLesIntrouvables(prisma: PrismaClient): Promise<st
     noterOperation(prisma, CLE_SUPPRESSION_INTROUVABLES),
   ]);
   return `Articles introuvables sur Wolt : ${supprimes.count} supprimé(s).`;
+}
+
+/**
+ * Ce que Wolt ne vend pas est supprimé du site (décision du gérant, 15 novembre 2026 : prisma/absents-de-wolt.ts).
+ * Une liste par page ENTIÈRE de rayon reçue, chacune une seule fois. Supprimés pour de bon ; les commandes passées
+ * gardent leur copie de l'article (`LigneCommande.produitId` se vide). Un article de sa liste dont il a noté
+ * lui-même le prix d'achat n'est pas touché : c'est qu'il l'a trouvé sur Wolt.
+ */
+export async function supprimerLesAbsentsDeWolt(prisma: PrismaClient): Promise<string> {
+  const bilans: string[] = [];
+  for (const liste of ABSENTS_DE_WOLT) {
+    const faite = await operationFaite(prisma, liste.cle);
+    if (faite === null) { bilans.push(`${liste.titre} : réglages pas encore créés, rien supprimé.`); continue; }
+    if (faite) { bilans.push(`${liste.titre} : déjà supprimés, rien de changé.`); continue; }
+    const [supprimes] = await prisma.$transaction([
+      prisma.produit.deleteMany({ where: { OR: [{ nom: { in: liste.deLaListe }, prixAchat: null }, { nom: { in: liste.releves } }] } }),
+      noterOperation(prisma, liste.cle),
+    ]);
+    bilans.push(`${liste.titre} : ${supprimes.count} supprimé(s) sur ${liste.deLaListe.length + liste.releves.length}.`);
+  }
+  return bilans.join(" ");
 }
 
 /**

@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -107,6 +107,8 @@ async function main() {
     dire(await remettreEnVenteLesRayons(prisma));
     // Et les cinq articles introuvables sur Wolt, supprimés pour de bon à sa demande (13 novembre, « enlève »). Une seule fois.
     dire(await supprimerLesIntrouvables(prisma));
+    // Ce que Wolt ne vend pas, d'après la page entière d'un rayon : supprimé, à sa demande (15 novembre : « je ne peux pas faire des produits que Wolt n'a pas »). Une seule fois par rayon.
+    dire(await supprimerLesAbsentsDeWolt(prisma));
     // Sa liste « Dynamica » : installée « à compléter », masquée — et elle le reste (prix et modèles invérifiables).
     dire(await installerLaListeDynamica(prisma));
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.

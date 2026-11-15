@@ -68,9 +68,10 @@ describe("articles introuvables sur Wolt : supprimés à la demande du gérant (
   it("une seule fois, dans la même transaction, et ces cinq noms seulement", () => {
     const corps = corpsDe("supprimerLesIntrouvables");
     for (const morceau of ["operationFaite(prisma, CLE_SUPPRESSION_INTROUVABLES)", "noterOperation(prisma, CLE_SUPPRESSION_INTROUVABLES)", "$transaction"]) expect(corps, morceau).toContain(morceau);
-    // La seule suppression du fichier : rien d'autre n'est jamais supprimé par le code.
+    // Deux suppressions dans tout le fichier, toutes deux demandées par le gérant : celle-ci, et ce que Wolt ne
+    // vend pas (tests/absents-de-wolt.test.ts). Rien d'autre n'est jamais supprimé par le code.
     expect(corps).toContain("prisma.produit.deleteMany({ where: { nom: { in: INTROUVABLES_SUR_WOLT } } })");
-    expect(lire("prisma/remplissage.ts").match(/\.(delete|deleteMany)\(/g)).toHaveLength(1);
+    expect(lire("prisma/remplissage.ts").match(/\.(delete|deleteMany)\(/g)).toHaveLength(2);
     // Une commande passée garde sa ligne : le lien vers l'article se vide, rien d'autre.
     expect(lire("prisma/schema.prisma")).toMatch(/produit\s+Produit\?\s+@relation\(fields: \[produitId\], references: \[id\], onDelete: SetNull\)/);
   });
