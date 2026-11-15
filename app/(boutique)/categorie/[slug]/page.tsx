@@ -167,7 +167,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
                 {remplir(t.categorie.retourAuRayon, { nom: nomDuRayon(c, t) })}
               </Link>
             </div>
-            <GrilleProduits produits={groupeChoisi.articles} etroite />
+            <GrilleProduits produits={groupeChoisi.articles} etroite auDefilement />
           </section>
         ) : avecSousRayons ? (
           // Le rayon entier : un aperçu de chaque sous-rayon, et « Tout voir ».
@@ -193,7 +193,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
             ))}
           </div>
         ) : (
-          <GrilleProduits produits={produits} etroite />
+          <GrilleProduits produits={produits} etroite auDefilement />
         )}
 
         <p className="pt-2 text-sm text-slate-600">

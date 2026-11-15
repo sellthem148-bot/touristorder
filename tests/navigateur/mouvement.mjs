@@ -20,7 +20,8 @@ const pause = (p, ms) => p.waitForTimeout(ms);
 const restes = (p) =>
   p.evaluate(() =>
     // (Un bloc encore en attente plus bas dans la page n'est pas un reste : `enAttente` le compte à part.)
-    [...document.querySelectorAll(".apparait, .arrive, .entree-page, .saute, .monte, .deploie, .change, .se-remplit, .balance")]
+    // (Ni une tuile d'une longue liste qui attend encore plus bas : `.a-venir`.)
+    [...document.querySelectorAll(".apparait:not(.a-venir), .arrive, .entree-page, .saute, .monte, .deploie, .change, .se-remplit, .balance")]
       .filter((el) => {
         const s = getComputedStyle(el);
         return el.getClientRects().length > 0 && (Number(s.opacity) < 1 || s.clipPath !== "none" || s.transform !== "none");
@@ -28,6 +29,15 @@ const restes = (p) =>
       .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).slice(0, 60)}`),
   );
 const enAttente = (p) => p.locator(".a-venir").count();
+/** Les photos d'articles chargées mais restées transparentes (aucune ne doit l'être). */
+const photosCoincees = (p) =>
+  p.evaluate(() => [...document.querySelectorAll("img.photo")].filter((i) => i.getClientRects().length > 0 && i.complete && i.naturalWidth > 0 && getComputedStyle(i).opacity === "0").length);
+/** Les éléments à l'écran encore transparents (une tuile ou une photo qui n'est pas encore arrivée). */
+const transparentsALEcran = (p) =>
+  p.evaluate(() => [...document.querySelectorAll("main article")].filter((a) => { const r = a.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0 && Number(getComputedStyle(a).opacity) < 1; }).length);
+/** Un coup de pouce : la page descend de `distance` pixels en un tiers de seconde. */
+const coupDePouce = (p, distance) =>
+  p.evaluate((d) => new Promise((fini) => { const y0 = scrollY; const t0 = performance.now(); const pas = (t) => { const k = Math.min(1, (t - t0) / 330); scrollTo(0, y0 + d * k); if (k < 1) requestAnimationFrame(pas); else fini(); }; requestAnimationFrame(pas); }), distance);
 
 /** Fait défiler toute la page, écran par écran, comme un doigt. */
 async function toutDefiler(p) {
@@ -52,6 +62,8 @@ try {
     await p.goto(BASE + prefixe + "/", { waitUntil: "networkidle" });
     const enCascade = await p.locator(".apparait").count();
     verifier(enCascade >= 15, `${langue} — accueil : ${enCascade} éléments arrivent en cascade`);
+    const mots = await p.locator("h1 span.apparait").allInnerTexts();
+    verifier(mots.length >= 3 && (await p.locator("h1").innerText()).replace(/\s+/g, " ").trim() === mots.join(" "), `${langue} — accueil : le titre arrive mot à mot (${mots.length} mots), et se lit comme avant`);
     if (OUT && !prefixe) {
       // Pour l'œil : la page rechargée, prise en plein mouvement.
       await p.reload({ waitUntil: "commit" });
@@ -87,6 +99,9 @@ try {
     const plus = tuile.locator("button").first();
     const avant = await plus.boundingBox();
     await plus.click();
+    // L'article file vers le panier : une pastille part du « + »…
+    await p.locator("[data-envol]").first().waitFor({ state: "attached", timeout: 3000 });
+    ok(`${langue} — au « + », l'article s'envole vers le panier`);
     const compteur = tuile.locator(".deploie");
     await compteur.waitFor();
     if (OUT && !prefixe) { await pause(p, 90); await p.screenshot({ path: `${OUT}/mouvement-3-ajout-en-cours.png` }); }
@@ -109,6 +124,9 @@ try {
     await pause(p, 500);
     const apresAjout = await restes(p);
     verifier(apresAjout.length === 0, `${langue} — rien n'est resté transparent ou coupé après l'ajout${apresAjout.length ? " : " + apresAjout.slice(0, 4).join(" | ") : ""}`);
+    // … et ne laisse rien derrière elle.
+    verifier((await p.locator("[data-envol]").count()) === 0 && !(await deborde(p)), `${langue} — l'envol terminé, la pastille s'est retirée ; la page n'a pas été élargie`);
+    verifier((await photosCoincees(p)) === 0, `${langue} — aucune photo chargée n'est restée transparente`);
     if (OUT) await p.screenshot({ path: `${OUT}/mouvement-4-panier-${prefixe ? "he" : "fr"}.png` });
 
     // 4. La tuile ouvre toujours la fiche, qui monte par-dessus la page
@@ -118,8 +136,11 @@ try {
     await pause(p, 500);
     const cadre = await fiche.boundingBox();
     verifier(cadre.y + cadre.height <= ecran.height + 1 && cadre.x >= 0 && cadre.width <= ecran.width, `${langue} — la fiche produit s'ouvre dans l'écran`);
+    // Échap : elle se referme en douceur (elle redescend), puis disparaît pour de bon.
     await p.keyboard.press("Escape");
-    await pause(p, 200);
+    await p.locator("dialog.fiche[data-se-ferme]").waitFor({ state: "attached", timeout: 2000 });
+    await p.locator("dialog.fiche").waitFor({ state: "detached", timeout: 2000 });
+    ok(`${langue} — la fiche se referme en douceur, puis disparaît`);
 
     // 5. Un rayon à sous-rayons : la rangée des sous-rayons reste collée sous l'en-tête pendant le mouvement
     await p.goto(BASE + prefixe + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
@@ -133,6 +154,21 @@ try {
     await toutDefiler(p);
     verifier((await enAttente(p)) === 0 && (await restes(p)).length === 0, `${langue} — crèmerie : tout est arrivé, rien n'est resté invisible`);
     verifier(!(await deborde(p)), `${langue} — crèmerie : pas de défilement horizontal`);
+
+    // 5 bis. Une longue liste (un sous-rayon entier) : les tuiles plus bas arrivent rangée par rangée
+    await p.goto(BASE + prefixe + "/categorie/cremerie-oeufs?s=yaourts", { waitUntil: "networkidle" });
+    await pause(p, 900);
+    const tuilesDeLaListe = await p.locator("main article").count();
+    const tuilesEnAttente = await p.locator("main article.a-venir").count();
+    verifier(tuilesDeLaListe > 30 && tuilesEnAttente > 10, `${langue} — longue liste : ${tuilesDeLaListe} tuiles, dont ${tuilesEnAttente} plus bas qui attendent`);
+    verifier((await transparentsALEcran(p)) === 0, `${langue} — longue liste : tout ce qui est à l'écran est visible`);
+    await coupDePouce(p, 780);
+    await pause(p, 550);
+    verifier((await transparentsALEcran(p)) === 0, `${langue} — un coup de pouce d'un écran : une demi-seconde après, tout l'écran est là`);
+    await toutDefiler(p);
+    const resteListe = await restes(p);
+    verifier((await enAttente(p)) === 0 && resteListe.length === 0, `${langue} — longue liste : toutes les tuiles sont arrivées${resteListe.length ? " : " + resteListe.slice(0, 3).join(" | ") : ""}`);
+    verifier(!(await deborde(p)) && (await photosCoincees(p)) === 0, `${langue} — longue liste : pas de défilement horizontal, aucune photo restée transparente`);
 
     // 6. D'une page à l'autre : la barre de chargement accompagne, le fondu rejoue, et le panier n'a pas bougé
     verifier((await p.locator("header").first().getAttribute("data-defile")) === "oui", `${langue} — page défilée : l'en-tête a pris son ombre`);
@@ -209,6 +245,17 @@ try {
   verifier((await restes(c)).length === 0, "moins d'animations : toute la page est visible tout de suite");
   const duree = await c.locator(".apparait").first().evaluate((el) => parseFloat(getComputedStyle(el).animationDuration));
   verifier(duree < 0.001, "moins d'animations : les animations sont coupées");
+  await c.goto(BASE + "/categorie/cremerie-oeufs?s=yaourts", { waitUntil: "networkidle" });
+  await pause(c, 400);
+  verifier((await enAttente(c)) === 0, "moins d'animations : dans une longue liste, aucune tuile n'attend");
+  await c.locator('main article button[aria-label]').nth(1).click();
+  await pause(c, 150);
+  verifier((await c.locator("[data-envol]").count()) === 0, "moins d'animations : pas d'envol vers le panier");
+  await c.locator("main article h3 button").first().click();
+  await c.locator("dialog.fiche[open]").waitFor();
+  await c.keyboard.press("Escape");
+  await pause(c, 80);
+  verifier((await c.locator("dialog.fiche").count()) === 0, "moins d'animations : la fiche se ferme tout de suite");
   await calme.close();
 
   // 9. Sans JavaScript (et pour un moteur de recherche) : toute la page est là
@@ -219,6 +266,14 @@ try {
   verifier((await enAttente(s)) === 0, "sans JavaScript : aucun bloc n'est caché");
   const opacites = await s.locator("main article").evaluateAll((l) => l.filter((a) => a.offsetParent !== null).map((a) => Number(getComputedStyle(a).opacity)));
   verifier(opacites.length > 20 && opacites.every((o) => o === 1), `sans JavaScript : les ${opacites.length} tuiles sont visibles`);
+  await s.goto(BASE + "/categorie/cremerie-oeufs?s=yaourts", { waitUntil: "load" });
+  await pause(s, 1200);
+  const liste = await s.locator("main article").evaluateAll((l) => l.map((a) => Number(getComputedStyle(a).opacity)));
+  verifier(liste.length > 30 && liste.every((o) => o === 1), `sans JavaScript : dans une longue liste, les ${liste.length} tuiles sont visibles`);
+  await s.goto(BASE + "/categorie/fruits-legumes", { waitUntil: "load" });
+  await pause(s, 800);
+  const photos = await s.locator("img.photo").evaluateAll((l) => l.filter((i) => i.getClientRects().length > 0).map((i) => [i.dataset.chargee ?? "", getComputedStyle(i).opacity]));
+  verifier(photos.length > 0 && photos.every(([etat, o]) => etat === "" && o === "1"), `sans JavaScript : les ${photos.length} photos s'affichent comme de simples images`);
   await sans.close();
 
   // 10. Sur ordinateur : la tuile se soulève au survol, la colonne des rayons reste collée
@@ -240,6 +295,25 @@ try {
   verifier(colonne.y > 60 && colonne.y < 120, "ordinateur : la colonne des rayons reste collée pendant le défilement");
   await toutDefiler(ordi);
   verifier((await enAttente(ordi)) === 0 && (await restes(ordi)).length === 0, "ordinateur : tout est arrivé, rien n'est resté invisible");
+
+  // 11. Sur ordinateur, depuis la fiche d'un article : elle se referme, puis l'article file vers le panier de l'en-tête
+  await ordi.goto(BASE + "/categorie/fruits-legumes", { waitUntil: "networkidle" });
+  await pause(ordi, 900);
+  await ordi.locator("main article h3 button").first().click();
+  await ordi.locator("dialog.fiche[open]").waitFor();
+  await pause(ordi, 500);
+  await ordi.locator("dialog.fiche[open] button.bouton").click();
+  await ordi.locator("dialog.fiche[data-se-ferme]").waitFor({ state: "attached", timeout: 2000 });
+  const envol = ordi.locator("[data-envol]").first();
+  await envol.waitFor({ state: "attached", timeout: 3000 });
+  verifier((await ordi.locator("dialog.fiche").count()) === 0, "ordinateur : la fiche s'est refermée avant l'envol");
+  const depart = await envol.boundingBox();
+  await pause(ordi, 400);
+  const enVol = await envol.boundingBox().catch(() => null);
+  const panierEnTete = await ordi.locator("header a[data-cible-panier='entete']").boundingBox();
+  verifier(depart && (!enVol || enVol.x > depart.x) && panierEnTete.x > depart.x, "ordinateur : l'article part de la fiche vers le panier de l'en-tête (en haut à droite)");
+  await pause(ordi, 1200);
+  verifier((await ordi.locator("[data-envol]").count()) === 0 && (await ordi.locator("header a[data-cible-panier='entete'] span.saute").innerText()).trim() === "1", "ordinateur : la pastille s'est retirée, le panier compte 1 article");
 
   console.log("Erreurs JS :", erreurs.length ? erreurs : "aucune");
   if (erreurs.length) process.exitCode = 1;

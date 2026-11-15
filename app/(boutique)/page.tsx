@@ -14,6 +14,7 @@ import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { joursOuverts } from "@/lib/livraisons";
 import { ADRESSE_DU_SITE, MESSAGE_ACCUEIL_PAR_DEFAUT, NOM_DU_SITE } from "@/lib/marque";
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import { adressesParLangue, compter, heureLisible, lienPour, remplir, type Langue } from "@/lib/langues";
 import { estAujourdhui, libelleDuJour } from "@/lib/dates";
 import { traduction } from "@/lib/traduction";
@@ -49,7 +50,17 @@ const donneesStructurees = (langue: Langue, description: string) => JSON.stringi
   ],
 }).replace(/</g, "\\u003c");
 
-type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string };
+type Fait = { icone: LucideIcon; titre: string; valeur: string; precision?: string; enDirect?: boolean };
+
+/** Un point vert qui bat doucement : les commandes sont ouvertes, voici la prochaine livraison. Décoratif. */
+function PointOuvert() {
+  return (
+    <span aria-hidden="true" data-point-ouvert className="absolute -end-1 -top-1 flex h-2 w-2">
+      <span className="bat absolute inset-0 rounded-full [--halo:rgb(16_185_129/0.6)] [--portee:6px]" />
+      <span className="relative h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white" />
+    </span>
+  );
+}
 
 export default async function Accueil() {
   const { langue, t, ts, lien } = await traduction();
@@ -83,6 +94,7 @@ export default async function Accueil() {
         heure: prochaine.creneaux[0].split(/\s*[–-]\s*/)[0],
       }),
       precision: reglages.heureLimite ? remplir(a.commandezAvant, { heure: heureLisible(reglages.heureLimite, langue) }) : undefined,
+      enDirect: reglages.ouvert,
     });
   }
   faits.push({
@@ -104,7 +116,10 @@ export default async function Accueil() {
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200">
       {faits.map((f, i) => (
         <div key={f.titre} className={`flex flex-col gap-2 bg-white p-3.5 sm:flex-row sm:gap-3 sm:p-4 ${faits.length % 2 === 1 && i === faits.length - 1 ? "col-span-2" : ""}`}>
-          <f.icone className="apparait h-5 w-5 shrink-0 text-slate-500 sm:mt-0.5" strokeWidth={1.6} aria-hidden="true" style={rangDansLaCascade(i * 2 + 4)} />
+          <span className="apparait relative h-5 w-5 shrink-0 sm:mt-0.5" style={rangDansLaCascade(i * 2 + 4)}>
+            <f.icone className="h-5 w-5 text-slate-500" strokeWidth={1.6} aria-hidden="true" />
+            {f.enDirect && <PointOuvert />}
+          </span>
           <div className="apparait min-w-0" style={rangDansLaCascade(i * 2 + 5)}>
             <dt className="text-[13px] text-slate-500">{f.titre}</dt>
             <dd className="font-semibold leading-snug">{f.valeur}</dd>
@@ -133,32 +148,40 @@ export default async function Accueil() {
         <div className="space-y-3.5 sm:space-y-5">
           {/* Le haut de page arrive ligne après ligne (`apparait`, dans l'ordre de `--i`). */}
           <p className="surtitre apparait">{a.surtitre}</p>
-          <h1 className="apparait text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]" style={rangDansLaCascade(1)}>
-            {a.titre}
+          {/* Le titre arrive mot à mot (chaque mot est un bloc qui monte ; le texte lu reste le même). */}
+          <h1 className="text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]">
+            {a.titre.split(" ").map((mot, i) => (
+              <Fragment key={i}>
+                <span className="apparait inline-block" style={{ animationDelay: `${70 + i * 55}ms` }}>{mot}</span>{" "}
+              </Fragment>
+            ))}
           </h1>
-          {messageAccueil && <p className="apparait max-w-xl text-pretty text-[15px] text-slate-600 sm:text-lg" style={rangDansLaCascade(2)}>{messageAccueil}</p>}
+          {messageAccueil && <p className="apparait max-w-xl text-pretty text-[15px] text-slate-600 sm:text-lg" style={rangDansLaCascade(6)}>{messageAccueil}</p>}
           {!reglages.ouvert && (
             <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
               {a.ferme}
             </p>
           )}
           {/* Sur téléphone : l'essentiel de la livraison en deux pastilles ; le détail est plus bas. */}
-          <ul className="apparait flex flex-wrap gap-2 lg:hidden" style={rangDansLaCascade(3)}>
+          <ul className="apparait flex flex-wrap gap-2 lg:hidden" style={rangDansLaCascade(8)}>
             {faits.slice(amplitude ? 1 : 0, amplitude ? 3 : 2).map((f) => (
               <li key={f.titre} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold">
-                <f.icone className="h-4 w-4 shrink-0 text-slate-500" strokeWidth={1.7} aria-hidden="true" />
+                <span className="relative h-4 w-4 shrink-0">
+                  <f.icone className="h-4 w-4 text-slate-500" strokeWidth={1.7} aria-hidden="true" />
+                  {f.enDirect && <PointOuvert />}
+                </span>
                 <span className="sr-only">{f.titre} : </span>{f.valeur}
               </li>
             ))}
           </ul>
           {rayons.length > 0 && (
-            <div className="apparait hidden flex-wrap gap-2.5 pt-1 lg:flex" style={rangDansLaCascade(3)}>
+            <div className="apparait hidden flex-wrap gap-2.5 pt-1 lg:flex" style={rangDansLaCascade(8)}>
               <a href="#rayons" className="bouton px-5">{a.voirRayons}</a>
               <a href="#etapes" className="bouton-secondaire px-5">{a.commentCaMarche}</a>
             </div>
           )}
         </div>
-        <div className="apparait hidden lg:block" style={rangDansLaCascade(3)}>{reperes}</div>
+        <div className="apparait hidden lg:block" style={rangDansLaCascade(5)}>{reperes}</div>
       </section>
 
       {rayons.length === 0 ? (
@@ -166,17 +189,18 @@ export default async function Accueil() {
       ) : (
         <>
           <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-3.5">
-            <h2 id="titre-categories" className="apparait text-xl font-bold sm:text-2xl" style={rangDansLaCascade(4)}>{a.rayons}</h2>
+            <h2 id="titre-categories" className="apparait text-xl font-bold sm:text-2xl" style={rangDansLaCascade(9)}>{a.rayons}</h2>
             {/* Des tuiles à icône, trois par ligne sur téléphone : tous les rayons tiennent sur un écran. */}
             <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-2.5 lg:grid-cols-6">
               {rayons.map(({ categorie, total }, i) => (
-                <li key={categorie.id} className="apparait" style={rangDansLaCascade(i + 4)}>
+                <li key={categorie.id} className="apparait" style={{ animationDelay: `${420 + i * 45}ms` }}>
                   {/* La tuile se soulève au survol et s'enfonce sous le doigt ; son icône suit. */}
                   <Link
                     href={lien(`/categorie/${categorie.slug}`)}
                     className="group flex h-full flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3.5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.96] sm:py-4"
                   >
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition duration-200 group-hover:scale-110 group-hover:bg-encre group-hover:text-white group-active:bg-encre group-active:text-white">
+                    {/* L'icône rebondit juste après l'arrivée de sa tuile. */}
+                    <span className="saute flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 transition duration-200 group-hover:scale-110 group-hover:bg-encre group-hover:text-white group-active:bg-encre group-active:text-white" style={{ animationDelay: `${640 + i * 45}ms` }}>
                       <IconeRayon slug={categorie.slug} className="h-[22px] w-[22px]" />
                     </span>
                     <span className="min-w-0">

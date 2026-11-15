@@ -14,6 +14,7 @@ export function LienPanier() {
   return (
     <Link
       href={lien("/panier")}
+      data-cible-panier="entete"
       className="relative inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-encre px-3 text-sm font-semibold text-white transition duration-150 hover:bg-slate-800 active:scale-95"
       aria-label={compter(langue, nombre, t.entete.panierAria)}
     >
@@ -40,10 +41,10 @@ export function BarrePanier() {
   if (nombre === 0 || chemin === "/panier" || chemin.startsWith("/suivi")) return null;
   return (
     // `monte` : la barre arrive par le bas quand le premier article entre au panier.
-    <aside aria-label={t.entete.panier} className="monte fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+    <aside aria-label={t.entete.panier} data-cible-panier="barre" className="monte fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
       <Link href={lien("/panier")} className="bouton w-full justify-between py-3.5">
         <span className="flex items-center gap-2.5">
-          <span key={nombre} className="saute flex h-6 min-w-6 items-center justify-center rounded-md bg-white/15 px-1.5 text-sm tabular-nums">{nombre}</span>
+          <span key={nombre} data-compteur className="saute flex h-6 min-w-6 items-center justify-center rounded-md bg-white/15 px-1.5 text-sm tabular-nums">{nombre}</span>
           {t.entete.voirLePanier}
         </span>
         <span key={sousTotal} className="change tabular-nums">{formatPrix(sousTotal, langue)}</span>

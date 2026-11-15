@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element -- photos venant du stockage (Supabase ou /uploads en local) */
 "use client";
 
 import Link from "next/link";
@@ -8,6 +7,7 @@ import { useTraduction } from "@/components/LangueProvider";
 import { LoaderCircle, Minus, Plus, ShoppingCart, Trash2, Zap } from "lucide-react";
 import { Apparition } from "@/components/Apparition";
 import { rangDansLaCascade } from "@/lib/cascade";
+import { Photo } from "@/components/Photo";
 import { calculerTotaux } from "@/lib/calcul";
 import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
 import { RecapMontants } from "@/components/RecapMontants";
@@ -240,7 +240,7 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
                   <div className={`min-h-0 ${sortant ? "overflow-hidden" : ""}`}>
                     {/* Les lignes arrivent l'une après l'autre à l'ouverture du panier. */}
                     <div className="apparait flex items-center gap-3 py-3 group-first/ligne:pt-0 group-last/ligne:pb-0" style={rangDansLaCascade(i)}>
-                      {a.photoUrl && <img src={a.photoUrl} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />}
+                      {a.photoUrl && <Photo src={a.photoUrl} className="h-14 w-14 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />}
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold leading-snug"><bdi>{a.nom}</bdi></p>
                         {a.optionsLibelle && <p className="truncate text-xs text-slate-500"><bdi>{a.optionsLibelle}</bdi></p>}

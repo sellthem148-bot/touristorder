@@ -87,6 +87,20 @@ dialog.fiche[open]::backdrop {
   from { transform: translateY(24px); opacity: 0; }
   to { transform: none; opacity: 1; }
 }
+/* Elle se referme comme elle s'est ouverte : elle redescend, le fond s'efface (components/FicheProduit.tsx
+   la ferme pour de bon juste avant la fin de l'animation). */
+dialog.fiche[data-se-ferme] {
+  animation: descendre 0.2s ease-in;
+}
+dialog.fiche[data-se-ferme]::backdrop {
+  animation: disparition 0.2s ease-in;
+}
+@keyframes descendre {
+  to { transform: translateY(28px); opacity: 0; }
+}
+@keyframes disparition {
+  to { opacity: 0; }
+}
 
 /*
  * Le mouvement du site (demande du gérant, 15 novembre 2026 : « c'est très plat »). Ce qui arrive à l'écran
@@ -179,9 +193,41 @@ header[data-defile] {
 header[data-defile="oui"] {
   box-shadow: 0 6px 20px rgb(0 0 0 / 0.07);
 }
-/* Dans un bloc en attente, les éléments en cascade attendent aussi : ils partiront avec lui. */
-.a-venir .apparait {
-  animation: none;
+/* Une photo d'article qui charge encore reste transparente, puis arrive en fondu (components/Photo.tsx :
+   l'état n'est posé que dans le navigateur). `venue` n'a pas d'arrivée : la photo retrouve sa propre opacité. */
+@keyframes venue {
+  from { opacity: 0; }
+}
+img.photo[data-chargee="attente"] {
+  opacity: 0;
+}
+img.photo[data-chargee="oui"] {
+  animation: venue 0.4s ease-out;
+}
+/* Dans une rangée qui défile de côté, les tuiles arrivent de côté : on voit qu'elle se fait défiler.
+   (Vers la gauche en hébreu, où la rangée continue de ce côté.) */
+@keyframes glissade {
+  from { opacity: 0; transform: translateX(34px); }
+}
+@keyframes glissade-rtl {
+  from { opacity: 0; transform: translateX(-34px); }
+}
+.rail .apparait {
+  animation-name: glissade;
+}
+[dir="rtl"] .rail .apparait {
+  animation-name: glissade-rtl;
+}
+/* Une tuile d'une longue liste, qui arrive pendant qu'on fait défiler : plus vite qu'à l'ouverture de la page. */
+.apparait.vite {
+  animation-duration: 0.32s;
+}
+/* Dans un bloc en attente, les éléments en cascade attendent aussi : ils partiront avec lui. De même une
+   tuile en attente dans une longue liste (`GrilleProduits`). `!important` : plus fort que les règles
+   ci-dessus, quelle que soit leur précision. */
+.a-venir .apparait,
+.a-venir.apparait {
+  animation: none !important;
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -202,6 +248,9 @@ header[data-defile="oui"] {
   .a-venir {
     opacity: 1 !important;
     transform: none !important;
+  }
+  img.photo[data-chargee="attente"] {
+    opacity: 1 !important;
   }
 }
 

@@ -42,7 +42,7 @@ export default async function PageRecherche({ searchParams }: PageProps<"/recher
           <Link href={lien(`/panier?demande=${encodeURIComponent(q.slice(0, 200))}`)} className="bouton">{r.demander}</Link>
         </div>
       ) : (
-        <GrilleProduits produits={produits} />
+        <GrilleProduits produits={produits} auDefilement />
       )}
     </div>
   );

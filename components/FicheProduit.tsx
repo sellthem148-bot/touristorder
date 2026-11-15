@@ -13,6 +13,8 @@ import { useTraduction } from "./LangueProvider";
 import { LOCALE, remplir } from "@/lib/langues";
 import { nomDuRayon } from "@/lib/i18n/rayons";
 import { rangDansLaCascade } from "@/lib/cascade";
+import { envolVersLePanier } from "@/lib/envol";
+import { Photo } from "./Photo";
 
 /** La fiche d'un produit : la photo s'il y en a une, la description, le choix des options, la quantité. */
 export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; fermer: () => void }) {
@@ -21,6 +23,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
   const { langue, t } = useTraduction();
   const [selection, setSelection] = useState<Selection>({});
   const [quantite, setQuantite] = useState(1);
+  const [seFerme, setSeFerme] = useState(false);
 
   useEffect(() => {
     const d = ref.current;
@@ -31,8 +34,24 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
   const manquants = produit.options.filter((g) => !selection[g.nom]).map((g) => (g.affiche ?? g.nom).toLocaleLowerCase(LOCALE[langue]));
   const prixUnitaire = produit.prix + (choix.ok ? choix.supplement : 0);
 
+  // La fiche redescend avant de se fermer (règles `dialog.fiche[data-se-ferme]` de app/globals.css) ;
+  // elle se ferme tout de suite pour qui a demandé moins d'animations.
+  function fermerEnDouceur(ensuite?: () => void) {
+    const d = ref.current;
+    if (!d || seFerme) return;
+    const finir = () => {
+      if (d.open) d.close();
+      ensuite?.();
+    };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return finir();
+    setSeFerme(true);
+    window.setTimeout(finir, 180);
+  }
+
   function ajouter() {
     if (!choix.ok || produit.epuise) return;
+    // L'article partira de sa photo (sinon du haut de la fiche) vers le panier, une fois la fiche refermée.
+    const depart = (ref.current?.querySelector("img") ?? ref.current?.querySelector("h2"))?.getBoundingClientRect();
     panier.ajouter(
       {
         produitId: produit.id,
@@ -46,17 +65,23 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
       },
       quantite,
     );
-    ref.current?.close();
+    fermerEnDouceur(() => envolVersLePanier(depart, produit.photoUrl));
   }
 
   return (
     <dialog
       ref={ref}
       onClose={fermer}
+      // La touche Échap : la fiche se referme en douceur, comme par son bouton.
+      onCancel={(e) => {
+        e.preventDefault();
+        fermerEnDouceur();
+      }}
       onClick={(e) => {
         // Un toucher sur le fond (hors de la fiche) la ferme.
-        if (e.target === ref.current) ref.current?.close();
+        if (e.target === ref.current) fermerEnDouceur();
       }}
+      data-se-ferme={seFerme ? "" : undefined}
       aria-labelledby={`fiche-${produit.id}`}
       className="fiche mx-0 mb-0 mt-auto max-h-[92dvh] w-full max-w-full overflow-y-auto rounded-t-3xl bg-white p-0 text-encre sm:m-auto sm:max-w-lg sm:rounded-3xl"
     >
@@ -64,7 +89,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
       <div className="sticky top-0 z-10 h-0">
         <button
           type="button"
-          onClick={() => ref.current?.close()}
+          onClick={() => fermerEnDouceur()}
           className="absolute end-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition duration-150 hover:bg-slate-50 active:scale-90"
           aria-label={t.commun.fermer}
           autoFocus
@@ -73,7 +98,7 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
         </button>
       </div>
       {produit.photoUrl && (
-        <img src={produit.photoUrl} alt={produit.nom} className="en-fondu aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
+        <Photo src={produit.photoUrl} alt={produit.nom} paresseuse={false} className="en-fondu aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
       )}
 
       <div className="space-y-5 p-5">
@@ -140,7 +165,8 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
               </button>
             </div>
             <button type="button" onClick={ajouter} disabled={!choix.ok} className="bouton flex-1 py-3.5">
-              {choix.ok ? remplir(t.produit.ajouter, { prix: formatPrix(prixUnitaire * quantite, langue) }) : remplir(t.produit.choisissez, { options: manquants.join(", ") })}
+              {/* Le prix du bouton suit la quantité et les options : il revient en fondu à chaque changement. */}
+              {choix.ok ? <span key={prixUnitaire * quantite} className="change inline-block">{remplir(t.produit.ajouter, { prix: formatPrix(prixUnitaire * quantite, langue) })}</span> : remplir(t.produit.choisissez, { options: manquants.join(", ") })}
             </button>
           </div>
         )}

@@ -1,7 +1,6 @@
-/* eslint-disable @next/next/no-img-element -- photos venant du stockage (Supabase ou /uploads en local) */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Minus, Plus } from "lucide-react";
 import type { ProduitPublic } from "@/lib/catalogue";
 import { usePanier } from "./panier/PanierProvider";
@@ -12,6 +11,8 @@ import { RangeeQuiDefile } from "./Rangee";
 import { photosDAbord } from "@/lib/sous-rayons";
 import { remplir } from "@/lib/langues";
 import { rangDansLaCascade } from "@/lib/cascade";
+import { envolVersLePanier } from "@/lib/envol";
+import { Photo } from "./Photo";
 
 // Le bouton posé dans le coin haut GAUCHE de la photo, dans toutes les langues (décision du gérant : en
 // hébreu aussi, comme sur Wolt). Arrondi comme la photo côté coin, et à l'opposé : la forme de Wolt.
@@ -57,7 +58,10 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
         </span>
         <button
           type="button"
-          onClick={() => panier.ajouter(articleSansOptions(produit))}
+          onClick={(e) => {
+            panier.ajouter(articleSansOptions(produit));
+            envolVersLePanier(e.currentTarget.getBoundingClientRect(), produit.photoUrl);
+          }}
           className={`flex h-9 items-center justify-center transition-colors hover:bg-white/10 active:bg-white/25 ${surPhoto ? `w-8 ${COIN}` : "w-9 rounded-xl"}`}
           aria-label={remplir(t.produit.ajouterUn, { nom: produit.nom })}
         >
@@ -71,7 +75,12 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
   return (
     <button
       type="button"
-      onClick={() => (avecOptions ? ouvrir() : panier.ajouter(articleSansOptions(produit)))}
+      onClick={(e) => {
+        if (avecOptions) return ouvrir();
+        panier.ajouter(articleSansOptions(produit));
+        // L'article file vers le panier : on voit où il est allé.
+        envolVersLePanier(e.currentTarget.getBoundingClientRect(), produit.photoUrl);
+      }}
       className={
         surPhoto
           ? `flex h-9 min-w-9 items-center justify-center bg-encre px-2 text-sm font-bold tabular-nums text-white transition duration-150 hover:bg-encre/90 active:scale-90 ${COIN}`
@@ -107,10 +116,8 @@ export function CarteProduit({ produit, sansBadge = false, rang }: { produit: Pr
     >
       {produit.photoUrl && (
         <div className="relative overflow-hidden rounded-t-2xl">
-          <img
+          <Photo
             src={produit.photoUrl}
-            alt=""
-            loading="lazy"
             className={`aspect-[4/3] w-full border-b border-slate-100 bg-white object-contain p-2 transition-transform duration-300 group-hover/tuile:scale-[1.05] ${produit.epuise ? "opacity-50 grayscale" : ""}`}
           />
           {/* Le « + » en haut à gauche de la photo, quelle que soit la langue : la seule position qui ne se retourne pas en hébreu. */}
@@ -150,17 +157,64 @@ export function CarteProduit({ produit, sansBadge = false, rang }: { produit: Pr
 }
 
 /**
+ * Dans une longue liste (un sous-rayon entier, une recherche), les tuiles plus bas dans la page arrivent
+ * rangée par rangée quand on y descend — comme les blocs d'`Apparition`, avec un seul observateur pour
+ * toute la grille. Mêmes règles : seule une tuile encore SOUS l'écran est mise en attente, par le navigateur ;
+ * rien pour qui a demandé moins d'animations ; et tout est rendu visible si la grille est démontée.
+ */
+function useTuilesAuDefilement(actif: boolean, produits: ProduitPublic[]) {
+  const grille = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = grille.current;
+    if (!actif || !el || typeof IntersectionObserver === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const enAttente = Array.from(el.children).filter((t): t is HTMLElement => t instanceof HTMLElement && t.getBoundingClientRect().top >= window.innerHeight);
+    if (enAttente.length === 0) return;
+    const versLaGauche = getComputedStyle(el).direction === "rtl";
+    for (const t of enAttente) t.classList.add("a-venir");
+    const observateur = new IntersectionObserver(
+      (entrees) => {
+        // Les tuiles d'une même rangée arrivent ensemble : elles partent dans l'ordre de lecture, à un
+        // instant d'écart. Vite (`vite`), et dès que la tuile touche le bas de l'écran : en faisant défiler
+        // d'un coup de pouce, on ne doit jamais attendre devant un écran vide.
+        const arrivent = entrees.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement);
+        arrivent.sort((a, b) => a.offsetTop - b.offsetTop || (versLaGauche ? b.offsetLeft - a.offsetLeft : a.offsetLeft - b.offsetLeft));
+        let rangee = Number.NaN;
+        let place = 0;
+        for (const t of arrivent) {
+          place = t.offsetTop === rangee ? place + 1 : 0;
+          rangee = t.offsetTop;
+          observateur.unobserve(t);
+          t.style.setProperty("--i", String(place));
+          t.classList.remove("a-venir");
+          t.classList.add("apparait", "vite");
+        }
+      },
+      { rootMargin: "0px" },
+    );
+    for (const t of enAttente) observateur.observe(t);
+    return () => {
+      observateur.disconnect();
+      for (const t of enAttente) t.classList.remove("a-venir");
+    };
+  }, [actif, produits]);
+  return grille;
+}
+
+/**
  * Une grille de tuiles : deux par ligne sur téléphone, jusqu'à cinq sur grand écran.
  * - `sansBadge` : dans une sélection où tous les articles portent la même étiquette (« Les plus demandés ») ;
  * - `etroite` : à côté de la colonne des rayons, une colonne de moins ;
- * - `apercu` : pour l'aperçu d'un sous-rayon — deux lignes entières, jamais une ligne à moitié vide.
+ * - `apercu` : pour l'aperçu d'un sous-rayon — deux lignes entières, jamais une ligne à moitié vide ;
+ * - `auDefilement` : pour une longue liste — les tuiles plus bas arrivent quand on y descend.
  */
-export function GrilleProduits({ produits, sansBadge = false, etroite = false, apercu = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean; apercu?: boolean }) {
+export function GrilleProduits({ produits, sansBadge = false, etroite = false, apercu = false, auDefilement = false }: { produits: ProduitPublic[]; sansBadge?: boolean; etroite?: boolean; apercu?: boolean; auDefilement?: boolean }) {
+  const grille = useTuilesAuDefilement(auDefilement, produits);
   const colonnes = etroite ? "grid-cols-2 sm:grid-cols-3 xl:grid-cols-4" : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5";
   // L'aperçu reçoit huit articles : six affichés sur deux ou trois colonnes, huit sur quatre — toujours des lignes entières.
   const coupe = apercu ? (etroite ? "max-xl:[&>*:nth-child(n+7)]:hidden" : "max-lg:[&>*:nth-child(n+7)]:hidden xl:[&>*:nth-child(n+6)]:hidden") : "";
   return (
-    <div className={`grid gap-2.5 ${colonnes} ${coupe}`}>
+    <div ref={grille} className={`grid gap-2.5 ${colonnes} ${coupe}`}>
       {photosDAbord(produits).map((p, i) => (
         <CarteProduit key={p.id} produit={p} sansBadge={sansBadge} rang={i} />
       ))}
