@@ -16,6 +16,17 @@ export const DOSSIER_PHOTOS_FRAIS = "/produits/frais";
 /** Les licences acceptées : domaine public, CC0, CC BY et CC BY-SA (attribution sur /credits). Jamais la GFDL seule. */
 export const LICENCES_ACCEPTEES = /^(CC0|Domaine public|CC BY(-SA)? \d\.\d)$/;
 
+/**
+ * La bannière de l'accueil (`public/accueil/banniere.jpg`) : une mosaïque de douze de ces photos, choisies
+ * parmi celles du DOMAINE PUBLIC ou sous CC0 seulement — une image composée à partir d'elles ne demande ni
+ * attribution ni partage à l'identique (tests/refonte-wolt.test.ts). La refaire : mêmes fichiers, 300 px
+ * chacun, six par rang sur deux rangs.
+ */
+export const SOURCES_DE_LA_BANNIERE = [
+  "tomates.jpg", "avocats-coupes.jpg", "myrtilles.jpg", "pommes-pink.jpg", "raisin-blanc.jpg", "courgettes.jpg",
+  "pommes-granny.jpg", "tomates-cerises.jpg", "laitue.jpg", "oeufs.jpg", "avocats.jpg", "persil.jpg",
+];
+
 export const CREDITS_PHOTOS: CreditPhoto[] = [
   { fichier: "ail.jpg", sujet: "Ail", auteur: "Dubravko Sorić SoraZG on Flickr", licence: "CC BY 2.0", lienLicence: "https://creativecommons.org/licenses/by/2.0", source: "https://commons.wikimedia.org/wiki/File:Opened_garlic_bulb_with_garlic_clove.jpg" },
   { fichier: "ail-epluche.jpg", sujet: "Ail épluché", auteur: "Fumikas Sagisavas", licence: "CC0", lienLicence: "https://creativecommons.org/publicdomain/zero/1.0/", source: "https://commons.wikimedia.org/wiki/File:Peeled_garlic_cloves.jpg" },

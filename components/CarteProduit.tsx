@@ -13,10 +13,12 @@ import { remplir } from "@/lib/langues";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { envolVersLePanier } from "@/lib/envol";
 import { Photo } from "./Photo";
+import { IconeRayon } from "./IconeRayon";
+import { couleurDuRayon } from "@/lib/couleurs-rayons";
 
 // Le bouton posé dans le coin haut GAUCHE de la photo, dans toutes les langues (décision du gérant : en
 // hébreu aussi, comme sur Wolt). Arrondi comme la photo côté coin, et à l'opposé : la forme de Wolt.
-const COIN = "rounded-tl-2xl rounded-br-xl";
+const COIN = "rounded-br-xl";
 
 // Les premières tuiles d'une grille ou d'une rangée arrivent l'une après l'autre ; les suivantes, plus bas
 // dans la page, sont simplement là (animer des centaines de tuiles à la fois ferait peiner un téléphone).
@@ -95,11 +97,10 @@ function BoutonRapide({ produit, ouvrir, surPhoto = false }: { produit: ProduitP
 }
 
 /**
- * Un article, présenté comme une tuile (deux par ligne sur téléphone, comme sur Wolt ou Uber Eats) : la photo
- * en haut quand il y en a une, puis le nom, le format, le prix. Toute la tuile ouvre la fiche ; le bouton
- * ajoute au panier.
- * Avec une photo : elle porte le bouton « + » dans son coin haut gauche — en hébreu aussi, comme sur Wolt.
- * Sans photo : pas d'image de remplacement, la tuile est plus basse et le bouton est en bas, côté fin.
+ * Un article, présenté comme une carte de Wolt (demande du gérant, 16 novembre 2026 : « fais-moi le même site
+ * que Wolt ») : une zone d'image en haut, le « + » dans son coin haut gauche — en hébreu aussi —, puis le prix,
+ * le nom et le format. Toute la carte ouvre la fiche ; le bouton ajoute au panier.
+ * Toutes les cartes ont la même forme : sans photo, la zone d'image porte l'icône du rayon sur sa couleur.
  */
 export function CarteProduit({ produit, sansBadge = false, rang }: { produit: ProduitPublic; sansBadge?: boolean; rang?: number }) {
   const [ouvert, setOuvert] = useState(false);
@@ -108,47 +109,49 @@ export function CarteProduit({ produit, sansBadge = false, rang }: { produit: Pr
   const enCascade = rang !== undefined && rang < EN_CASCADE;
 
   return (
-    // La tuile répond : elle se soulève au survol (ordinateur) et s'enfonce un peu sous le doigt.
+    // La carte, comme sur Wolt : blanche, sans trait, détachée du fond par une ombre légère. Elle se soulève au
+    // survol (ordinateur) et s'enfonce un peu sous le doigt.
     <article
-      className={`group/tuile relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.985] ${enCascade ? "apparait" : ""} ${produit.epuise ? "bg-slate-50" : ""}`}
+      className={`group/tuile relative flex h-full flex-col overflow-hidden rounded-xl bg-white shadow-(--shadow-tuile) transition duration-200 hover:-translate-y-0.5 hover:shadow-(--shadow-tuile-survol) active:scale-[0.985] ${enCascade ? "apparait" : ""}`}
       style={enCascade ? rangDansLaCascade(rang) : undefined}
     >
-      {produit.photoUrl && (
-        <div className="relative overflow-hidden rounded-t-2xl">
+      {/* La zone d'image, la même sur toutes les cartes : la photo de l'article ; sinon l'icône de son rayon sur
+          sa couleur — elle ne prétend pas montrer l'article, mais les cartes gardent toutes la même forme. */}
+      <div className="relative">
+        {produit.photoUrl ? (
           <Photo
             src={produit.photoUrl}
-            className={`aspect-[4/3] w-full border-b border-slate-100 bg-white object-contain p-2 transition-transform duration-300 group-hover/tuile:scale-[1.05] ${produit.epuise ? "opacity-50 grayscale" : ""}`}
+            className={`aspect-[4/3] w-full bg-white object-contain p-2 transition-transform duration-300 group-hover/tuile:scale-[1.05] ${produit.epuise ? "opacity-50 grayscale" : ""}`}
           />
-          {/* Le « + » en haut à gauche de la photo, quelle que soit la langue : la seule position qui ne se retourne pas en hébreu. */}
-          <div className="absolute left-0 top-0 z-10">
-            <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} surPhoto />
+        ) : (
+          <div data-sans-photo aria-hidden="true" className={`flex aspect-[4/3] w-full items-center justify-center ${couleurDuRayon(produit.categorie.slug).zone} ${produit.epuise ? "opacity-60 grayscale" : ""}`}>
+            <IconeRayon slug={produit.categorie.slug} className="h-11 w-11 transition-transform duration-300 group-hover/tuile:scale-110 sm:h-12 sm:w-12" />
           </div>
+        )}
+        {/* Le « + » en haut à gauche, quelle que soit la langue : la seule position qui ne se retourne pas en hébreu. */}
+        <div className="absolute left-0 top-0 z-10">
+          <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} surPhoto />
         </div>
-      )}
-      <div className="flex min-w-0 flex-1 flex-col p-3">
+        {/* Les étiquettes, en bas à droite de l'image : le « − 1 + », qui se déplie depuis le coin haut gauche,
+            ne passe jamais dessus (une carte de téléphone est étroite). */}
         {((produit.badge && !sansBadge) || produit.epuise) && (
-          <p className="mb-1 flex flex-wrap gap-1">
+          <p className="pointer-events-none absolute bottom-1.5 right-1.5 flex max-w-[80%] flex-wrap justify-end gap-1">
             {!sansBadge && <PastilleBadge badge={produit.badge} libelle={produit.badge ? t.produit.badges[produit.badge] : undefined} />}
             {produit.epuise && <span className="inline-block rounded-md bg-slate-200 px-1.5 py-0.5 text-[10.5px] font-semibold uppercase leading-4 tracking-wide text-slate-700">{t.produit.epuise}</span>}
           </p>
         )}
-        <h3 className={`text-sm font-semibold leading-snug ${produit.epuise ? "text-slate-500" : "text-encre"}`}>
-          {/* Le bouton s'étend à toute la tuile (after:inset-0). */}
-          <button type="button" onClick={() => setOuvert(true)} className="line-clamp-3 text-start after:absolute after:inset-0 after:rounded-2xl" aria-label={remplir(t.produit.voir, { nom: produit.nom })}>
+      </div>
+      {/* Sous l'image, dans l'ordre de Wolt : le prix, le nom, puis le format tout en bas. */}
+      <div className="flex min-w-0 flex-1 flex-col px-3 pb-3 pt-2.5">
+        <Prix prix={produit.prix} prixBarre={produit.prixBarre} etiquette langue={langue} auLieuDe={t.produit.auLieuDe} />
+        <h3 className={`mt-1 text-sm font-semibold leading-snug ${produit.epuise ? "text-slate-500" : "text-encre"}`}>
+          {/* Le bouton s'étend à toute la carte (after:inset-0). */}
+          <button type="button" onClick={() => setOuvert(true)} className="line-clamp-2 text-start after:absolute after:inset-0 after:rounded-xl" aria-label={remplir(t.produit.voir, { nom: produit.nom })}>
             {/* <bdi> : un nom en français garde son ordre dans une page en hébreu. */}
             <bdi>{produit.nom}</bdi>
           </button>
         </h3>
-        {detail && <p className="mt-0.5 line-clamp-1 text-xs text-slate-500"><bdi>{detail}</bdi></p>}
-        {/* Sur un écran étroit, « − 1 + » passe sous le prix plutôt que de sortir de la tuile. */}
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-2 gap-y-1.5 pt-2.5">
-          <Prix prix={produit.prix} prixBarre={produit.prixBarre} etiquette langue={langue} auLieuDe={t.produit.auLieuDe} />
-          {!produit.photoUrl && (
-            <div className="relative z-10 ms-auto">
-              <BoutonRapide produit={produit} ouvrir={() => setOuvert(true)} />
-            </div>
-          )}
-        </div>
+        {detail && <p className="mt-auto line-clamp-1 pt-2 text-xs text-slate-500"><bdi>{detail}</bdi></p>}
       </div>
       {ouvert && <FicheProduit produit={produit} fermer={() => setOuvert(false)} />}
     </article>

@@ -4,15 +4,17 @@ import type { Langue } from "@/lib/langues";
 
 /**
  * Le prix d'un article. Sans `langue` ni `auLieuDe` : en français (l'espace gérant).
- * `etiquette` (côté client) : le prix dans une petite étiquette au jaune du logo — rose pour une promotion.
+ * `etiquette` (côté client), comme sur Wolt : le prix en bleu, sans fond ; une PROMOTION est dans une étiquette
+ * au jaune du logo, l'ancien prix barré à côté.
  */
 export function Prix({
   prix, prixBarre, grand = false, etiquette = false, langue = "fr", auLieuDe = "au lieu de ",
 }: { prix: number; prixBarre: number | null; grand?: boolean; etiquette?: boolean; langue?: Langue; auLieuDe?: string }) {
-  const fond = !etiquette ? "" : `${grand ? "rounded-xl px-2.5 py-1" : "rounded-lg px-2 py-0.5"} ${prixBarre ? "bg-rose-100" : "bg-soleil/25"}`;
+  const promotion = etiquette && prixBarre ? `bg-soleil text-encre ${grand ? "rounded-xl px-2.5 py-1" : "rounded-md px-1.5 py-0.5"}` : "";
+  const couleur = promotion ? "" : etiquette ? "text-marque" : prixBarre ? "text-rose-700" : "text-encre";
   return (
     <p className="flex flex-wrap items-baseline gap-x-2 tabular-nums">
-      <span className={`font-bold ${fond} ${prixBarre ? "text-rose-700" : "text-encre"} ${grand ? "text-2xl" : "text-[15px]"}`}>
+      <span className={`font-bold ${promotion} ${couleur} ${grand ? "text-2xl" : "text-[15px]"}`}>
         {formatPrix(prix, langue)}
       </span>
       {prixBarre && (

@@ -149,9 +149,18 @@ try {
   if (OUT) await ordi.screenshot({ path: `${OUT}/rayons-3-ordinateur.png` });
   // L'accueil sur ordinateur : les flèches d'une rangée
   await ordi.goto(BASE + "/", { waitUntil: "networkidle" });
-  // La rangée d'un rayon tombe juste : six tuiles entières, aucune coupée au bord, rien à faire défiler.
-  const justes = await ordi.locator("section[aria-labelledby^=rangee-] .rail").evaluateAll((l) => l.map((el) => ({ tuiles: el.querySelectorAll("article").length, defile: el.scrollWidth > el.clientWidth + 1 })));
-  verifier(justes.length >= 5 && justes.every((r) => r.tuiles <= 6 && !r.defile), "ordinateur : la rangée d'un rayon montre six tuiles entières au plus, sans tuile coupée");
+  // Comme sur Wolt, la colonne des rayons est à côté du catalogue : une rangée tombe juste sur QUATRE tuiles
+  // entières, aucune coupée au bord (la suite, s'il y en a, est derrière la flèche).
+  verifier(await ordi.locator("#rayons").evaluate((el) => getComputedStyle(el).position === "sticky" && el.getBoundingClientRect().width < 260), "ordinateur · accueil : les rayons sont une colonne, qui reste à l'écran");
+  const justes = await ordi.locator("section[aria-labelledby^=rangee-] .rail").evaluateAll((l) => l.map((el) => {
+    const cadre = el.getBoundingClientRect();
+    const etats = [...el.querySelectorAll("article")].map((a) => {
+      const r = a.getBoundingClientRect();
+      return r.left >= cadre.left - 1 && r.right <= cadre.right + 1 ? "entiere" : r.left >= cadre.right - 1 || r.right <= cadre.left + 1 ? "dehors" : "coupee";
+    });
+    return { tuiles: etats.length, entieres: etats.filter((e) => e === "entiere").length, coupees: etats.filter((e) => e === "coupee").length };
+  }));
+  verifier(justes.length >= 5 && justes.every((r) => r.tuiles <= 6 && r.coupees === 0 && r.entieres === Math.min(4, r.tuiles)), "ordinateur : la rangée d'un rayon montre quatre tuiles entières, sans tuile coupée au bord");
   // « Les plus demandés » en montre davantage : une flèche, toujours visible, mène à la suite.
   const rangeeOrdi = ordi.locator("section[aria-labelledby=titre-populaires]");
   const flecheSuite = rangeeOrdi.locator("button[aria-hidden=true]").last();

@@ -4,6 +4,7 @@ import { RailProduits } from "@/components/CarteProduit";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { Apparition } from "@/components/Apparition";
 import { IconeRayon } from "@/components/IconeRayon";
+import { Sigle } from "@/components/Sigle";
 import { couleurDuRayon } from "@/lib/couleurs-rayons";
 import { misEnAvant, vitrine } from "@/lib/catalogue";
 import { libelleDuMode, nomDuRayon } from "@/lib/i18n/rayons";
@@ -117,18 +118,16 @@ export default async function Accueil() {
     precision: reglages.paiements.length > 0 ? reglages.paiements.map((m) => libelleDuMode(m, t)).join(", ") : undefined,
   });
 
-  // Les repères de la livraison : à côté du titre sur grand écran, sous le catalogue sur téléphone
-  // (où les rayons passent d'abord, comme sur Wolt ou Uber Eats).
+  // Le détail de la livraison (horaires, frais, paiement, villes) : plus bas dans la page. En haut, la bande
+  // d'informations sous la bannière en donne l'essentiel, comme sur la page d'une boutique de Wolt.
   const reperes = (
-    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200">
+    <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-slate-200 shadow-(--shadow-tuile) lg:grid-cols-4">
       {faits.map((f, i) => (
-        <div key={f.titre} className={`flex flex-col gap-2 bg-white p-3.5 sm:flex-row sm:gap-3 sm:p-4 ${faits.length % 2 === 1 && i === faits.length - 1 ? "col-span-2" : ""}`}>
-          {/* L'icône dans une pastille au jaune du logo : la seule couleur de ce bloc. */}
-          <span className={`apparait relative ${PASTILLE_SOLEIL}`} style={rangDansLaCascade(i * 2 + 4)}>
+        <div key={f.titre} className={`flex flex-col gap-2 bg-white p-3.5 sm:flex-row sm:gap-3 sm:p-4 ${faits.length % 2 === 1 && i === faits.length - 1 ? "col-span-2 lg:col-span-1" : ""}`}>
+          <span className={PASTILLE_SOLEIL}>
             <f.icone className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" />
-            {f.enDirect && <PointOuvert />}
           </span>
-          <div className="apparait min-w-0" style={rangDansLaCascade(i * 2 + 5)}>
+          <div className="min-w-0">
             <dt className="text-[13px] text-slate-500">{f.titre}</dt>
             <dd className="font-semibold leading-snug">{f.valeur}</dd>
             {f.precision && <dd className="mt-0.5 text-[13px] leading-snug text-slate-500">{f.precision}</dd>}
@@ -136,7 +135,7 @@ export default async function Accueil() {
         </div>
       ))}
       {villes.length > 0 && (
-        <div className="col-span-2 flex gap-3 bg-white p-3.5 sm:p-4">
+        <div className="col-span-2 flex gap-3 bg-white p-3.5 sm:p-4 lg:col-span-4">
           <span className={PASTILLE_SOLEIL}><MapPin className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" /></span>
           <div className="min-w-0">
             <dt className="text-[13px] text-slate-500">{compter(langue, villes.length, a.villesLivrees)}</dt>
@@ -150,124 +149,158 @@ export default async function Accueil() {
   const rangees = rayons.filter((r) => r.produits.length >= 4);
 
   return (
-    <div className="space-y-11 sm:space-y-14">
+    <div className="space-y-7 sm:space-y-9">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: donneesStructurees(langue, ts.meta.description) }} />
-      <section className="grid gap-6 pt-1 sm:pt-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-start lg:gap-12">
-        <div className="space-y-3.5 sm:space-y-5">
-          {/* Le haut de page arrive ligne après ligne (`apparait`, dans l'ordre de `--i`). */}
-          <p className="surtitre apparait nuit:text-slate-400">{a.surtitre}</p>
-          {/* Le titre arrive mot à mot (chaque mot est un bloc qui monte ; le texte lu reste le même). */}
-          <h1 className="text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] nuit:text-white sm:text-5xl sm:leading-[1.08]">
-            {a.titre.split(" ").map((mot, i) => (
-              <Fragment key={i}>
-                <span className="apparait inline-block" style={{ animationDelay: `${70 + i * 55}ms` }}>{mot}</span>{" "}
-              </Fragment>
-            ))}
-          </h1>
-          {messageAccueil && <p className="apparait max-w-xl text-pretty text-[15px] text-slate-600 nuit:text-slate-300 sm:text-lg" style={rangDansLaCascade(6)}>{messageAccueil}</p>}
-          {!reglages.ouvert && (
-            <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-              {a.ferme}
+
+      {/* La bannière de la boutique, comme sur la page d'une boutique de Wolt (demande du gérant, 16 novembre 2026 :
+          « fais-moi le même site que Wolt ») : une image de produits frais, le sigle et le nom, puis le titre.
+          D'un bord à l'autre de l'écran jusqu'à la largeur de la page ; au-delà, une carte aux coins arrondis.
+          Le fond encre est sous l'image : le texte blanc se lit même avant qu'elle n'arrive. */}
+      <div>
+        <section data-banniere className="relative -mx-4 -mt-5 overflow-hidden bg-encre text-white sm:-mt-8 xl:mx-0 xl:mt-0 xl:rounded-t-3xl">
+          {/* eslint-disable-next-line @next/next/no-img-element -- une image du site, déjà à la bonne taille */}
+          <img src="/accueil/banniere.jpg" alt="" width={1800} height={600} className="absolute inset-0 h-full w-full object-cover" />
+          <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-encre from-5% via-encre/80 via-45% to-encre/30" />
+          <div className="relative flex min-h-[17.5rem] flex-col justify-end gap-2.5 px-4 pb-5 pt-12 sm:min-h-[21rem] sm:gap-3.5 sm:px-8 sm:pb-8">
+            {/* Le haut de page arrive ligne après ligne (`apparait`, dans l'ordre de `--i`). */}
+            <p className="apparait flex items-center gap-3">
+              <span className="shrink-0 overflow-hidden rounded-[14px] shadow-lg ring-1 ring-white/25"><Sigle taille={52} clair /></span>
+              <span className="min-w-0">
+                <span className="block text-lg font-bold leading-tight sm:text-xl">{NOM_DU_SITE}</span>
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.08em] text-white/75 sm:text-xs">{a.surtitre}</span>
+              </span>
             </p>
+            {/* Le titre arrive mot à mot (chaque mot est un bloc qui monte ; le texte lu reste le même). */}
+            <h1 className="max-w-3xl text-balance text-[1.7rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-5xl sm:leading-[1.08]">
+              {a.titre.split(" ").map((mot, i) => (
+                <Fragment key={i}>
+                  <span className="apparait inline-block" style={{ animationDelay: `${70 + i * 55}ms` }}>{mot}</span>{" "}
+                </Fragment>
+              ))}
+            </h1>
+            {messageAccueil && <p className="apparait max-w-2xl text-pretty text-[15px] text-white/85 sm:text-lg" style={rangDansLaCascade(6)}>{messageAccueil}</p>}
+          </div>
+        </section>
+
+        {/* La bande d'informations, collée sous la bannière : l'essentiel de la livraison d'un coup d'œil. */}
+        <ul data-infos className="clair -mx-4 grid grid-cols-2 gap-x-4 gap-y-3 border-b border-slate-200 bg-white px-4 py-3.5 text-sm sm:flex sm:flex-wrap sm:items-center sm:gap-x-7 sm:px-8 xl:mx-0 xl:rounded-b-3xl xl:border-b-0 xl:shadow-(--shadow-tuile)">
+          {faits.map((f, i) => (
+            <li key={f.titre} className="apparait flex min-w-0 items-center gap-2.5" style={rangDansLaCascade(i + 7)}>
+              <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soleil/20 text-amber-900">
+                <f.icone className="h-[18px] w-[18px]" strokeWidth={1.7} aria-hidden="true" />
+                {f.enDirect && <PointOuvert />}
+              </span>
+              <span className="min-w-0 leading-tight">
+                <span className="block truncate text-[11px] text-slate-500 sm:text-xs">{f.titre}</span>
+                <span className="block text-[13px] font-semibold sm:text-sm">{f.valeur}</span>
+              </span>
+            </li>
+          ))}
+          {villes.length > 0 && (
+            <li className="apparait col-span-2 sm:ms-auto" style={rangDansLaCascade(faits.length + 7)}>
+              <a href="#livraison" className="inline-flex items-center gap-1.5 rounded-full bg-marque-clair px-3.5 py-1.5 text-[13px] font-semibold text-marque-fonce transition hover:bg-marque/15">
+                <MapPin className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
+                {compter(langue, villes.length, a.villesLivrees)}
+              </a>
+            </li>
           )}
-          {/* Sur téléphone : l'essentiel de la livraison en deux pastilles ; le détail est plus bas. */}
-          <ul className="apparait flex flex-wrap gap-2 lg:hidden" style={rangDansLaCascade(8)}>
-            {faits.slice(amplitude ? 1 : 0, amplitude ? 3 : 2).map((f) => (
-              <li key={f.titre} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[13px] font-semibold">
-                <span className="relative h-4 w-4 shrink-0">
-                  <f.icone className="h-4 w-4 text-amber-700" strokeWidth={1.7} aria-hidden="true" />
-                  {f.enDirect && <PointOuvert />}
-                </span>
-                <span className="sr-only">{f.titre} : </span>{f.valeur}
-              </li>
-            ))}
-          </ul>
-          {rayons.length > 0 && (
-            <div className="apparait hidden flex-wrap gap-2.5 pt-1 lg:flex" style={rangDansLaCascade(8)}>
-              {/* Sur le fond sombre : le bouton d'action au jaune du logo, l'autre en simple contour. */}
-              <a href="#rayons" className="bouton px-5 nuit:bg-soleil nuit:text-encre nuit:hover:bg-soleil/90">{a.voirRayons}</a>
-              <a href="#etapes" className="bouton-secondaire px-5 nuit:border-white/25 nuit:bg-transparent nuit:text-white nuit:hover:border-white/50 nuit:hover:bg-white/10">{a.commentCaMarche}</a>
-            </div>
-          )}
-        </div>
-        <div className="apparait hidden lg:block" style={rangDansLaCascade(5)}>{reperes}</div>
-      </section>
+        </ul>
+      </div>
+
+      {!reglages.ouvert && (
+        <p className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+          {a.ferme}
+        </p>
+      )}
 
       {rayons.length === 0 ? (
         <p className="carte p-8 text-center text-slate-600">{a.catalogueBientot}</p>
       ) : (
         <>
-          <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-3.5">
-            <h2 id="titre-categories" className="apparait text-xl font-bold nuit:text-white sm:text-2xl" style={rangDansLaCascade(9)}>{a.rayons}</h2>
-            {/* Des tuiles à icône, trois par ligne sur téléphone : tous les rayons tiennent sur un écran. */}
-            <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
-              {rayons.map(({ categorie, total }, i) => (
-                <li key={categorie.id} className="apparait" style={{ animationDelay: `${420 + i * 45}ms` }}>
-                  {/* La tuile se soulève au survol et s'enfonce sous le doigt ; son icône suit. */}
-                  <Link
-                    href={lien(`/categorie/${categorie.slug}`)}
-                    className="group flex h-full flex-col items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-3.5 text-center transition duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-[0_6px_16px_rgb(0_0_0/0.07)] active:scale-[0.96] sm:py-4"
-                  >
-                    {/* L'icône, dans une pastille à la couleur du rayon, rebondit juste après l'arrivée de sa tuile. */}
-                    <span className={`saute flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-200 group-hover:scale-110 ${couleurDuRayon(categorie.slug).pastille} ${couleurDuRayon(categorie.slug).survol}`} style={{ animationDelay: `${640 + i * 45}ms` }}>
-                      <IconeRayon slug={categorie.slug} className="h-[22px] w-[22px]" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-[13px] font-semibold leading-tight sm:text-sm">{nomDuRayon(categorie, t)}</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-500 sm:text-xs">{compter(langue, total, t.commun.articles)}</span>
-                    </span>
-                  </Link>
-                </li>
+          {/* Comme sur Wolt : sur grand écran, la colonne des rayons à côté du catalogue ; sur téléphone, les
+              rayons en tuiles d'abord. C'est la MÊME liste, présentée autrement selon la largeur. */}
+          <div className="space-y-9 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-start lg:gap-8 lg:space-y-0">
+            <section id="rayons" aria-labelledby="titre-categories" className="scroll-mt-24 space-y-3.5 lg:sticky lg:top-[calc(var(--entete-haut)+1.45rem)] lg:max-h-[calc(100dvh-7rem)] lg:space-y-2 lg:overflow-y-auto lg:pe-1">
+              <h2 id="titre-categories" className="apparait text-xl font-bold nuit:text-white sm:text-2xl lg:px-2.5 lg:text-xs lg:font-semibold lg:uppercase lg:tracking-[0.08em] lg:text-slate-500" style={rangDansLaCascade(9)}>{a.rayons}</h2>
+              {/* Des tuiles à icône, trois par ligne sur téléphone : tous les rayons tiennent sur un écran. */}
+              <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-1 lg:gap-0.5">
+                {rayons.map(({ categorie, total }, i) => (
+                  <li key={categorie.id} className="apparait" style={{ animationDelay: `${420 + i * 45}ms` }}>
+                    {/* La tuile se soulève au survol et s'enfonce sous le doigt ; son icône suit. Sur grand écran : une ligne de la colonne. */}
+                    <Link
+                      href={lien(`/categorie/${categorie.slug}`)}
+                      className="group flex h-full flex-col items-center gap-2 rounded-2xl bg-white px-2 py-3.5 text-center shadow-(--shadow-tuile) transition duration-200 hover:-translate-y-0.5 hover:shadow-(--shadow-tuile-survol) active:scale-[0.96] sm:py-4 lg:flex-row lg:gap-2.5 lg:rounded-xl lg:bg-transparent lg:px-2.5 lg:py-1.5 lg:text-start lg:shadow-none lg:hover:translate-y-0 lg:hover:bg-slate-200/70 lg:hover:shadow-none"
+                    >
+                      {/* L'icône, dans une pastille ronde à la couleur du rayon, rebondit juste après l'arrivée de sa tuile. */}
+                      <span className={`saute flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition duration-200 group-hover:scale-110 lg:h-9 lg:w-9 ${couleurDuRayon(categorie.slug).pastille} ${couleurDuRayon(categorie.slug).survol}`} style={{ animationDelay: `${640 + i * 45}ms` }}>
+                        <IconeRayon slug={categorie.slug} className="h-[22px] w-[22px] lg:h-[18px] lg:w-[18px]" />
+                      </span>
+                      <span className="min-w-0 lg:flex lg:flex-1 lg:items-baseline lg:gap-2">
+                        <span className="block text-[13px] font-semibold leading-tight sm:text-sm lg:min-w-0 lg:flex-1 lg:truncate">{nomDuRayon(categorie, t)}</span>
+                        <span className="mt-0.5 block text-[11px] text-slate-500 sm:text-xs lg:hidden">{compter(langue, total, t.commun.articles)}</span>
+                        <span aria-hidden="true" className="hidden text-xs tabular-nums text-slate-500 lg:inline">{total}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            <div className="min-w-0 space-y-10 sm:space-y-12">
+              {/* Plus bas dans la page, chaque bloc monte en fondu quand il arrive à l'écran (`Apparition`). */}
+              {populaires.length > 0 && (
+                <Apparition>
+                  <section aria-labelledby="titre-populaires" className="space-y-3.5">
+                    <h2 id="titre-populaires" className="flex items-center gap-2.5 text-xl font-bold nuit:text-white sm:text-2xl">
+                      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soleil/25 text-amber-900 nuit:bg-soleil nuit:text-encre"><Star className="h-[17px] w-[17px]" strokeWidth={1.8} /></span>
+                      {a.plusDemandes}
+                    </h2>
+                    <RailProduits produits={populaires} sansBadge etroite />
+                  </section>
+                </Apparition>
+              )}
+
+              {/* Une rangée à faire défiler par rayon, et « Tout voir ». */}
+              {rangees.map(({ categorie, produits, total }) => (
+                <Apparition key={categorie.id}>
+                  <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <h2 id={`rangee-${categorie.slug}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold nuit:text-white sm:text-xl">
+                        {/* La pastille du rayon, à sa couleur : on retrouve la tuile d'en haut. */}
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${couleurDuRayon(categorie.slug).pastille}`}>
+                          <IconeRayon slug={categorie.slug} className="h-[17px] w-[17px]" />
+                        </span>
+                        <Link href={lien(`/categorie/${categorie.slug}`)} className="min-w-0 truncate hover:underline">{nomDuRayon(categorie, t)}</Link>
+                      </h2>
+                      <Link href={lien(`/categorie/${categorie.slug}`)} className={`group group/lien inline-flex shrink-0 items-center gap-0.5 rounded-full py-1 ps-3 pe-2 text-sm font-semibold transition ${couleurDuRayon(categorie.slug).pastille} ${couleurDuRayon(categorie.slug).survol}`}>
+                        {t.categorie.toutVoir} <span className="font-normal tabular-nums opacity-70">({total})</span>
+                        <ChevronRight className="h-4 w-4 transition-transform group-hover/lien:translate-x-0.5 rtl:rotate-180 rtl:group-hover/lien:-translate-x-0.5" strokeWidth={1.8} aria-hidden="true" />
+                      </Link>
+                    </div>
+                    <RailProduits produits={produits} etroite />
+                  </section>
+                </Apparition>
               ))}
-            </ul>
-            <p className="text-sm text-slate-600 nuit:text-slate-300">
-              {t.commun.introuvableQuestion}{" "}
-              <Link href={lien("/panier?demande=")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre nuit:text-white nuit:decoration-white/40 nuit:hover:decoration-white">{t.commun.demandezLe}</Link>
-              {t.commun.introuvableSuite}
-            </p>
-          </section>
 
-          {/* Plus bas dans la page, chaque bloc monte en fondu quand il arrive à l'écran (`Apparition`). */}
-          {populaires.length > 0 && (
-            <Apparition>
-              <section aria-labelledby="titre-populaires" className="space-y-3.5">
-                <h2 id="titre-populaires" className="flex items-center gap-2.5 text-xl font-bold nuit:text-white sm:text-2xl">
-                  <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soleil/25 text-amber-900 nuit:bg-soleil nuit:text-encre"><Star className="h-[17px] w-[17px]" strokeWidth={1.8} /></span>
-                  {a.plusDemandes}
-                </h2>
-                <RailProduits produits={populaires} sansBadge />
-              </section>
-            </Apparition>
-          )}
+              <p className="text-sm text-slate-600 nuit:text-slate-300">
+                {t.commun.introuvableQuestion}{" "}
+                <Link href={lien("/panier?demande=")} className="font-semibold text-encre underline decoration-slate-300 underline-offset-4 hover:decoration-encre nuit:text-white nuit:decoration-white/40 nuit:hover:decoration-white">{t.commun.demandezLe}</Link>
+                {t.commun.introuvableSuite}
+              </p>
+            </div>
+          </div>
 
-          {/* Une rangée à faire défiler par rayon, et « Tout voir ». */}
-          {rangees.map(({ categorie, produits, total }) => (
-            <Apparition key={categorie.id}>
-              <section aria-labelledby={`rangee-${categorie.slug}`} className="space-y-3.5">
-                <div className="flex items-center justify-between gap-4">
-                  <h2 id={`rangee-${categorie.slug}`} className="flex min-w-0 items-center gap-2.5 text-lg font-bold nuit:text-white sm:text-xl">
-                    {/* La pastille du rayon, à sa couleur : on retrouve la tuile d'en haut. */}
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${couleurDuRayon(categorie.slug).pastille}`}>
-                      <IconeRayon slug={categorie.slug} className="h-[17px] w-[17px]" />
-                    </span>
-                    <Link href={lien(`/categorie/${categorie.slug}`)} className="min-w-0 truncate hover:underline">{nomDuRayon(categorie, t)}</Link>
-                  </h2>
-                  <Link href={lien(`/categorie/${categorie.slug}`)} className={`group group/lien inline-flex shrink-0 items-center gap-0.5 rounded-full py-1 ps-3 pe-2 text-sm font-semibold transition ${couleurDuRayon(categorie.slug).pastille} ${couleurDuRayon(categorie.slug).survol}`}>
-                    {t.categorie.toutVoir} <span className="font-normal tabular-nums opacity-70">({total})</span>
-                    <ChevronRight className="h-4 w-4 transition-transform group-hover/lien:translate-x-0.5 rtl:rotate-180 rtl:group-hover/lien:-translate-x-0.5" strokeWidth={1.8} aria-hidden="true" />
-                  </Link>
-                </div>
-                <RailProduits produits={produits} />
-              </section>
-            </Apparition>
-          ))}
-
-          <Apparition className="lg:hidden">{reperes}</Apparition>
+          <Apparition>
+            <section id="livraison" aria-labelledby="titre-livraison" className="scroll-mt-24 space-y-4">
+              <h2 id="titre-livraison" className="text-xl font-bold nuit:text-white sm:text-2xl">{a.prochaineLivraison}</h2>
+              {reperes}
+            </section>
+          </Apparition>
 
           <Apparition>
             <section id="etapes" aria-labelledby="titre-etapes" className="scroll-mt-24 space-y-4">
               <h2 id="titre-etapes" className="text-xl font-bold nuit:text-white sm:text-2xl">{a.commentTitre}</h2>
-              <ol className="grid gap-px overflow-hidden rounded-3xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
+              <ol className="grid gap-px overflow-hidden rounded-2xl bg-slate-200 shadow-(--shadow-tuile) sm:grid-cols-3">
                 {a.etapes.map((e, i) => (
                   <li key={e.titre} className="bg-white p-5">
                     {/* Le contenu de chaque étape arrive à son tour (la case reste en place : pas de trou gris). */}

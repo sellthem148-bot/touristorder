@@ -299,7 +299,8 @@ try {
   await c.goto(BASE + "/categorie/cremerie-oeufs?s=yaourts", { waitUntil: "networkidle" });
   await pause(c, 400);
   verifier((await enAttente(c)) === 0, "moins d'animations : dans une longue liste, aucune tuile n'attend");
-  await c.locator('main article button[aria-label]').nth(1).click();
+  // Le « + » d'une carte, par son nom : dans la carte à la manière de Wolt il vient AVANT le bouton du nom.
+  await c.locator("main article").first().getByRole("button", { name: /^Ajouter/ }).click();
   await pause(c, 150);
   verifier((await c.locator("[data-envol]").count()) === 0, "moins d'animations : pas d'envol vers le panier");
   await c.locator("main article h3 button").first().click();

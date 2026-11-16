@@ -38,6 +38,9 @@
 
   --shadow-carte: 0 1px 2px rgb(0 0 0 / 0.04);
   --shadow-flottant: 0 12px 32px rgb(0 0 0 / 0.16);
+  /* Les cartes de la boutique, comme sur Wolt : blanches, sans trait, détachées du fond par une ombre légère. */
+  --shadow-tuile: 0 1px 2px rgb(0 0 0 / 0.05), 0 2px 10px rgb(0 0 0 / 0.06);
+  --shadow-tuile-survol: 0 8px 22px rgb(0 0 0 / 0.12);
 }
 
 /*
@@ -80,6 +83,10 @@ body {
  */
 html:has([data-fond="ivoire"]) {
   --color-fond: #faf5ec;
+}
+/* Le fond du site de Wolt : un gris presque blanc, sur lequel les cartes blanches se détachent par leur ombre. */
+html:has([data-fond="clair"]) {
+  --color-fond: #f8f8f8;
 }
 @media screen {
   html:has([data-fond="nuit"]) {

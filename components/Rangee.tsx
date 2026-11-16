@@ -59,7 +59,8 @@ export function RangeeQuiDefile({ children }: { children: ReactNode }) {
   const fleche = "absolute top-1/2 z-[12] hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-encre shadow-(--shadow-flottant) transition hover:scale-105 hover:bg-slate-50 active:scale-95 lg:flex";
   return (
     <div className="group/rangee relative">
-      <div ref={rangee} className="rail items-stretch gap-3 lg:gap-5">
+      {/* `py-3 -my-3` : l'ombre des cartes (et leur soulèvement au survol) dépasse de la rangée sans être coupée. */}
+      <div ref={rangee} className="rail -my-3 items-stretch gap-3 py-3 lg:gap-5">
         {children}
       </div>
       {reste.avant && (

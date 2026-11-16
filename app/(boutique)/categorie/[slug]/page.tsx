@@ -75,28 +75,30 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
                 <Link
                   href={lien(`/categorie/${x.slug}`)}
                   aria-current={x.slug === slug && !choisi ? "page" : undefined}
-                  className={`flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-semibold transition ${
-                    x.slug === slug ? "bg-encre text-white nuit:bg-white nuit:text-encre" : "text-slate-700 hover:bg-slate-200/70 nuit:text-slate-300 nuit:hover:bg-white/10"
+                  className={`group flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-sm font-semibold transition ${
+                    x.slug === slug ? "bg-marque-clair text-encre nuit:bg-white" : "text-slate-700 hover:bg-slate-200/70 nuit:text-slate-300 nuit:hover:bg-white/10"
                   }`}
                 >
-                  {/* L'icône à la couleur de son rayon (blanche sur le rayon ouvert). */}
-                  <IconeRayon slug={x.slug} className={`h-[18px] w-[18px] shrink-0 ${x.slug === slug ? "" : couleurDuRayon(x.slug).trait}`} />
+                  {/* Comme sur Wolt : une pastille ronde par rayon (son icône, à sa couleur), et le rayon ouvert sur un fond bleu très clair. */}
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${couleurDuRayon(x.slug).pastille} ${couleurDuRayon(x.slug).survol}`}>
+                    <IconeRayon slug={x.slug} className="h-[18px] w-[18px]" />
+                  </span>
                   <span className="min-w-0 flex-1 truncate">{nomDuRayon(x, t)}</span>
-                  <span className="text-xs font-normal tabular-nums opacity-60">{x._count.produits}</span>
+                  <span className="text-xs font-normal tabular-nums text-slate-500">{x._count.produits}</span>
                 </Link>
                 {x.slug === slug && avecSousRayons && (
-                  <ul className="my-1 ms-[1.1rem] space-y-0.5 border-s border-slate-300 ps-2 nuit:border-white/15">
+                  <ul className="my-1 ms-[1.65rem] space-y-0.5 border-s border-slate-300 ps-2 nuit:border-white/15">
                     {groupes.map((g) => (
                       <li key={g.cle}>
                         <Link
                           href={adresse(g.cle)}
                           aria-current={g.cle === choisi ? "page" : undefined}
                           className={`flex items-baseline gap-2 rounded-lg px-2 py-1.5 text-[13px] transition ${
-                            g.cle === choisi ? "bg-slate-200 font-semibold text-encre nuit:bg-white/15 nuit:text-white" : "text-slate-600 hover:bg-slate-200/70 hover:text-encre nuit:text-slate-400 nuit:hover:bg-white/10 nuit:hover:text-white"
+                            g.cle === choisi ? "bg-marque-clair font-semibold text-encre nuit:bg-white/15 nuit:text-white" : "text-slate-600 hover:bg-slate-200/70 hover:text-encre nuit:text-slate-400 nuit:hover:bg-white/10 nuit:hover:text-white"
                           }`}
                         >
                           <span className="min-w-0 flex-1">{nomSous(g.cle)}</span>
-                          <span className="text-xs tabular-nums text-slate-400">{g.articles.length}</span>
+                          <span className="text-xs tabular-nums text-slate-500">{g.articles.length}</span>
                         </Link>
                       </li>
                     ))}
@@ -129,7 +131,7 @@ export default async function PageCategorie({ params, searchParams }: PageProps<
         </nav>
 
         {/* Le bandeau du rayon, à sa couleur : un fond très clair, l'icône dans un rond blanc. */}
-        <header className={`apparait flex items-center gap-3.5 rounded-3xl border p-4 sm:gap-4 sm:p-5 ${couleur.bandeau}`}>
+        <header className={`apparait flex items-center gap-3.5 rounded-2xl border p-4 sm:gap-4 sm:p-5 ${couleur.bandeau}`}>
           <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white sm:h-14 sm:w-14 ${couleur.trait}`}>
             <IconeRayon slug={c.slug} className="h-6 w-6 sm:h-7 sm:w-7" />
           </span>

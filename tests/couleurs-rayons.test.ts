@@ -28,6 +28,8 @@ describe("couleurs des rayons", () => {
       // Le bandeau (tête de la page du rayon, fiche sans photo) est le ton le plus clair ; le repère, un trait franc.
       expect(c.bandeau).toBe(`border-${famille}-200 bg-${famille}-50`);
       expect(c.repere).toBe(`bg-${famille}-400`);
+      // La zone d'image d'une carte sans photo : le ton le plus clair, l'icône du rayon en clair dessus.
+      expect(c.zone).toBe(`bg-${famille}-50 text-${famille}-300`);
     }
   });
 
@@ -41,8 +43,10 @@ describe("couleurs des rayons", () => {
 // produits » — le fond de la boutique se choisit dans lib/fond.ts, sans toucher à l'espace gérant.
 describe("fond de la boutique", () => {
   const css = readFileSync("app/globals.css", "utf8");
-  it("le fond choisi est l'un des deux que la feuille de style connaît", () => {
-    expect(["nuit", "ivoire"]).toContain(FOND_DE_LA_BOUTIQUE);
+  it("le fond choisi est l'un des trois que la feuille de style connaît", () => {
+    expect(["nuit", "ivoire", "clair"]).toContain(FOND_DE_LA_BOUTIQUE);
+    // Depuis le 16 novembre (« le même site que Wolt ») : le gris presque blanc du site de Wolt.
+    expect(css).toMatch(/html:has\(\[data-fond="clair"\]\) \{\s*--color-fond: #f8f8f8;/);
     expect(css).toMatch(/html:has\(\[data-fond="ivoire"\]\) \{\s*--color-fond: #faf5ec;/);
     expect(css).toMatch(/@media screen \{\s*html:has\(\[data-fond="nuit"\]\) \{\s*--color-fond: #0d1321;/);
   });
