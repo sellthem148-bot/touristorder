@@ -10,6 +10,10 @@
 // Une seule fois (prisma/remplissage.ts, `retirerLaViande`). Ne plus ajouter de viande au catalogue :
 // tests/retrait-viande.test.ts refuse un article du rayon boucherie qui ne serait ni ici ni du poisson.
 
+// 16 novembre 2026 : treize de ces articles — ceux qui ont leur photo de Wolt — sont revenus en vente à sa
+// demande (prisma/remise-en-vente-1116.ts), et le rayon a repris son nom « Boucherie & poisson ». Les 27 autres
+// restent masqués, et la règle reste : ne pas AJOUTER de viande au catalogue.
+
 /** Les articles retirés, par leur nom au catalogue (prisma/articles-wolt*.ts et prisma/articles-liste.ts). */
 export const VIANDE_ET_VOLAILLE: string[] = [
   // Volaille et viande fraîches (Wolt Market)

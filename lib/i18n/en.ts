@@ -91,7 +91,7 @@ const en: Dictionnaire = {
     "pain-patisserie": "Bread & pastries",
     "boissons": "Drinks",
     "fruits-legumes": "Fruit & vegetables",
-    "poisson": "Fish",
+    "poisson": "Meat & fish",
     "surgeles-glaces": "Frozen & ice cream",
     "apero-snacks": "Snacks & nibbles",
     "bebe-enfants": "Baby & kids",

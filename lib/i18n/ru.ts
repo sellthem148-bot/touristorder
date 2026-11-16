@@ -88,7 +88,7 @@ const ru: Dictionnaire = {
     "pain-patisserie": "Хлеб и выпечка",
     "boissons": "Напитки",
     "fruits-legumes": "Фрукты и овощи",
-    "poisson": "Рыба",
+    "poisson": "Мясо и рыба",
     "surgeles-glaces": "Заморозка и мороженое",
     "apero-snacks": "Закуски и снеки",
     "bebe-enfants": "Для малышей и детей",

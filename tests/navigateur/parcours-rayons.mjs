@@ -119,9 +119,16 @@ try {
   ok("toucher la tuile ouvre la fiche de l'article");
   await tel.keyboard.press("Escape");
 
-  // 7. Un petit rayon : tous ses articles, sans sous-rayons
+  // 7. Les surgelés : depuis le retour en vente du poisson surgelé et de la viande (16 novembre), ce rayon a lui
+  //    aussi ses sous-rayons. Plus aucun rayon du catalogue entier ne tient en 12 articles : le rayon sans
+  //    sous-rayons se vérifie sur le jeu de test (largeur.mjs, parcours-langues.mjs).
   await tel.goto(BASE + "/categorie/surgeles-glaces", { waitUntil: "networkidle" });
-  verifier((await tel.getByRole("navigation", { name: "Sous-rayons" }).count()) === 0 && (await visibles(tel.locator("main"))) >= 1, "petit rayon : pas de sous-rayons, tous les articles");
+  const surgeles = await tel.getByRole("navigation", { name: "Sous-rayons" }).getByRole("link").allInnerTexts();
+  verifier(surgeles.includes("Poisson") && surgeles.includes("Viande & volaille") && (await visibles(tel.locator("main"))) >= 6, `surgelés : sous-rayons ${surgeles.slice(1).join(", ")} — le poisson et la viande sont revenus en vente`);
+  // Le rayon où la viande revient a repris son nom, à la même adresse.
+  await tel.goto(BASE + "/categorie/poisson", { waitUntil: "networkidle" });
+  const boucherie = await tel.getByRole("navigation", { name: "Sous-rayons" }).getByRole("link").allInnerTexts();
+  verifier((await tel.locator("main h1").innerText()).trim() === "Boucherie & poisson" && boucherie.includes("Viande & volaille") && boucherie.includes("Poisson surgelé"), `/categorie/poisson : « Boucherie & poisson », sous-rayons ${boucherie.slice(1).join(", ")}`);
 
   // 8. Sur ordinateur : la colonne des rayons, celui-ci ouvert sur ses sous-rayons ; une rangée par sous-rayon
   await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });

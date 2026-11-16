@@ -87,7 +87,7 @@ const he: Dictionnaire = {
     "pain-patisserie": "לחם ומאפים",
     "boissons": "משקאות",
     "fruits-legumes": "פירות וירקות",
-    "poisson": "דגים",
+    "poisson": "בשר ודגים",
     "surgeles-glaces": "קפואים וגלידות",
     "apero-snacks": "חטיפים ונשנושים",
     "bebe-enfants": "תינוקות וילדים",

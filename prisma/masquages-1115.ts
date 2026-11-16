@@ -4,6 +4,9 @@
 // ses captures de Wolt les montreront. Chaque liste est appliquée une seule fois (`masquerCeQuiManque`,
 // prisma/remplissage.ts) : ce qu'il remet en vente ensuite y reste.
 
+// 16 novembre 2026 : les 7 boissons de la deuxième liste et 20 des 22 poissons surgelés de la première — ceux qui
+// ont leur photo de Wolt — sont revenus en vente à sa demande (prisma/remise-en-vente-1116.ts).
+
 export type Masquage = {
   cle: string;
   titre: string;

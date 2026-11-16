@@ -18,6 +18,7 @@ import { ARTICLES_WOLT_BOISSONS_ET_ELECTRONIQUE, RELEVE_DES_BOISSONS } from "./a
 import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allegement-cremerie";
 import { ABSENTS_DE_WOLT } from "./absents-de-wolt";
 import { MASQUAGES } from "./masquages-1115";
+import { CLE_REMISE_EN_VENTE_AVEC_PHOTO, REMIS_EN_VENTE_AVEC_PHOTO } from "./remise-en-vente-1116";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 import { RELEVE_DES_CANETTES, RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
@@ -403,6 +404,35 @@ export async function masquerCeQuiManque(prisma: PrismaClient): Promise<string> 
     bilans.push(`${m.titre} : ${masques.count} masqué(s) sur ${m.releves.length + m.deLaListe.length}.`);
   }
   return bilans.join(" ");
+}
+
+/**
+ * Les articles masqués qui ont leur photo de Wolt, remis en vente : décision du gérant (16 novembre 2026,
+ * prisma/remise-en-vente-1116.ts) — sept boissons que Wolt n'affiche plus, vingt poissons surgelés, treize
+ * viandes et volailles, choisis par lui groupe par groupe. Une seule fois : ce qu'il remasque ensuite le reste.
+ * Seulement un article encore masqué et qui a un prix ; un article de Wolt est retrouvé par son nom sur Wolt
+ * (il a pu le renommer). Rien n'est créé, aucun prix n'est touché.
+ * Le rayon « Poisson », où la viande revient, reprend son nom « Boucherie & poisson » — s'il porte encore le
+ * nom que le retrait de la viande lui avait donné ; son adresse (`poisson`) ne change pas.
+ */
+export async function remettreEnVenteCeQuiAUnePhoto(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_REMISE_EN_VENTE_AVEC_PHOTO);
+  if (faite === null) return "Articles masqués qui ont leur photo : réglages pas encore créés, rien remis en vente.";
+  if (faite) return "Articles masqués qui ont leur photo : déjà remis en vente, rien de changé.";
+  const choisis = new Set(REMIS_EN_VENTE_AVEC_PHOTO);
+  const nomsWolt = LOTS_WOLT.flatMap((l) => l.articles).filter((a) => choisis.has(a.nom) && a.nomWolt).map((a) => a.nomWolt);
+  const [remis] = await prisma.$transaction([
+    prisma.produit.updateMany({
+      where: { actif: false, prix: { gt: 0 }, OR: [{ nom: { in: REMIS_EN_VENTE_AVEC_PHOTO } }, { nomWolt: { in: nomsWolt } }] },
+      data: { actif: true },
+    }),
+    noterOperation(prisma, CLE_REMISE_EN_VENTE_AVEC_PHOTO),
+  ]);
+  const rayon = await prisma.categorie.findFirst({ where: RAYON_POISSON, select: { id: true } });
+  const pris = await prisma.categorie.count({ where: { nom: RAYON_BOUCHERIE } });
+  const renomme = rayon != null && pris === 0;
+  if (renomme) await prisma.categorie.update({ where: { id: rayon.id }, data: { nom: RAYON_BOUCHERIE } });
+  return `Articles masqués qui ont leur photo : ${remis.count} remis en vente sur ${REMIS_EN_VENTE_AVEC_PHOTO.length}${renomme ? ` ; rayon renommé « ${RAYON_BOUCHERIE} »` : ""}.`;
 }
 
 /**

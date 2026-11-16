@@ -88,7 +88,7 @@ const es: Dictionnaire = {
     "pain-patisserie": "Pan y pastelería",
     "boissons": "Bebidas",
     "fruits-legumes": "Frutas y verduras",
-    "poisson": "Pescado",
+    "poisson": "Carne y pescado",
     "surgeles-glaces": "Congelados y helados",
     "apero-snacks": "Aperitivos y snacks",
     "bebe-enfants": "Bebés y niños",
