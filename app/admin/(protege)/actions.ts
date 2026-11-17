@@ -16,7 +16,7 @@ import { slugDe } from "@/lib/slug";
 import { lireReglages } from "@/lib/reglages";
 import { lirePrix } from "@/lib/argent";
 import { derniereDiscussion, envoyerTelegram, estJetonTelegram, robotTelegram } from "@/lib/telegram";
-import { COOKIE_VUE_CLIENT, DUREE_VUE_CLIENT_S } from "@/lib/vue-gerant";
+import { COOKIE_VUE_CLIENT, DUREE_VUE_CLIENT_S, oublierLeReglageDesPhotos } from "@/lib/vue-gerant";
 
 const texte = (form: FormData, cle: string) => String(form.get(cle) ?? "");
 const id = (form: FormData, cle = "id") => {
@@ -358,6 +358,7 @@ export async function enregistrerReglages(form: FormData) {
     messageAccueil: texte(form, "messageAccueil"),
     ouvert: form.get("ouvert") === "on",
     fraisRegroupes: form.get("fraisRegroupes") === "on",
+    photosWoltPourTous: form.get("photosWoltPourTous") === "on",
     joursLivres: form.getAll("joursLivres").map(String),
     delaiPreparation: texte(form, "delaiPreparation"),
     commandesParCreneau: texte(form, "commandesParCreneau"),
@@ -375,6 +376,7 @@ export async function enregistrerReglages(form: FormData) {
   }
   await lireReglages(); // crée la ligne si besoin
   await prisma.reglages.update({ where: { id: 1 }, data: lecture.data });
+  oublierLeReglageDesPhotos(); // le site suit tout de suite la case « Photos de Wolt pour tout le monde »
   redirect(avecMessage("/admin/reglages", "ok", "Réglages enregistrés."));
 }
 
@@ -605,9 +607,9 @@ export async function delierTelegram() {
 }
 
 /**
- * La vue du gérant sur son site (bandeau « Vue du gérant », components/admin/VueDuGerant.tsx) : avec les photos
- * de Wolt sur les articles sans photo — le réglage de départ —, ou comme un client. Rien ne change pour les
- * clients : ce n'est qu'un choix d'affichage, gardé douze heures sur cet appareil.
+ * La vue du gérant sur son site (bandeau « Vue du gérant », components/admin/VueDuGerant.tsx) : avec ses repères
+ * (étiquette « Wolt », « Mettre sa photo ») — le réglage de départ —, ou comme un client. Rien ne change pour
+ * les clients : ce n'est qu'un choix d'affichage, gardé douze heures sur cet appareil.
  */
 export async function changerLaVueDuSite(form: FormData) {
   await exigerAdmin();

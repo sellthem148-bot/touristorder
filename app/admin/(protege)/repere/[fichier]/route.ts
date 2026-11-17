@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { estAdmin, exigerAdmin } from "@/lib/admin";
 import { DOSSIER_DES_REPERES, NOMBRE_DE_PHOTOS_REPERE, estPhotoRepere } from "@/lib/reperes-wolt";
+import { photosDeWoltPourTous } from "@/lib/vue-gerant";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,10 @@ const compteurs = { servies: 0, refusees: 0, inconnues: 0, illisibles: 0 };
 /**
  * Une photo repère du gérant (la photo que Wolt montre pour un article, tirée de ses captures) :
  * /admin/repere/<fichier>. Réservée au gérant — une route n'est pas protégée par le layout :
- * exigerAdmin() d'abord. Seuls les fichiers de la liste sont lus (lib/reperes-wolt.ts).
+ * exigerAdmin() d'abord — SAUF s'il a coché « Photos de Wolt pour tout le monde » dans ses réglages (sa
+ * décision du 17 novembre 2026, lib/vue-gerant.ts) : elle est alors servie à tout visiteur, le temps que la
+ * case reste cochée. Seuls les fichiers de la liste sont lus (lib/reperes-wolt.ts). Dans les deux cas, les
+ * moteurs de recherche n'y vont pas (`/admin` est fermé dans robots.txt, et l'en-tête le redit).
  */
 export async function GET(_requete: Request, { params }: { params: Promise<{ fichier: string }> }) {
   const { fichier } = await params;
@@ -21,8 +25,11 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ fic
   // vérifier une mise en ligne sans le mot de passe du gérant — un NOMBRE, jamais un nom ni une photo. (Le gérant
   // ne voyait pas ses photos en production alors qu'elles s'affichaient partout ailleurs : 17 novembre 2026.)
   if (fichier === "etat") return Response.json(await etatDesPhotos(), { headers: { "Cache-Control": "no-store", "X-Robots-Tag": "noindex" } });
-  if (!(await estAdmin())) compteurs.refusees++;
-  await exigerAdmin();
+  const pourTous = await photosDeWoltPourTous();
+  if (!pourTous) {
+    if (!(await estAdmin())) compteurs.refusees++;
+    await exigerAdmin();
+  }
   if (!estPhotoRepere(fichier)) {
     compteurs.inconnues++;
     return new Response("Photo inconnue.", { status: 404 });
@@ -31,7 +38,8 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ fic
     const octets = await readFile(path.join(process.cwd(), DOSSIER_DES_REPERES, fichier));
     compteurs.servies++;
     return new Response(new Uint8Array(octets), {
-      headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=86400", "X-Robots-Tag": "noindex" },
+      // Pour tous : gardée dix minutes au plus (la case décochée, elle cesse vite d'être servie) ; au gérant seul : un jour, chez lui.
+      headers: { "Content-Type": "image/jpeg", "Cache-Control": pourTous ? "public, max-age=600, s-maxage=600" : "private, max-age=86400", "X-Robots-Tag": "noindex" },
     });
   } catch {
     compteurs.illisibles++;
@@ -40,12 +48,14 @@ export async function GET(_requete: Request, { params }: { params: Promise<{ fic
 }
 
 /** Combien de photos de la liste sont lisibles sur ce serveur (et, s'il manque le dossier, le code de l'erreur). */
-async function etatDesPhotos(): Promise<{ attendues: number; presentes: number; erreur?: string; depuisLeDemarrage: typeof compteurs }> {
+async function etatDesPhotos(): Promise<{ attendues: number; presentes: number; pourTous: boolean; erreur?: string; depuisLeDemarrage: typeof compteurs }> {
   const attendues = NOMBRE_DE_PHOTOS_REPERE;
+  // Le réglage « Photos de Wolt pour tout le monde » : ce que n'importe quel visiteur constate déjà sur le site.
+  const pourTous = await photosDeWoltPourTous().catch(() => false);
   try {
     const fichiers = await readdir(path.join(process.cwd(), DOSSIER_DES_REPERES));
-    return { attendues, presentes: fichiers.filter(estPhotoRepere).length, depuisLeDemarrage: { ...compteurs } };
+    return { attendues, presentes: fichiers.filter(estPhotoRepere).length, pourTous, depuisLeDemarrage: { ...compteurs } };
   } catch (e) {
-    return { attendues, presentes: 0, erreur: e instanceof Error && "code" in e ? String(e.code) : "illisible", depuisLeDemarrage: { ...compteurs } };
+    return { attendues, presentes: 0, pourTous, erreur: e instanceof Error && "code" in e ? String(e.code) : "illisible", depuisLeDemarrage: { ...compteurs } };
   }
 }

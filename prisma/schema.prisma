@@ -205,6 +205,10 @@ model Reglages {
   ouvert          Boolean  @default(true)
   // Afficher au client une seule ligne « Frais de service (livraison comprise) ».
   fraisRegroupes  Boolean  @default(false)
+  // Les photos de Wolt (photos repère, tirées des captures du gérant) montrées à TOUS les visiteurs sur les
+  // articles qui n'ont pas encore leur photo : décision du gérant (17 novembre 2026 — le site n'a pas encore
+  // de client, ils sont deux à y travailler). Décoché, seul le gérant connecté les voit (lib/vue-gerant.ts).
+  photosWoltPourTous Boolean @default(false)
   // Alerte Telegram à chaque commande : le jeton du robot (secret, jamais réaffiché) et la discussion reliée.
   telegramJeton      String @default("")
   telegramDiscussion String @default("")

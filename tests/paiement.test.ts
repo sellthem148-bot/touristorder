@@ -90,7 +90,7 @@ describe("lien de paiement Bit", () => {
     }
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "", creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "",
-      ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "", heureLimite: "",
+      ouvert: true, fraisRegroupes: false, photosWoltPourTous: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "", heureLimite: "",
       coordonneesPaiement: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, lienBit: "" }).lienBit).toBe("");

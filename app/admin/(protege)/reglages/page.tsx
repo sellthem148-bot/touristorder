@@ -128,6 +128,20 @@ export default async function PageReglages({ searchParams }: PageProps<"/admin/r
           Commandes ouvertes
         </label>
 
+        {/* Sa décision du 17 novembre 2026 (« active-moi les photos pour tout le monde ») : c'est lui qui la défait. */}
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="photosWoltPourTous" defaultChecked={r.photosWoltPourTous} className="mt-1 h-5 w-5 accent-marque" />
+          <span>
+            <span className="block font-semibold">Photos de Wolt pour tout le monde</span>
+            <span className="text-xs text-slate-500">
+              Cochée : sur le site, un article qui n&apos;a pas encore sa photo montre celle de Wolt à tous les visiteurs, sans avoir à se connecter.
+              Ces photos sont celles de Wolt et des marques : décoche avant d&apos;ouvrir le site aux clients, ou remplace-les par les tiennes
+              dans <Link href="/admin/produits/photos" className="font-semibold text-marque underline">Photos rapides</Link>.
+              Décochée : toi seul les vois, connecté à ton espace.
+            </span>
+          </span>
+        </label>
+
         <fieldset className="grid gap-4 sm:grid-cols-2">
           <legend className="mb-1 font-bold">Tarif de base (ta marge)</legend>
           <p className="col-span-full -mt-1 mb-1 text-xs text-slate-500">

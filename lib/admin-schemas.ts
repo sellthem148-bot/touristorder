@@ -124,6 +124,7 @@ export const reglagesSchema = z.object({
   messageAccueil: z.string().trim().max(300, { error: "300 caractères maximum." }),
   ouvert: z.boolean(),
   fraisRegroupes: z.boolean(),
+  photosWoltPourTous: z.boolean(),
   joursLivres: z
     .array(z.coerce.number().int().min(0).max(6))
     .min(1, { error: "Coche au moins un jour de livraison." })

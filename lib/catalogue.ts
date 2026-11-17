@@ -9,7 +9,7 @@ import { descriptionArticle, nomArticle, traduireGroupes } from "./i18n/catalogu
 import { nomDuRayon, nomDuSousRayon } from "./i18n/rayons";
 import { classer, ficheDe, motsDeRecherche, type Fiche } from "./recherche";
 import { PHOTOS_POUR_UNE_RANGEE, photosDAbord, sousRayonDe } from "./sous-rayons";
-import { reperesDuGerant } from "./vue-gerant";
+import { reperesPour, type Repere } from "./vue-gerant";
 
 // Ce qu'une page PUBLIQUE lit d'un produit. Jamais le prix d'achat,
 // la boutique ni le lien Wolt : ils sont à toi seul.
@@ -36,10 +36,11 @@ export type ProduitPublic = Omit<Brut, "options" | "badge" | "prixBarre"> & {
   /** Le sous-rayon de l'article dans son rayon (« eaux », « colas »… ou « autres ») : lib/sous-rayons.ts. */
   sousRayon: string;
   /**
-   * Vue du gérant seulement (lib/vue-gerant.ts) : la photo de Wolt d'un article qui n'a pas encore la sienne,
-   * pour qu'il sache quelle image chercher. Toujours `null` pour un client.
+   * La photo de Wolt d'un article qui n'a pas encore la sienne (lib/vue-gerant.ts) : pour le gérant connecté,
+   * avec son étiquette ; pour tout le monde si le réglage « Photos de Wolt pour tout le monde » est coché.
+   * Sinon `null` : un visiteur ne reçoit même pas son adresse.
    */
-  repere: string | null;
+  repere: Repere | null;
 };
 
 /**
@@ -47,7 +48,7 @@ export type ProduitPublic = Omit<Brut, "options" | "badge" | "prixBarre"> & {
  * de départ sont traduits (lib/i18n/catalogue) ; ce que le gérant a écrit lui-même reste tel quel.
  * Sans langue : en français (les textes de la base).
  */
-function versPublic(p: Brut, langue: Langue = "fr", repere: string | null = null): ProduitPublic {
+function versPublic(p: Brut, langue: Langue = "fr", repere: Repere | null = null): ProduitPublic {
   return {
     ...p,
     nom: nomArticle(p.nom, langue),
@@ -63,11 +64,12 @@ function versPublic(p: Brut, langue: Langue = "fr", repere: string | null = null
 }
 
 /**
- * Une liste de produits telle que la page la reçoit. Pour le gérant connecté à son espace, les articles sans
- * photo portent en plus celle de Wolt (`repere`) ; pour un client, jamais (lib/vue-gerant.ts).
+ * Une liste de produits telle que la page la reçoit. Les articles sans photo portent en plus celle de Wolt
+ * (`repere`) pour qui a le droit de la voir — le gérant connecté, ou tout le monde si le réglage est coché
+ * (lib/vue-gerant.ts) ; sinon rien.
  */
 async function versPublics(liste: Brut[], langue: Langue): Promise<ProduitPublic[]> {
-  const reperes = await reperesDuGerant(liste);
+  const reperes = await reperesPour(liste);
   return liste.map((p) => versPublic(p, langue, reperes.get(p.id) ?? null));
 }
 

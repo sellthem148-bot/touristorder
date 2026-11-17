@@ -435,6 +435,26 @@ export async function remettreEnVenteCeQuiAUnePhoto(prisma: PrismaClient): Promi
   return `Articles masqués qui ont leur photo : ${remis.count} remis en vente sur ${REMIS_EN_VENTE_AVEC_PHOTO.length}${renomme ? ` ; rayon renommé « ${RAYON_BOUCHERIE} »` : ""}.`;
 }
 
+/** La clé de l'opération ci-dessous (Reglages.operationsFaites). */
+export const CLE_PHOTOS_DE_WOLT_POUR_TOUS = "photos-de-wolt-pour-tous-2026-11-17";
+
+/**
+ * « Le site a 0 client, on est 2 à bosser dessus et on ne peut pas se connecter à l'admin à chaque fois :
+ * active-moi les photos pour tout le monde » (le gérant, 17 novembre 2026). Le réglage « Photos de Wolt pour
+ * tout le monde » est coché, une seule fois : s'il le décoche ensuite dans ses réglages, il le reste.
+ * (Prévenu que ces photos sont celles de Wolt et des marques : c'est sa décision, et c'est lui qui la défait.)
+ */
+export async function montrerLesPhotosDeWoltATous(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_PHOTOS_DE_WOLT_POUR_TOUS);
+  if (faite === null) return "Photos de Wolt pour tout le monde : réglages pas encore créés, rien de changé.";
+  if (faite) return "Photos de Wolt pour tout le monde : déjà activées une fois, rien de changé.";
+  await prisma.$transaction([
+    prisma.reglages.update({ where: { id: 1 }, data: { photosWoltPourTous: true } }),
+    noterOperation(prisma, CLE_PHOTOS_DE_WOLT_POUR_TOUS),
+  ]);
+  return "Photos de Wolt pour tout le monde : activées (le gérant les coupe dans ses réglages).";
+}
+
 /**
  * Ce qu'un rayon ne garde pas quand le gérant en demande une courte sélection (pur) : les articles que le CODE
  * y a mis en vente — lots de Wolt, liste du gérant, et les articles de sa liste remplacés le 12 novembre, sous

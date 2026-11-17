@@ -102,7 +102,7 @@ describe("limite de commandes par créneau", () => {
     const { reglagesSchema } = await import("@/lib/admin-schemas");
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
-      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", heureLimite: "",
+      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, photosWoltPourTous: false, joursLivres: ["1"], delaiPreparation: "60", heureLimite: "",
       coordonneesPaiement: "", lienBit: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, commandesParCreneau: "4" }).commandesParCreneau).toBe(4);
@@ -129,7 +129,7 @@ describe("tournée du soir", () => {
     const { reglagesSchema } = await import("@/lib/admin-schemas");
     const base = {
       fraisService: "15", fraisLivraison: "30", fraisExpress: "", minimumCommande: "", pourboires: "", paiements: "",
-      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "",
+      creneaux: "19:00 – 20:00", whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: false, photosWoltPourTous: false, joursLivres: ["1"], delaiPreparation: "60", commandesParCreneau: "",
       coordonneesPaiement: "", lienBit: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     };
     expect(reglagesSchema.parse({ ...base, heureLimite: "17:00" }).heureLimite).toBe("17:00");

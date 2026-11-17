@@ -103,8 +103,8 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
       {produit.photoUrl ? (
         <Photo src={produit.photoUrl} alt={produit.nom} paresseuse={false} className="en-fondu aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
       ) : produit.repere ? (
-        // Vue du gérant seulement : la photo de Wolt en entier, et le lien pour poser la vraie photo.
-        <ApercuSurFiche photo={produit.repere} id={produit.id} />
+        // La photo de Wolt en entier ; pour le gérant, avec le lien pour poser la vraie photo (lib/vue-gerant.ts).
+        <ApercuSurFiche repere={produit.repere} id={produit.id} nom={produit.nom} />
       ) : (
         // Sans photo : un bandeau à la couleur du rayon (pas une image de remplacement : il ne montre pas l'article).
         <div aria-hidden="true" className={`en-fondu flex h-20 items-center border-b px-5 ${couleur.bandeau}`}>

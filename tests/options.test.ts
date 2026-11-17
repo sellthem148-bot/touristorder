@@ -97,7 +97,7 @@ describe("formulaires admin (nouveaux champs)", () => {
     const r = reglagesSchema.parse({
       fraisService: "15", fraisLivraison: "30", fraisExpress: "20", minimumCommande: "",
       pourboires: "20 10 12,50 10", paiements: "", creneaux: "Dès que possible",
-      whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: true, joursLivres: ["1"], delaiPreparation: "", commandesParCreneau: "", heureLimite: "",
+      whatsapp: "", messageAccueil: "", ouvert: true, fraisRegroupes: true, photosWoltPourTous: true, joursLivres: ["1"], delaiPreparation: "", commandesParCreneau: "", heureLimite: "",
       coordonneesPaiement: "", lienBit: "", entrepriseNom: "", entrepriseNumero: "", entrepriseAdresse: "", emailContact: "",
     });
     expect(r.pourboires).toEqual([1000, 1250, 2000]);

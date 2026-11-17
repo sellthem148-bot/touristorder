@@ -18,6 +18,9 @@ const chargees = async (p, selecteur) => {
   return p.evaluate((s) => { const vues = [...document.querySelectorAll(s)].filter((i) => { const r = i.getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }); return { vues: vues.length, vides: vues.filter((i) => i.naturalWidth === 0).length }; }, selecteur);
 };
 
+// Le réglage « Photos de Wolt pour tout le monde » (Réglages) : coché, les visiteurs voient aussi ces photos.
+const POUR_TOUS = (await (await fetch(BASE + "/admin/repere/etat")).json()).pourTous === true;
+
 const navigateur = await chromium.launch();
 const ouvrir = async (options) => {
   const ctx = await navigateur.newContext(options);
@@ -91,20 +94,23 @@ try {
     // 5. Une photo de Wolt s'ouvre en entier d'un toucher
     const adresse = await premiere.locator("[data-photo-wolt=ligne]").getAttribute("href");
     const reponse = await ctx.request.get(BASE + adresse);
-    verifier(reponse.status() === 200 && reponse.headers()["content-type"] === "image/jpeg" && /private/.test(reponse.headers()["cache-control"] ?? ""), `${ecran} · un toucher ouvre la photo entière (image privée)`);
+    verifier(reponse.status() === 200 && reponse.headers()["content-type"] === "image/jpeg" && (POUR_TOUS ? /public/ : /private/).test(reponse.headers()["cache-control"] ?? ""), `${ecran} · un toucher ouvre la photo entière (${POUR_TOUS ? "image montrée à tous : réglage coché" : "image privée"})`);
     await ctx.close();
   }
 
-  // 6. Jamais côté client : ni dans une page, ni à quelqu'un qui n'est pas connecté
+  // 6. Côté client : rien, ni dans une page ni à quelqu'un qui n'est pas connecté — sauf si le gérant a coché
+  //    « Photos de Wolt pour tout le monde » : alors la photo seule, jamais l'étiquette « Wolt » ni ses repères.
   const ctx = await navigateur.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-FR" });
   const p = await ctx.newPage();
   for (const adresse of ["/", "/categorie/cremerie-oeufs", "/recherche?q=lait"]) {
     await p.goto(BASE + adresse, { waitUntil: "networkidle" });
     const source = await p.content();
-    verifier(!/admin\/repere|data-photo-wolt/.test(source), `côté client · ${adresse} : aucune photo de Wolt`);
+    if (POUR_TOUS) verifier(/admin\/repere/.test(source) && !/data-photo-wolt|data-etiquette-gerant|data-vue-gerant/.test(source), `côté client · ${adresse} : les photos de Wolt sont montrées (réglage coché), sans étiquette ni repère du gérant`);
+    else verifier(!/admin\/repere|data-photo-wolt/.test(source), `côté client · ${adresse} : aucune photo de Wolt`);
   }
   const sansConnexion = await ctx.request.get(BASE + "/admin/repere/nutella-400-g.jpg", { maxRedirects: 0 });
-  verifier(sansConnexion.status() !== 200, `sans connexion, une photo de Wolt n'est pas servie (réponse ${sansConnexion.status()})`);
+  if (POUR_TOUS) verifier(sansConnexion.status() === 200 && /noindex/.test(sansConnexion.headers()["x-robots-tag"] ?? ""), "sans connexion, la photo est servie (réglage coché), fermée aux moteurs de recherche");
+  else verifier(sansConnexion.status() !== 200, `sans connexion, une photo de Wolt n'est pas servie (réponse ${sansConnexion.status()})`);
   await ctx.close();
 } finally {
   if (OUT) writeFileSync(`${OUT}/resultat-photos-wolt.txt`, etapes.join("\n") + "\n\nErreurs JS : " + (erreurs.length ? "\n" + erreurs.join("\n") : "aucune") + "\n");
