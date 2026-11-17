@@ -3,6 +3,7 @@ import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import { formatPrix } from "@/lib/argent";
 import { repereWolt } from "@/lib/repere-wolt";
+import { ControleDesPhotosWolt } from "@/components/admin/ControleDesPhotosWolt";
 import { LignePhoto } from "./LignePhoto";
 
 export const metadata = { title: "Photos rapides" };
@@ -55,6 +56,8 @@ export default async function PagePhotos({ searchParams }: PageProps<"/admin/pro
           <li>Reviens ici → « Coller ». Sur ordinateur : Ctrl + V, ou glisse l&apos;image sur la ligne.</li>
         </ol>
       </div>
+      {/* Les photos de Wolt arrivent-elles sur cet appareil ? Une ligne qui le dit (et dit pourquoi, sinon). */}
+      <ControleDesPhotosWolt exemple={produits.map((p) => repereWolt(p.nom, p.nomWolt).photo).find((photo) => photo) ?? null} />
       <nav aria-label="Filtrer les articles" className="flex gap-2">
         {(Object.keys(VUES) as Vue[]).map((v) => (
           <Link
