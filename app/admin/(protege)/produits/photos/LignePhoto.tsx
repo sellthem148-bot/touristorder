@@ -98,6 +98,12 @@ export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Pr
     return () => document.removeEventListener("paste", ecoute);
   }, [visee]);
 
+  // Arrivé depuis une fiche du site (« Mettre sa photo », vue du gérant) : l'adresse désigne cette ligne
+  // (`#p-<id>`) — elle est visée d'office, prête à recevoir l'image.
+  useEffect(() => {
+    if (window.location.hash === `#p-${id}`) viser(id);
+  }, [id]);
+
   // Une image glissée depuis une autre fenêtre.
   const auSurvol = (e: DragEvent<HTMLLIElement>) => {
     if (!e.dataTransfer.types.some((t) => t === "Files" || t === "text/html")) return;
@@ -114,12 +120,13 @@ export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Pr
 
   return (
     <li
+      id={`p-${id}`}
       data-visee={visee ? "oui" : undefined}
       onClick={() => viser(id)}
       onDragOver={auSurvol}
       onDragLeave={() => setSurvol(false)}
       onDrop={auDepot}
-      className={`flex flex-wrap items-center gap-3 p-3 transition-colors first:rounded-t-3xl last:rounded-b-3xl sm:flex-nowrap ${visee || survol ? "bg-marque/5 ring-2 ring-inset ring-marque" : ""}`}
+      className={`flex scroll-mt-28 flex-wrap items-center gap-3 p-3 transition-colors first:rounded-t-3xl last:rounded-b-3xl sm:flex-nowrap ${visee || survol ? "bg-marque/5 ring-2 ring-inset ring-marque" : ""}`}
     >
       {/* D'abord ce que Wolt montre : c'est ce qui dit au gérant quel article chercher. */}
       {photoWolt ? (

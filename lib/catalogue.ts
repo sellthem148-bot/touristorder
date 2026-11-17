@@ -9,6 +9,7 @@ import { descriptionArticle, nomArticle, traduireGroupes } from "./i18n/catalogu
 import { nomDuRayon, nomDuSousRayon } from "./i18n/rayons";
 import { classer, ficheDe, motsDeRecherche, type Fiche } from "./recherche";
 import { PHOTOS_POUR_UNE_RANGEE, photosDAbord, sousRayonDe } from "./sous-rayons";
+import { reperesDuGerant } from "./vue-gerant";
 
 // Ce qu'une page PUBLIQUE lit d'un produit. Jamais le prix d'achat,
 // la boutique ni le lien Wolt : ils sont à toi seul.
@@ -34,6 +35,11 @@ export type ProduitPublic = Omit<Brut, "options" | "badge" | "prixBarre"> & {
   prixBarre: number | null;
   /** Le sous-rayon de l'article dans son rayon (« eaux », « colas »… ou « autres ») : lib/sous-rayons.ts. */
   sousRayon: string;
+  /**
+   * Vue du gérant seulement (lib/vue-gerant.ts) : la photo de Wolt d'un article qui n'a pas encore la sienne,
+   * pour qu'il sache quelle image chercher. Toujours `null` pour un client.
+   */
+  repere: string | null;
 };
 
 /**
@@ -41,7 +47,7 @@ export type ProduitPublic = Omit<Brut, "options" | "badge" | "prixBarre"> & {
  * de départ sont traduits (lib/i18n/catalogue) ; ce que le gérant a écrit lui-même reste tel quel.
  * Sans langue : en français (les textes de la base).
  */
-function versPublic(p: Brut, langue: Langue = "fr"): ProduitPublic {
+function versPublic(p: Brut, langue: Langue = "fr", repere: string | null = null): ProduitPublic {
   return {
     ...p,
     nom: nomArticle(p.nom, langue),
@@ -52,7 +58,17 @@ function versPublic(p: Brut, langue: Langue = "fr"): ProduitPublic {
     prixBarre: p.prixBarre != null && p.prixBarre > p.prix ? p.prixBarre : null,
     // D'après le nom FRANÇAIS (celui de la base), avant sa traduction.
     sousRayon: sousRayonDe(p.categorie.slug, p.nom),
+    repere,
   };
+}
+
+/**
+ * Une liste de produits telle que la page la reçoit. Pour le gérant connecté à son espace, les articles sans
+ * photo portent en plus celle de Wolt (`repere`) ; pour un client, jamais (lib/vue-gerant.ts).
+ */
+async function versPublics(liste: Brut[], langue: Langue): Promise<ProduitPublic[]> {
+  const reperes = await reperesDuGerant(liste);
+  return liste.map((p) => versPublic(p, langue, reperes.get(p.id) ?? null));
 }
 
 // En ligne, avec un prix (0 = « à définir »), dans une catégorie visible.
@@ -73,7 +89,7 @@ export async function produitsDeLaCategorie(slug: string, langue: Langue = "fr")
     orderBy: ORDRE,
     select: PRODUIT_PUBLIC,
   });
-  return liste.map((p) => versPublic(p, langue));
+  return versPublics(liste, langue);
 }
 
 /**
@@ -89,7 +105,7 @@ export async function vitrine(parCategorie = 10, langue: Langue = "fr") {
         prisma.produit.findMany({ where: { ...VISIBLE, categorieId: c.id, ...where }, orderBy: ORDRE, take: parCategorie, select: PRODUIT_PUBLIC });
       const avecPhoto = await lire({ photoUrl: { not: "" } });
       const produits = avecPhoto.length >= PHOTOS_POUR_UNE_RANGEE ? avecPhoto : await lire({});
-      return { categorie: c, produits: produits.map((p) => versPublic(p, langue)), total: c._count.produits };
+      return { categorie: c, produits: await versPublics(produits, langue), total: c._count.produits };
     }),
   );
 }
@@ -102,7 +118,7 @@ export async function misEnAvant(nombre = 12, langue: Langue = "fr") {
     take: nombre,
     select: PRODUIT_PUBLIC,
   });
-  return liste.map((p) => versPublic(p, langue));
+  return versPublics(liste, langue);
 }
 
 // Ce que la recherche lit de chaque article en vente : peu de chose, gardé quelques secondes. La recherche de
@@ -164,11 +180,8 @@ export async function rechercher(texte: string, langue: Langue = "fr", maximum =
   if (ids.length === 0) return [];
   // Relus à l'instant, avec la même condition : un article masqué depuis le relevé ne ressort pas.
   const liste = await prisma.produit.findMany({ where: { ...VISIBLE, id: { in: ids } }, select: PRODUIT_PUBLIC });
-  const parId = new Map(liste.map((p) => [p.id, p]));
-  return ids.flatMap((id) => {
-    const p = parId.get(id);
-    return p ? [versPublic(p, langue)] : [];
-  });
+  const parId = new Map((await versPublics(liste, langue)).map((p) => [p.id, p]));
+  return ids.flatMap((id) => parId.get(id) ?? []);
 }
 
 /** Prix, options et disponibilité actuels des produits d'un panier. */
@@ -186,7 +199,7 @@ export async function etatDuPanier(ids: string[], langue: Langue = "fr") {
 export async function produitsParIds(ids: string[], langue: Langue = "fr") {
   if (ids.length === 0) return [];
   const liste = await prisma.produit.findMany({ where: { id: { in: ids.slice(0, 50) }, ...VISIBLE }, select: PRODUIT_PUBLIC });
-  const parId = new Map(liste.map((p) => [p.id, versPublic(p, langue)]));
+  const parId = new Map((await versPublics(liste, langue)).map((p) => [p.id, p]));
   return ids.map((id) => parId.get(id)).filter((p): p is ProduitPublic => !!p);
 }
 

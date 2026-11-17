@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { refresh } from "next/cache";
+import { cookies } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -15,6 +16,7 @@ import { slugDe } from "@/lib/slug";
 import { lireReglages } from "@/lib/reglages";
 import { lirePrix } from "@/lib/argent";
 import { derniereDiscussion, envoyerTelegram, estJetonTelegram, robotTelegram } from "@/lib/telegram";
+import { COOKIE_VUE_CLIENT, DUREE_VUE_CLIENT_S } from "@/lib/vue-gerant";
 
 const texte = (form: FormData, cle: string) => String(form.get(cle) ?? "");
 const id = (form: FormData, cle = "id") => {
@@ -600,4 +602,20 @@ export async function delierTelegram() {
   await lireReglages();
   await prisma.reglages.update({ where: { id: 1 }, data: { telegramJeton: "", telegramDiscussion: "", telegramNom: "" } });
   redirect(versTelegram("ok", "Alerte Telegram retirée."));
+}
+
+/**
+ * La vue du gérant sur son site (bandeau « Vue du gérant », components/admin/VueDuGerant.tsx) : avec les photos
+ * de Wolt sur les articles sans photo — le réglage de départ —, ou comme un client. Rien ne change pour les
+ * clients : ce n'est qu'un choix d'affichage, gardé douze heures sur cet appareil.
+ */
+export async function changerLaVueDuSite(form: FormData) {
+  await exigerAdmin();
+  const c = await cookies();
+  if (texte(form, "vue") === "client") {
+    c.set(COOKIE_VUE_CLIENT, "1", { path: "/", maxAge: DUREE_VUE_CLIENT_S, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production" });
+  } else {
+    c.delete(COOKIE_VUE_CLIENT);
+  }
+  refresh();
 }

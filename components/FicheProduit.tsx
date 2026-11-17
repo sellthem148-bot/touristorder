@@ -16,6 +16,7 @@ import { envolVersLePanier } from "@/lib/envol";
 import { Photo } from "./Photo";
 import { IconeRayon } from "./IconeRayon";
 import { couleurDuRayon } from "@/lib/couleurs-rayons";
+import { ApercuSurFiche } from "./admin/ApercuGerant";
 
 /** La fiche d'un produit : la photo s'il y en a une, la description, le choix des options, la quantité. */
 export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; fermer: () => void }) {
@@ -101,6 +102,9 @@ export function FicheProduit({ produit, fermer }: { produit: ProduitPublic; ferm
       </div>
       {produit.photoUrl ? (
         <Photo src={produit.photoUrl} alt={produit.nom} paresseuse={false} className="en-fondu aspect-[16/10] max-h-72 w-full border-b border-slate-200 bg-white object-contain" />
+      ) : produit.repere ? (
+        // Vue du gérant seulement : la photo de Wolt en entier, et le lien pour poser la vraie photo.
+        <ApercuSurFiche photo={produit.repere} id={produit.id} />
       ) : (
         // Sans photo : un bandeau à la couleur du rayon (pas une image de remplacement : il ne montre pas l'article).
         <div aria-hidden="true" className={`en-fondu flex h-20 items-center border-b px-5 ${couleur.bandeau}`}>

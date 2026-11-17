@@ -15,6 +15,7 @@ import { envolVersLePanier } from "@/lib/envol";
 import { Photo } from "./Photo";
 import { IconeRayon } from "./IconeRayon";
 import { couleurDuRayon } from "@/lib/couleurs-rayons";
+import { ApercuSurCarte } from "./admin/ApercuGerant";
 
 // Le bouton posé dans le coin haut GAUCHE de la photo, dans toutes les langues (décision du gérant : en
 // hébreu aussi, comme sur Wolt). Arrondi comme la photo côté coin, et à l'opposé : la forme de Wolt.
@@ -123,6 +124,9 @@ export function CarteProduit({ produit, sansBadge = false, rang }: { produit: Pr
             src={produit.photoUrl}
             className={`aspect-[4/3] w-full bg-white object-contain p-2 transition-transform duration-300 group-hover/tuile:scale-[1.05] ${produit.epuise ? "opacity-50 grayscale" : ""}`}
           />
+        ) : produit.repere ? (
+          // Vue du gérant seulement : la photo de Wolt, pour qu'il sache quelle image chercher (lib/vue-gerant.ts).
+          <ApercuSurCarte photo={produit.repere} epuise={produit.epuise} />
         ) : (
           <div data-sans-photo aria-hidden="true" className={`flex aspect-[4/3] w-full items-center justify-center ${couleurDuRayon(produit.categorie.slug).zone} ${produit.epuise ? "opacity-60 grayscale" : ""}`}>
             <IconeRayon slug={produit.categorie.slug} className="h-11 w-11 transition-transform duration-300 group-hover/tuile:scale-110 sm:h-12 sm:w-12" />

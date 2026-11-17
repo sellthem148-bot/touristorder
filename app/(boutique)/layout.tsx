@@ -8,6 +8,7 @@ import { BarrePanier } from "@/components/LienPanier";
 import { EntreePage } from "@/components/EntreePage";
 import { BarreDeNavigation } from "@/components/BarreDeNavigation";
 import { Apparition } from "@/components/Apparition";
+import { BandeauDuGerant } from "@/components/admin/VueDuGerant";
 import { FOND_DE_LA_BOUTIQUE, FOND_SOMBRE } from "@/lib/fond";
 import { NOM_DU_SITE } from "@/lib/marque";
 import { traduction } from "@/lib/traduction";
@@ -25,6 +26,8 @@ export default async function LayoutBoutique({ children }: LayoutProps<"/">) {
           <BarreDeNavigation />
         </Suspense>
         <EnTete t={t} langue={langue} />
+        {/* Pour le gérant connecté seulement (rien pour un client) : ce qu'il voit de plus qu'eux sur son site. */}
+        <BandeauDuGerant />
         <main id="contenu" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-5 sm:pb-20 sm:pt-8">
           <EntreePage>{children}</EntreePage>
         </main>

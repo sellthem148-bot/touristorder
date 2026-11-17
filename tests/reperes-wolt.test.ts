@@ -105,6 +105,49 @@ describe("photos repère", () => {
     expect(NOMBRE_DE_PHOTOS_REPERE).toBe(new Set(PHOTOS_REPERE.map((p) => p.fichier)).size);
   });
 
+  it("vue du gérant sur le site : la photo de Wolt n'arrive sur une page de la boutique que par lib/vue-gerant.ts, pour le gérant connecté", () => {
+    // « Grâce à ces images de Wolt je peux chercher les images qui correspondent à chaque produit — alors mets-moi
+    // les images » (17 novembre 2026). Il les voit sur SON site, connecté à son espace ; un client, jamais.
+    const lire = (f: string) => readFileSync(f, "utf8");
+    const vue = lire("lib/vue-gerant.ts");
+    expect(vue).toContain('import "server-only"');
+    // Qui regarde : sans la connexion du gérant, rien — quoi que dise le cookie de la vue.
+    const qui = vue.slice(vue.indexOf("export const vueDuGerant"), vue.indexOf("export async function reperesDuGerant"));
+    expect(qui).toContain("if (!(await estAdmin())) return { gerant: false, photosDeWolt: false };");
+    expect(qui.indexOf("await estAdmin()")).toBeLessThan(qui.indexOf("COOKIE_VUE_CLIENT"));
+    // Les photos : la question est posée AVANT de relire la base ou de chercher une photo.
+    const reperes = vue.slice(vue.indexOf("export async function reperesDuGerant"));
+    const garde = reperes.indexOf("!(await vueDuGerant()).photosDeWolt) return reperes;");
+    expect(garde).toBeGreaterThan(-1);
+    expect(garde).toBeLessThan(reperes.indexOf("prisma.produit.findMany"));
+    expect(garde).toBeLessThan(reperes.indexOf("photoRepere("));
+    // Le catalogue ne connaît que cette porte : sans elle `repere` vaut null, et le nom sur Wolt reste hors de ce qu'une page reçoit.
+    const catalogue = lire("lib/catalogue.ts");
+    expect(catalogue).toContain("const reperes = await reperesDuGerant(liste);");
+    expect(catalogue).toContain("function versPublic(p: Brut, langue: Langue = \"fr\", repere: string | null = null): ProduitPublic {");
+    expect(catalogue.match(/versPublic\(/g)).toHaveLength(2); // sa définition, et `versPublics` : aucun lecteur ne la contourne
+    expect(catalogue.slice(catalogue.indexOf("export const PRODUIT_PUBLIC"), catalogue.indexOf("satisfies Prisma.ProduitSelect"))).not.toMatch(/nomWolt|prixAchat|boutique|lienWolt|prixIndicatif/);
+    // La carte et la fiche ne la montrent que si le serveur l'a donnée, avec l'étiquette « Wolt ».
+    expect(lire("components/CarteProduit.tsx")).toContain("<ApercuSurCarte photo={produit.repere} epuise={produit.epuise} />");
+    expect(lire("components/FicheProduit.tsx")).toContain("<ApercuSurFiche photo={produit.repere} id={produit.id} />");
+    const apercu = lire("components/admin/ApercuGerant.tsx");
+    expect(apercu).toContain(">Wolt</span>");
+    expect(apercu).toContain("Photo de Wolt : toi seul la vois.");
+    expect(apercu).toContain("href={`/admin/produits/photos#p-${id}`}");
+    // Le bandeau : rien pour un client ; au gérant, il dit que ses clients ne voient pas ces photos.
+    const bandeau = lire("components/admin/VueDuGerant.tsx");
+    expect(bandeau).toContain("if (!vue.gerant) return null;");
+    expect(bandeau).toContain("Tes clients voient l'icône du rayon, jamais ces photos.");
+    expect(lire("app/(boutique)/layout.tsx")).toContain("<BandeauDuGerant />");
+    // « Voir comme un client » n'est qu'un choix d'affichage du gérant : l'action exige sa connexion.
+    const actions = lire("app/admin/(protege)/actions.ts");
+    const action = actions.slice(actions.indexOf("export async function changerLaVueDuSite"));
+    expect(action.indexOf("await exigerAdmin()")).toBeGreaterThan(-1);
+    expect(action.indexOf("await exigerAdmin()")).toBeLessThan(action.indexOf("cookies()"));
+    // La photo elle-même reste servie au gérant seul.
+    expect(photoRepere("Lait Tnuva 3 % 1 L", "")).toMatch(/^\/admin\/repere\//);
+  });
+
   it("ces photos appartiennent à Wolt et aux marques : aucune dans public/, aucune page client ne les connaît", () => {
     const publics = new Set(fichiersDe("public").map((f) => path.basename(f)));
     for (const p of PHOTOS_REPERE) expect(publics.has(p.fichier), p.fichier).toBe(false);
