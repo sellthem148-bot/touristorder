@@ -745,6 +745,9 @@ const FICHIERS = new Set(PHOTOS_REPERE.map((p) => p.fichier));
 /** Vrai si ce nom de fichier est celui d'une photo repère (la route ne lit jamais autre chose). */
 export const estPhotoRepere = (fichier: string) => FICHIERS.has(fichier);
 
+/** Le nombre de fichiers attendus sur le serveur (deux articles peuvent partager une photo). */
+export const NOMBRE_DE_PHOTOS_REPERE = FICHIERS.size;
+
 /** L'adresse (réservée au gérant) de la photo Wolt d'un article ; `null` si ses captures ne la contiennent pas. */
 export function photoRepere(nom: string, nomWolt: string | null | undefined): string | null {
   const fichier = PAR_NOM_WOLT.get((nomWolt ?? "").trim()) ?? PAR_NOM.get(nom);

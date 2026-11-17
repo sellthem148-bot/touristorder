@@ -2,7 +2,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { DOSSIER_DES_REPERES, PHOTOS_REPERE, estPhotoRepere, photoRepere } from "@/lib/reperes-wolt";
+import { DOSSIER_DES_REPERES, NOMBRE_DE_PHOTOS_REPERE, PHOTOS_REPERE, estPhotoRepere, photoRepere } from "@/lib/reperes-wolt";
 import { repereWolt } from "@/lib/repere-wolt";
 import { LOTS_WOLT } from "../prisma/remplissage";
 import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
@@ -90,6 +90,19 @@ describe("photos repère", () => {
     expect(photo).toMatch(/ligne: "h-\[84px\] w-28 sm:h-\[108px\] sm:w-36"/);
     expect(photo).toContain(">Wolt</span>");
     expect(photo).not.toContain('"use client"');
+  });
+
+  it("« /admin/repere/etat » dit de l'extérieur si les photos sont sur le serveur : un nombre, jamais un nom ni une photo", () => {
+    const route = readFileSync("app/admin/(protege)/repere/[fichier]/route.ts", "utf8");
+    // Seule cette adresse répond sans connexion ; toute photo passe toujours par exigerAdmin().
+    expect(route).toContain('if (fichier === "etat") return Response.json(await etatDesPhotos()');
+    expect(route.indexOf('if (fichier === "etat")')).toBeLessThan(route.indexOf("await exigerAdmin()"));
+    expect(route.indexOf("await exigerAdmin()")).toBeLessThan(route.indexOf("readFile("));
+    expect(estPhotoRepere("etat")).toBe(false);
+    const etat = route.slice(route.indexOf("async function etatDesPhotos"));
+    expect(etat).toContain("presentes: fichiers.filter(estPhotoRepere).length");
+    expect(etat).not.toMatch(/readFile|fichiers\s*[,}]|nom\b/);
+    expect(NOMBRE_DE_PHOTOS_REPERE).toBe(new Set(PHOTOS_REPERE.map((p) => p.fichier)).size);
   });
 
   it("ces photos appartiennent à Wolt et aux marques : aucune dans public/, aucune page client ne les connaît", () => {
