@@ -20,6 +20,8 @@ import { ABSENTS_DE_WOLT } from "./absents-de-wolt";
 import { MASQUAGES } from "./masquages-1115";
 import { CLE_REMISE_EN_VENTE_AVEC_PHOTO, REMIS_EN_VENTE_AVEC_PHOTO } from "./remise-en-vente-1116";
 import { CLE_RETRAIT_VIANDE_FRAICHE, VIANDE_FRAICHE } from "./retrait-viande-fraiche-1119";
+import { CLE_RETRAIT_POISSON, POISSON_RETIRE } from "./retrait-poisson-1119";
+import { CLE_RETRAIT_SURGELES, SURGELES_RETIRES } from "./retrait-surgeles-1119";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 import { RELEVE_DES_CANETTES, RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
@@ -454,6 +456,47 @@ export async function retirerLaViandeFraiche(prisma: PrismaClient): Promise<stri
     noterOperation(prisma, CLE_RETRAIT_VIANDE_FRAICHE),
   ]);
   return `Viande et poulet frais : ${masques.count} articles masqués sur ${VIANDE_FRAICHE.length}.`;
+}
+
+/**
+ * « Enlève : Poisson surgelé - Poisson frais » (le gérant, 19 novembre 2026) : les 22 articles de ces deux
+ * sous-rayons de « Boucherie & poisson » sont masqués (prisma/retrait-poisson-1119.ts). Masqués, pas supprimés ;
+ * le poisson fumé et salé, la charcuterie, les sauces et le rayon « Surgelés & glaces » ne sont pas touchés. Une
+ * seule fois : ce qu'il remet en vente lui-même ensuite y reste. Un article de Wolt est retrouvé par son nom sur
+ * Wolt (il a pu le renommer). À lancer APRÈS `remettreEnVenteCeQuiAUnePhoto` : sur une base neuve, elle aurait
+ * remis en vente les poissons surgelés.
+ */
+export async function retirerLePoissonFraisEtSurgele(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RETRAIT_POISSON);
+  if (faite === null) return "Poisson frais et surgelé : réglages pas encore créés, rien de masqué.";
+  if (faite) return "Poisson frais et surgelé : déjà retirés, rien de changé.";
+  const retires = new Set(POISSON_RETIRE);
+  const nomsWolt = LOTS_WOLT.flatMap((l) => l.articles).filter((a) => retires.has(a.nom) && a.nomWolt).map((a) => a.nomWolt);
+  const [masques] = await prisma.$transaction([
+    prisma.produit.updateMany({ where: { actif: true, OR: [{ nom: { in: POISSON_RETIRE } }, { nomWolt: { in: nomsWolt } }] }, data: { actif: false } }),
+    noterOperation(prisma, CLE_RETRAIT_POISSON),
+  ]);
+  return `Poisson frais et surgelé : ${masques.count} articles masqués sur ${POISSON_RETIRE.length}.`;
+}
+
+/**
+ * « Supprime : Viande & volaille - Poisson - Glaces » (le gérant, 19 novembre 2026) : les onze articles de ces
+ * trois sous-rayons de « Surgelés & glaces » sont masqués (prisma/retrait-surgeles-1119.ts) ; le rayon garde ses
+ * pizzas et plats. Masqués, pas effacés de sa base ; la charcuterie de « Boucherie & poisson » n'est pas touchée.
+ * Une seule fois : ce qu'il remet en vente lui-même ensuite y reste. À lancer APRÈS
+ * `remettreEnVenteCeQuiAUnePhoto` : sur une base neuve, elle aurait remis en vente poisson et viande surgelés.
+ */
+export async function retirerLesSurgeles(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RETRAIT_SURGELES);
+  if (faite === null) return "Surgelés (viande, poisson, glaces) : réglages pas encore créés, rien de masqué.";
+  if (faite) return "Surgelés (viande, poisson, glaces) : déjà retirés, rien de changé.";
+  const retires = new Set(SURGELES_RETIRES);
+  const nomsWolt = LOTS_WOLT.flatMap((l) => l.articles).filter((a) => retires.has(a.nom) && a.nomWolt).map((a) => a.nomWolt);
+  const [masques] = await prisma.$transaction([
+    prisma.produit.updateMany({ where: { actif: true, OR: [{ nom: { in: SURGELES_RETIRES } }, { nomWolt: { in: nomsWolt } }] }, data: { actif: false } }),
+    noterOperation(prisma, CLE_RETRAIT_SURGELES),
+  ]);
+  return `Surgelés (viande, poisson, glaces) : ${masques.count} articles masqués sur ${SURGELES_RETIRES.length}.`;
 }
 
 /** La clé de l'opération ci-dessous (Reglages.operationsFaites). */

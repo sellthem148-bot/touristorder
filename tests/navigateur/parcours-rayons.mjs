@@ -119,16 +119,15 @@ try {
   ok("toucher la tuile ouvre la fiche de l'article");
   await tel.keyboard.press("Escape");
 
-  // 7. Les surgelés : depuis le retour en vente du poisson surgelé et de la viande (16 novembre), ce rayon a lui
-  //    aussi ses sous-rayons. Plus aucun rayon du catalogue entier ne tient en 12 articles : le rayon sans
-  //    sous-rayons se vérifie sur le jeu de test (largeur.mjs, parcours-langues.mjs).
+  // 7. Les surgelés : depuis le 19 novembre (« supprime : Viande & volaille - Poisson - Glaces ») il n'y reste que
+  //    les pizzas et plats — un petit rayon, tous ses articles, sans sous-rayons.
   await tel.goto(BASE + "/categorie/surgeles-glaces", { waitUntil: "networkidle" });
-  const surgeles = await tel.getByRole("navigation", { name: "Sous-rayons" }).getByRole("link").allInnerTexts();
-  verifier(surgeles.includes("Poisson") && surgeles.includes("Viande & volaille") && (await visibles(tel.locator("main"))) >= 6, `surgelés : sous-rayons ${surgeles.slice(1).join(", ")} — le poisson et la viande sont revenus en vente`);
-  // Le rayon où la viande revient a repris son nom, à la même adresse.
+  const surgeles = await tel.locator("main article h3").allInnerTexts();
+  verifier((await tel.getByRole("navigation", { name: "Sous-rayons" }).count()) === 0 && surgeles.length >= 1 && surgeles.length <= 12 && !surgeles.some((n) => /saumon|tilapia|poisson|poulet|bœuf|glace/i.test(n)), `surgelés : petit rayon sans sous-rayons, ${surgeles.length} articles — ni viande, ni poisson, ni glace`);
+  // « Boucherie & poisson » : le poisson frais et le poisson surgelé en sont partis le même jour ; le fumé reste.
   await tel.goto(BASE + "/categorie/poisson", { waitUntil: "networkidle" });
   const boucherie = await tel.getByRole("navigation", { name: "Sous-rayons" }).getByRole("link").allInnerTexts();
-  verifier((await tel.locator("main h1").innerText()).trim() === "Boucherie & poisson" && boucherie.includes("Viande & volaille") && boucherie.includes("Poisson surgelé"), `/categorie/poisson : « Boucherie & poisson », sous-rayons ${boucherie.slice(1).join(", ")}`);
+  verifier((await tel.locator("main h1").innerText()).trim() === "Boucherie & poisson" && boucherie.includes("Fumé & salé") && boucherie.includes("Viande & volaille") && !boucherie.includes("Poisson surgelé") && !boucherie.includes("Poisson frais"), `/categorie/poisson : « Boucherie & poisson », sous-rayons ${boucherie.slice(1).join(", ")} — plus de poisson frais ni surgelé`);
 
   // 8. Sur ordinateur : la colonne des rayons, celui-ci ouvert sur ses sous-rayons ; une rangée par sous-rayon
   await ordi.goto(BASE + "/categorie/cremerie-oeufs", { waitUntil: "networkidle" });
