@@ -19,6 +19,7 @@ import { CREMERIE_GARDEE, INTROUVABLES_SUR_WOLT, RAYON_CREMERIE } from "./allege
 import { ABSENTS_DE_WOLT } from "./absents-de-wolt";
 import { MASQUAGES } from "./masquages-1115";
 import { CLE_REMISE_EN_VENTE_AVEC_PHOTO, REMIS_EN_VENTE_AVEC_PHOTO } from "./remise-en-vente-1116";
+import { CLE_RETRAIT_VIANDE_FRAICHE, VIANDE_FRAICHE } from "./retrait-viande-fraiche-1119";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 import { RELEVE_DES_CANETTES, RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
@@ -433,6 +434,26 @@ export async function remettreEnVenteCeQuiAUnePhoto(prisma: PrismaClient): Promi
   const renomme = rayon != null && pris === 0;
   if (renomme) await prisma.categorie.update({ where: { id: rayon.id }, data: { nom: RAYON_BOUCHERIE } });
   return `Articles masqués qui ont leur photo : ${remis.count} remis en vente sur ${REMIS_EN_VENTE_AVEC_PHOTO.length}${renomme ? ` ; rayon renommé « ${RAYON_BOUCHERIE} »` : ""}.`;
+}
+
+/**
+ * « Enlève-moi tout ce qui est viande, poulet frais » (le gérant, 19 novembre 2026) : les sept articles de
+ * viande et de poulet FRAIS revenus en vente le 16 novembre sont masqués (prisma/retrait-viande-fraiche-1119.ts).
+ * Masqués, pas supprimés ; la charcuterie sous vide et les deux surgelés restent en vente. Une seule fois : ce
+ * qu'il remet en vente lui-même ensuite y reste. Un article de Wolt est retrouvé par son nom sur Wolt (il a pu
+ * le renommer). À lancer APRÈS `remettreEnVenteCeQuiAUnePhoto` : sur une base neuve, elle les aurait remis.
+ */
+export async function retirerLaViandeFraiche(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RETRAIT_VIANDE_FRAICHE);
+  if (faite === null) return "Viande et poulet frais : réglages pas encore créés, rien de masqué.";
+  if (faite) return "Viande et poulet frais : déjà retirés, rien de changé.";
+  const frais = new Set(VIANDE_FRAICHE);
+  const nomsWolt = LOTS_WOLT.flatMap((l) => l.articles).filter((a) => frais.has(a.nom) && a.nomWolt).map((a) => a.nomWolt);
+  const [masques] = await prisma.$transaction([
+    prisma.produit.updateMany({ where: { actif: true, OR: [{ nom: { in: VIANDE_FRAICHE } }, { nomWolt: { in: nomsWolt } }] }, data: { actif: false } }),
+    noterOperation(prisma, CLE_RETRAIT_VIANDE_FRAICHE),
+  ]);
+  return `Viande et poulet frais : ${masques.count} articles masqués sur ${VIANDE_FRAICHE.length}.`;
 }
 
 /** La clé de l'opération ci-dessous (Reglages.operationsFaites). */

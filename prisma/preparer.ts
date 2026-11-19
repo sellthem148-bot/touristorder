@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -115,6 +115,8 @@ async function main() {
     dire(await remettreEnVenteCeQuiAUnePhoto(prisma));
     // « Active-moi les photos pour tout le monde » (17 novembre : le site n'a pas encore de client) : le réglage « Photos de Wolt pour tout le monde » est coché. Une seule fois ; il le décoche lui-même.
     dire(await montrerLesPhotosDeWoltATous(prisma));
+    // « Enlève-moi tout ce qui est viande, poulet frais » (19 novembre) : les sept articles frais revenus en vente le 16 sont masqués — après la remise en vente ci-dessus. Une seule fois, rien de supprimé.
+    dire(await retirerLaViandeFraiche(prisma));
     // Sa liste « Dynamica » : installée « à compléter », masquée — et elle le reste (prix et modèles invérifiables).
     dire(await installerLaListeDynamica(prisma));
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.
