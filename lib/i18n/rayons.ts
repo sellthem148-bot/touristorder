@@ -2,10 +2,16 @@
 // les cinq dictionnaires : utilisable dans le navigateur avec le dictionnaire reçu du serveur.
 import fr, { type Dictionnaire } from "./fr";
 
+// Un rayon de départ que le gérant a fait renommer : sur une base où il porte encore son ancien nom de départ
+// (jeu de test, base pas encore mise à niveau), il se lit déjà sous le nouveau. « Surgelés & glaces » est devenu
+// « Surgelés » le 22 novembre 2026 (prisma/renommage-surgeles-1122.ts).
+const ANCIENS_NOMS_DE_DEPART: Record<string, string[]> = { "surgeles-glaces": ["Surgelés & glaces"] };
+
 /** Le nom d'un rayon de départ dans la langue du client, tant que le gérant ne l'a pas renommé. */
 export function nomDuRayon(rayon: { slug: string; nom: string }, t: Dictionnaire): string {
   const depart = (fr.rayons as Record<string, string>)[rayon.slug];
-  return depart !== undefined && depart === rayon.nom ? (t.rayons as Record<string, string>)[rayon.slug] ?? rayon.nom : rayon.nom;
+  const deDepart = depart !== undefined && (depart === rayon.nom || (ANCIENS_NOMS_DE_DEPART[rayon.slug] ?? []).includes(rayon.nom));
+  return deDepart ? (t.rayons as Record<string, string>)[rayon.slug] ?? rayon.nom : rayon.nom;
 }
 
 /**

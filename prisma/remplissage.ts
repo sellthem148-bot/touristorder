@@ -22,6 +22,7 @@ import { CLE_REMISE_EN_VENTE_AVEC_PHOTO, REMIS_EN_VENTE_AVEC_PHOTO } from "./rem
 import { CLE_RETRAIT_VIANDE_FRAICHE, VIANDE_FRAICHE } from "./retrait-viande-fraiche-1119";
 import { CLE_RETRAIT_POISSON, POISSON_RETIRE } from "./retrait-poisson-1119";
 import { CLE_RETRAIT_SURGELES, SURGELES_RETIRES } from "./retrait-surgeles-1119";
+import { CLE_RENOMMAGE_SURGELES, RAYON_SURGELES } from "./renommage-surgeles-1122";
 import { BOISSONS_GARDEES, BOISSONS_REMISES_EN_VENTE, RAYON_BOISSONS } from "./allegement-boissons";
 import { ARTICLES_WOLT_DU_12_NOVEMBRE, RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE, changementsDuReleve, type LigneDeReleve } from "./releve-wolt-1112";
 import { RELEVE_DES_CANETTES, RELEVE_DES_CHOCOLATS, RELEVE_DU_15_NOVEMBRE } from "./releve-wolt-1115";
@@ -497,6 +498,24 @@ export async function retirerLesSurgeles(prisma: PrismaClient): Promise<string> 
     noterOperation(prisma, CLE_RETRAIT_SURGELES),
   ]);
   return `Surgelés (viande, poisson, glaces) : ${masques.count} articles masqués sur ${SURGELES_RETIRES.length}.`;
+}
+
+/**
+ * « Oui, renomme-le en Surgelés » (le gérant, 22 novembre 2026) : le rayon « Surgelés & glaces », qui ne vend
+ * plus de glaces, devient « Surgelés » (prisma/renommage-surgeles-1122.ts). Son adresse ne change pas. Une seule
+ * fois, et seulement s'il porte encore son nom de départ : un nom que le gérant lui a donné lui-même reste.
+ */
+export async function renommerLesSurgeles(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RENOMMAGE_SURGELES);
+  if (faite === null) return "Rayon « Surgelés » : réglages pas encore créés, rien de renommé.";
+  if (faite) return "Rayon « Surgelés » : déjà renommé une fois, rien de changé.";
+  // Jamais deux rayons du même nom : s'il en a créé un « Surgelés » entre-temps, on ne touche à rien.
+  const pris = await prisma.categorie.count({ where: { nom: RAYON_SURGELES.nom } });
+  const [renomme] = await prisma.$transaction([
+    prisma.categorie.updateMany({ where: pris === 0 ? { slug: RAYON_SURGELES.slug, nom: RAYON_SURGELES.ancien } : { id: "aucun" }, data: { nom: RAYON_SURGELES.nom } }),
+    noterOperation(prisma, CLE_RENOMMAGE_SURGELES),
+  ]);
+  return renomme.count === 1 ? `Rayon « ${RAYON_SURGELES.ancien} » renommé « ${RAYON_SURGELES.nom} ».` : "Rayon « Surgelés » : il ne porte plus son nom de départ, rien de renommé.";
 }
 
 /** La clé de l'opération ci-dessous (Reglages.operationsFaites). */

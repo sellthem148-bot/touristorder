@@ -89,7 +89,7 @@ const ru: Dictionnaire = {
     "boissons": "Напитки",
     "fruits-legumes": "Фрукты и овощи",
     "poisson": "Мясо и рыба",
-    "surgeles-glaces": "Заморозка и мороженое",
+    "surgeles-glaces": "Заморозка",
     "apero-snacks": "Закуски и снеки",
     "bebe-enfants": "Для малышей и детей",
     "plage-soleil": "Пляж и солнце",

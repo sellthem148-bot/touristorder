@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, retirerLePoissonFraisEtSurgele, retirerLesSurgeles, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, retirerLePoissonFraisEtSurgele, retirerLesSurgeles, renommerLesSurgeles, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -121,6 +121,8 @@ async function main() {
     dire(await retirerLePoissonFraisEtSurgele(prisma));
     // « Supprime : Viande & volaille - Poisson - Glaces » (19 novembre) : onze articles de « Surgelés & glaces » masqués, le rayon garde ses pizzas et plats. Une seule fois, rien d'effacé.
     dire(await retirerLesSurgeles(prisma));
+    // « Oui, renomme-le en Surgelés » (22 novembre) : le rayon « Surgelés & glaces », qui ne vend plus de glaces, change de nom — pas d'adresse. Une seule fois, s'il porte encore son nom de départ.
+    dire(await renommerLesSurgeles(prisma));
     // Sa liste « Dynamica » : installée « à compléter », masquée — et elle le reste (prix et modèles invérifiables).
     dire(await installerLaListeDynamica(prisma));
     // Les photos libres de droits des produits frais : une seule fois, jamais sur un article qui a déjà une photo.

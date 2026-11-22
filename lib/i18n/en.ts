@@ -92,7 +92,7 @@ const en: Dictionnaire = {
     "boissons": "Drinks",
     "fruits-legumes": "Fruit & vegetables",
     "poisson": "Meat & fish",
-    "surgeles-glaces": "Frozen & ice cream",
+    "surgeles-glaces": "Frozen",
     "apero-snacks": "Snacks & nibbles",
     "bebe-enfants": "Baby & kids",
     "plage-soleil": "Beach & sun",

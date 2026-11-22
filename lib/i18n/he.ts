@@ -88,7 +88,7 @@ const he: Dictionnaire = {
     "boissons": "משקאות",
     "fruits-legumes": "פירות וירקות",
     "poisson": "בשר ודגים",
-    "surgeles-glaces": "קפואים וגלידות",
+    "surgeles-glaces": "קפואים",
     "apero-snacks": "חטיפים ונשנושים",
     "bebe-enfants": "תינוקות וילדים",
     "plage-soleil": "חוף ושמש",

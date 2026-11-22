@@ -89,7 +89,7 @@ const es: Dictionnaire = {
     "boissons": "Bebidas",
     "fruits-legumes": "Frutas y verduras",
     "poisson": "Carne y pescado",
-    "surgeles-glaces": "Congelados y helados",
+    "surgeles-glaces": "Congelados",
     "apero-snacks": "Aperitivos y snacks",
     "bebe-enfants": "Bebés y niños",
     "plage-soleil": "Playa y sol",

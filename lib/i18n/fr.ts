@@ -95,7 +95,7 @@ const fr = {
     "boissons": "Boissons",
     "fruits-legumes": "Fruits & légumes",
     "poisson": "Boucherie & poisson",
-    "surgeles-glaces": "Surgelés & glaces",
+    "surgeles-glaces": "Surgelés",
     "apero-snacks": "Apéro & snacks",
     "bebe-enfants": "Bébé & enfants",
     "plage-soleil": "Plage & soleil",
