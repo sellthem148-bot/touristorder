@@ -11,7 +11,7 @@ import { nomVille } from "@/lib/i18n/catalogue";
 import { DICTIONNAIRES } from "@/lib/i18n";
 import { LANGUES } from "@/lib/langues";
 import { VILLES_EXEMPLE } from "../prisma/catalogue";
-import { GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, supplementsDeLaGrille } from "../prisma/zones-1123";
+import { GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, ZONES_CORRIGEES, supplementsDeLaGrille } from "../prisma/zones-1123";
 
 const lire = (f: string) => readFileSync(path.join(process.cwd(), f), "utf8");
 
@@ -119,12 +119,16 @@ describe("la zone qu'une adresse désigne", () => {
 describe("la grille du gérant (23 novembre 2026)", () => {
   const prix = (nom: string) => GRILLE_DES_ZONES.find((z) => z.nom === nom)?.livraison;
 
-  it("Netanya 30 ₪, son quartier 40 ₪, le Sharon 50 ₪, Herzliya 100 ₪, Tel Aviv 150 ₪", () => {
+  it("Netanya 30 ₪, son quartier 40 ₪, les villages 50 ₪, le Sharon 70 ₪, Herzliya et Césarée 100 ₪, Tel Aviv 150 ₪", () => {
     expect(prix("Netanya")).toBe(3000);
     expect(prix(QUARTIER_IR_YAMIM)).toBe(4000);
-    for (const sharon of ["Even Yehuda", "Kfar Yona", "Kadima-Tsoran", "Pardesia", "Beit Yitzhak", "Tsur Moshe", "Udim", "Ra'anana", "Kfar Saba", "Hod Hasharon", "Hadera", "Césarée"]) {
-      expect(prix(sharon), sharon).toBe(5000);
+    for (const village of ["Even Yehuda", "Kfar Yona", "Kadima-Tsoran", "Pardesia", "Beit Yitzhak", "Tsur Moshe", "Udim"]) {
+      expect(prix(village), village).toBe(5000);
     }
+    // Sa correction du soir même : « toute la ligne Ra'anana, Kfar Saba, Hadera, c'est 70 ; Césarée, 100 ».
+    for (const sharon of ["Ra'anana", "Kfar Saba", "Hod Hasharon", "Hadera"]) expect(prix(sharon), sharon).toBe(7000);
+    expect(prix("Césarée")).toBe(10000);
+    expect(ZONES_CORRIGEES.sort()).toEqual(["Césarée", "Hadera", "Hod Hasharon", "Kfar Saba", "Ra'anana"]);
     expect(prix("Herzliya")).toBe(10000);
     expect(prix("Ramat HaSharon")).toBe(10000);
     for (const loin of ["Tel Aviv", "Ramat Gan", "Givatayim", "Petah Tikva"]) expect(prix(loin), loin).toBe(15000);
@@ -160,6 +164,18 @@ describe("la grille du gérant (23 novembre 2026)", () => {
     expect(corps).toContain("noterOperation(prisma, CLE_GRILLE_DES_ZONES)");
     // Rien n'est supprimé, et une ville retirée par le gérant n'est pas recréée.
     expect(corps).not.toMatch(/delete|createMany/);
+  });
+
+  it("sa correction est une opération à elle, lancée après la grille : la grille déjà appliquée n'est pas rejouée", () => {
+    const preparer = lire("prisma/preparer.ts");
+    expect(preparer.indexOf("corrigerLaGrilleDesZones(prisma)")).toBeGreaterThan(preparer.indexOf("appliquerLaGrilleDesZones(prisma)"));
+    const operation = lire("prisma/remplissage.ts");
+    const debut = operation.indexOf("export async function corrigerLaGrilleDesZones");
+    const corps = operation.slice(debut, operation.indexOf("\n}\n", debut));
+    expect(corps).toContain("operationFaite(prisma, CLE_CORRECTION_DE_LA_GRILLE)");
+    expect(corps).toContain("noterOperation(prisma, CLE_CORRECTION_DE_LA_GRILLE)");
+    expect(corps).toContain("ZONES_CORRIGEES.includes(c.nom)");
+    expect(corps).not.toMatch(/delete|create/);
   });
 
   it("le nom du quartier est traduit, et se lit en hébreu et en russe", () => {

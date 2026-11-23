@@ -7,7 +7,7 @@ import { PHOTOS_FRAIS } from "./photos-frais";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
-import { CLE_GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, supplementsDeLaGrille } from "./zones-1123";
+import { CLE_CORRECTION_DE_LA_GRILLE, CLE_GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, ZONES_CORRIGEES, supplementsDeLaGrille } from "./zones-1123";
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
@@ -139,6 +139,26 @@ export async function appliquerLaGrilleDesZones(prisma: PrismaClient): Promise<s
     noterOperation(prisma, CLE_GRILLE_DES_ZONES),
   ]);
   return `Grille des zones : ${aRegler.length} zone(s) mise(s) au prix du gérant${aCreer.length ? ", quartier « " + QUARTIER_IR_YAMIM + " » créé" : ""}.`;
+}
+
+/**
+ * La correction de la grille (le même soir : « toute la ligne Ra'anana, Kfar Saba, Hadera, c'est 70 ;
+ * Césarée, 100 ») : ces villes — et Hod Hasharon, sur la même ligne — prennent leur nouveau prix, une seule
+ * fois, toujours en supplément par rapport à la livraison de base de ses réglages. Une ville qu'il a
+ * retirée ou renommée n'est pas recréée.
+ */
+export async function corrigerLaGrilleDesZones(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_CORRECTION_DE_LA_GRILLE);
+  if (faite === null) return "Correction de la grille des zones : réglages pas encore créés, rien de changé.";
+  if (faite) return "Correction de la grille des zones : déjà appliquée, rien de changé.";
+  const reglages = await prisma.reglages.findUniqueOrThrow({ where: { id: 1 }, select: { fraisLivraison: true } });
+  const cibles = supplementsDeLaGrille(reglages.fraisLivraison).filter((c) => ZONES_CORRIGEES.includes(c.nom));
+  const resultats = await prisma.$transaction([
+    ...cibles.map((c) => prisma.ville.updateMany({ where: { nom: c.nom }, data: { supplementLivraison: c.supplementLivraison } })),
+    noterOperation(prisma, CLE_CORRECTION_DE_LA_GRILLE),
+  ]);
+  const reglees = resultats.slice(0, cibles.length).reduce((n, r) => n + ("count" in r ? r.count : 0), 0);
+  return `Correction de la grille des zones : ${reglees} ville(s) sur ${cibles.length} au nouveau prix.`;
 }
 
 /**

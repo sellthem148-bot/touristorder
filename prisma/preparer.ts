@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, retirerLePoissonFraisEtSurgele, retirerLesSurgeles, renommerLesSurgeles, appliquerLaGrilleDesZones, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, retirerLePoissonFraisEtSurgele, retirerLesSurgeles, renommerLesSurgeles, appliquerLaGrilleDesZones, corrigerLaGrilleDesZones, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -129,6 +129,8 @@ async function main() {
     dire(await installerLesPhotosFrais(prisma));
     // « Netanya 30 shekels, 40 vers Ir Yamim, 50 pour tout le Sharon, 100 Herzliya, 150 Tel Aviv » (23 novembre) : sa grille de livraison, et le quartier Ir Yamim / Poleg créé comme une zone à son prix. Une seule fois ; il règle ensuite ses zones dans « Villes ».
     dire(await appliquerLaGrilleDesZones(prisma));
+    // Sa correction du soir même : « toute la ligne Ra'anana, Kfar Saba, Hadera, c'est 70 ; Césarée, 100 » (Hod Hasharon, sur la même ligne, suit). Une seule fois.
+    dire(await corrigerLaGrilleDesZones(prisma));
     // 4. Les réglages restés à une ancienne valeur par défaut (jamais ceux que le gérant a modifiés).
     dire(await mettreLesReglagesANiveau(prisma));
   } finally {

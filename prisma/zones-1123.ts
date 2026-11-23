@@ -3,6 +3,8 @@
 // 150 Tel Aviv ». Ses réponses le même jour : la zone à 40 ₪ est un QUARTIER de Netanya (Ir Yamim / Poleg),
 // et pour les villes qu'il n'avait pas citées — 100 ₪ Ramat HaSharon, 150 ₪ Ramat Gan, Givatayim et Petah
 // Tikva, 50 ₪ Hadera et Césarée. Les villages autour de Netanya suivent sa règle « tout le Sharon » : 50 ₪.
+// Le soir même, devant le tableau de ces prix, il a corrigé : « toute la ligne Ra'anana, Kfar Saba, Hadera,
+// c'est 70 ; Césarée, 100 » — la ligne portait aussi Hod Hasharon, qui suit donc à 70 ₪ (ZONES_CORRIGEES).
 //
 // Les prix sont ceux de la livraison au tarif de base, en agorot. Le site garde « livraison du moment +
 // supplément de la zone » (lib/villes.ts) : le supplément se déduit de la livraison de base des Réglages.
@@ -24,11 +26,12 @@ export const GRILLE_DES_ZONES: { nom: string; livraison: number }[] = [
   { nom: "Beit Yitzhak", livraison: 5000 },
   { nom: "Tsur Moshe", livraison: 5000 },
   { nom: "Udim", livraison: 5000 },
-  { nom: "Ra'anana", livraison: 5000 },
-  { nom: "Kfar Saba", livraison: 5000 },
-  { nom: "Hod Hasharon", livraison: 5000 },
-  { nom: "Hadera", livraison: 5000 },
-  { nom: "Césarée", livraison: 5000 },
+  // Les villes du Sharon, plus loin
+  { nom: "Ra'anana", livraison: 7000 },
+  { nom: "Kfar Saba", livraison: 7000 },
+  { nom: "Hod Hasharon", livraison: 7000 },
+  { nom: "Hadera", livraison: 7000 },
+  { nom: "Césarée", livraison: 10000 },
   { nom: "Herzliya", livraison: 10000 },
   { nom: "Ramat HaSharon", livraison: 10000 },
   // Tel Aviv et sa région
@@ -37,6 +40,13 @@ export const GRILLE_DES_ZONES: { nom: string; livraison: number }[] = [
   { nom: "Givatayim", livraison: 15000 },
   { nom: "Petah Tikva", livraison: 15000 },
 ];
+
+/**
+ * Sa correction du 23 novembre au soir : ces cinq villes étaient à 50 ₪ dans la première grille, déjà
+ * appliquée — elles prennent leur nouveau prix par une opération à elle, une seule fois.
+ */
+export const CLE_CORRECTION_DE_LA_GRILLE = "zones-1123-sharon";
+export const ZONES_CORRIGEES = ["Ra'anana", "Kfar Saba", "Hod Hasharon", "Hadera", "Césarée"];
 
 /** Le supplément de chaque zone pour une livraison de base donnée (jamais négatif). Pur. */
 export function supplementsDeLaGrille(livraisonDeBase: number): { nom: string; supplementLivraison: number }[] {

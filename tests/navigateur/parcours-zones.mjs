@@ -1,5 +1,5 @@
 // Les zones de livraison définies par les adresses : la grille du gérant (Netanya 30 ₪, son quartier Ir Yamim /
-// Poleg 40 ₪, le Sharon 50 ₪, Herzliya 100 ₪, Tel Aviv 150 ₪), les repères qu'il saisit dans « Villes », le
+// Poleg 40 ₪, les villages 50 ₪, le Sharon 70 ₪, Césarée et Herzliya 100 ₪, Tel Aviv 150 ₪), les repères qu'il saisit dans « Villes », le
 // client prévenu au panier quand son adresse désigne une autre zone, la commande signalée, et la zone changée
 // par le gérant — la livraison et le total suivent.
 // PASSE UNE COMMANDE et modifie les villes : jeu de test local seulement, sur un serveur fraîchement démarré.
@@ -33,11 +33,11 @@ try {
   await admin.getByRole("heading", { name: "Villes livrées" }).waitFor();
   const recap = admin.locator("section", { hasText: "Prix de livraison par ville" });
   const prixDe = async (ville) => espaces(await recap.locator("tr", { has: admin.getByRole("cell", { name: ville, exact: true }) }).innerText());
-  for (const [ville, prix] of [["Netanya", "30 ₪"], [QUARTIER, "40 ₪"], ["Even Yehuda", "50 ₪"], ["Ra'anana", "50 ₪"], ["Hadera", "50 ₪"], ["Herzliya", "100 ₪"], ["Ramat HaSharon", "100 ₪"], ["Tel Aviv", "150 ₪"], ["Petah Tikva", "150 ₪"]]) {
+  for (const [ville, prix] of [["Netanya", "30 ₪"], [QUARTIER, "40 ₪"], ["Even Yehuda", "50 ₪"], ["Ra'anana", "70 ₪"], ["Kfar Saba", "70 ₪"], ["Hod Hasharon", "70 ₪"], ["Hadera", "70 ₪"], ["Césarée", "100 ₪"], ["Herzliya", "100 ₪"], ["Ramat HaSharon", "100 ₪"], ["Tel Aviv", "150 ₪"], ["Petah Tikva", "150 ₪"]]) {
     const ligne = await prixDe(ville);
     if (!ligne.startsWith(`${ville} ${prix}`)) throw new Error(`ÉCHEC : ${ville} devrait être à ${prix} — « ${ligne} »`);
   }
-  ok("grille du gérant : Netanya 30 ₪, Ir Yamim / Poleg 40 ₪, le Sharon 50 ₪, Herzliya 100 ₪, Tel Aviv 150 ₪");
+  ok("grille du gérant : Netanya 30 ₪, Ir Yamim / Poleg 40 ₪, les villages 50 ₪, le Sharon 70 ₪, Césarée et Herzliya 100 ₪, Tel Aviv 150 ₪");
   const noms = await admin.locator('input[name^="nom_"]').evaluateAll((l) => l.map((i) => i.value));
   verifier(noms[0] === "Netanya" && noms[1] === QUARTIER, "le quartier est rangé juste après sa ville");
   verifier(await admin.getByText("Les zones se définissent par les adresses").isVisible(), "la page explique comment définir une zone par ses adresses");
