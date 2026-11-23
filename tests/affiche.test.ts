@@ -42,6 +42,17 @@ describe("l'affiche partenaire", () => {
     expect(generateur).not.toMatch(/russe|espagnol|Russian|Spanish/);
   });
 
+  it("les photos du bandeau sont libres de droits sans mention : domaine public ou CC0", () => {
+    const photos = [...generateur.matchAll(/"([a-z-]+\.jpg)"/g)].map((m) => m[1]);
+    expect(photos.length).toBeGreaterThanOrEqual(4);
+    const credits = lire("lib/credits-photos.ts");
+    for (const f of photos) {
+      expect(existsSync(path.join(racine, "public/produits/frais", f)), f).toBe(true);
+      const ligne = credits.split("\n").find((l) => l.includes(`fichier: "${f}"`)) ?? "";
+      expect(ligne, f).toMatch(/licence: "(CC0|Domaine public)"/);
+    }
+  });
+
   it("en français et en anglais, sans emoji", () => {
     expect(generateur).toContain("Your groceries delivered to your door, the same evening.");
     expect(generateur).toContain("En partenariat avec");

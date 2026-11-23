@@ -20,6 +20,12 @@ const enBase64 = (fichier) => readFileSync(fichier).toString("base64");
 const police = (nom) => `data:font/ttf;base64,${enBase64(path.join(RACINE, "assets/polices", nom))}`;
 const image = (fichier, type) => `data:${type};base64,${enBase64(path.join(ICI, "elements", fichier))}`;
 
+// Le visuel du haut : cinq photos de la bannière de l'accueil, en bandeau (public/produits/frais — domaine
+// public ou CC0, lib/credits-photos.ts : elles s'impriment sans mention). Des photos pleines et colorées,
+// pas celles sur fond blanc.
+const PHOTOS = ["tomates.jpg", "pommes-pink.jpg", "raisin-blanc.jpg", "avocats.jpg", "courgettes.jpg"]
+  .map((f) => `data:image/jpeg;base64,${enBase64(path.join(RACINE, "public/produits/frais", f))}`);
+
 const PARTENAIRE = { nom: "Elite Home Group", logo: image("elite-home-group-noir.png", "image/png") };
 const QR = readFileSync(path.join(ICI, "elements/qr-touristorder.svg"), "utf8");
 // Le sigle du site (lib/sigle.ts) : la tuile claire, pour le fond encre du haut de l'affiche.
@@ -63,27 +69,33 @@ const page = `<!doctype html>
   .affiche > * { flex: none; }
   .en { color: #5b6472; }
 
-  /* Le haut : la marque et la promesse, sur le fond encre du logo. */
-  .tete { background: #0d1321; color: #ffffff; border-radius: 7mm; padding: 9.5mm 12mm 10mm; }
-  .marque { display: flex; align-items: center; gap: 3.6mm; font-weight: 700; font-size: 7mm; letter-spacing: -0.02em; }
-  .marque svg { width: 13mm; height: 13mm; }
-  .tete h1 { margin-top: 8.5mm; font-size: 12.3mm; line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; text-wrap: balance; }
-  .tete .h1-en { margin-top: 4mm; font-size: 6.3mm; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; color: #f2b632; text-wrap: balance; }
-  .tete .quoi { margin-top: 5.5mm; font-size: 4.1mm; line-height: 1.45; color: #e6e8ec; }
+  /* Le haut : un bandeau de photos de produits qui se fond dans le fond encre du logo, la marque dans une
+     pastille posée dessus, puis la promesse. */
+  .tete { position: relative; background: #0d1321; color: #ffffff; border-radius: 7mm; overflow: hidden; }
+  .photos { position: relative; height: 41mm; display: grid; grid-template-columns: repeat(${PHOTOS.length}, 1fr); }
+  .photos img { display: block; width: 100%; height: 41mm; object-fit: cover; }
+  .photos::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, #0d1321 0%, rgba(13, 19, 33, 0.6) 20%, rgba(13, 19, 33, 0) 58%); }
+  .marque { position: absolute; top: 6mm; left: 6mm; display: flex; align-items: center; gap: 3mm; background: #0d1321; border-radius: 5mm; padding: 2.2mm 5mm 2.2mm 2.2mm; font-weight: 700; font-size: 6.2mm; letter-spacing: -0.02em; box-shadow: 0 1mm 4mm rgba(0, 0, 0, 0.35); }
+  .marque svg { width: 11mm; height: 11mm; }
+  .promesse { padding: 4.5mm 11mm 9.5mm; }
+  .tete h1 { font-size: 12.6mm; line-height: 1.08; letter-spacing: -0.035em; font-weight: 700; text-wrap: balance; }
+  .tete .h1-en { margin-top: 3.6mm; font-size: 6.3mm; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; color: #f2b632; text-wrap: balance; }
+  .tete .quoi { margin-top: 5mm; font-size: 4.1mm; line-height: 1.45; color: #e6e8ec; }
   .tete .quoi .en { color: #aab1bd; }
 
   /* Le milieu : comment commander, et le QR code. */
-  .affiche > .milieu { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 66mm; gap: 9mm; align-items: center; padding: 0 3mm; }
+  .affiche > .milieu { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 59mm; gap: 10mm; align-items: center; padding: 0 3mm; }
   .etapes { list-style: none; display: flex; flex-direction: column; gap: 7.5mm; }
   .etapes li { display: flex; align-items: center; gap: 5mm; }
   .numero { flex: none; width: 13mm; height: 13mm; border-radius: 50%; background: #f2b632; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 6.4mm; }
   .etapes .fr { display: block; font-weight: 700; font-size: 6.4mm; line-height: 1.15; letter-spacing: -0.02em; }
   .etapes .en { display: block; margin-top: 0.8mm; font-size: 4.5mm; line-height: 1.2; }
-  .qr { border: 0.7mm solid #0d1321; border-radius: 6mm; padding: 5.5mm 5.5mm 4.5mm; text-align: center; }
+  .qr { background: #fdf1cf; border-radius: 6mm; padding: 4.5mm 4.5mm 4mm; text-align: center; }
+  .qr .code { background: #ffffff; border-radius: 3.5mm; padding: 3.5mm; }
   .qr svg { display: block; width: 100%; height: auto; shape-rendering: crispEdges; }
-  .qr .fr { display: block; margin-top: 4mm; font-weight: 700; font-size: 4.5mm; letter-spacing: -0.02em; white-space: nowrap; }
+  .qr .fr { display: block; margin-top: 3.2mm; font-weight: 700; font-size: 4.2mm; letter-spacing: -0.02em; white-space: nowrap; }
   .qr .en { display: block; font-size: 3.9mm; }
-  .qr .adresse { display: inline-block; margin-top: 3mm; background: #0d1321; color: #ffffff; border-radius: 99mm; padding: 1.6mm 4.5mm; font-weight: 700; font-size: 4.4mm; }
+  .qr .adresse { display: inline-block; margin-top: 2.4mm; background: #0d1321; color: #ffffff; border-radius: 99mm; padding: 1.6mm 4.5mm; font-weight: 700; font-size: 4.4mm; }
 
   /* Les repères : quand, où, comment payer, dans quelle langue. */
   .reperes { display: grid; grid-template-columns: 1fr 1fr; border: 0.35mm solid #d9dce1; border-radius: 5mm; overflow: hidden; }
@@ -99,16 +111,19 @@ const page = `<!doctype html>
   .partenaire .mention { text-align: end; font-size: 4.2mm; line-height: 1.35; }
   .partenaire .mention .fr { display: block; font-weight: 700; }
   .partenaire .trait { width: 0.35mm; align-self: stretch; background: #d9dce1; }
-  .partenaire img { height: 30mm; width: auto; display: block; }
+  .partenaire img { height: 27mm; width: auto; display: block; }
 </style>
 </head>
 <body>
 <main class="affiche">
   <header class="tete">
+    <div class="photos">${PHOTOS.map((src) => `<img src="${src}" alt="">`).join("")}</div>
     <div class="marque">${SIGLE}<span>Tourist Order</span></div>
-    <h1 lang="fr">${TEXTES.titre.fr}</h1>
-    <p class="h1-en" lang="en">${TEXTES.titre.en}</p>
-    <p class="quoi"><span lang="fr">${TEXTES.quoi.fr}</span><br><span class="en" lang="en">${TEXTES.quoi.en}</span></p>
+    <div class="promesse">
+      <h1 lang="fr">${TEXTES.titre.fr}</h1>
+      <p class="h1-en" lang="en">${TEXTES.titre.en}</p>
+      <p class="quoi"><span lang="fr">${TEXTES.quoi.fr}</span><br><span class="en" lang="en">${TEXTES.quoi.en}</span></p>
+    </div>
   </header>
 
   <section class="milieu">
@@ -116,7 +131,7 @@ const page = `<!doctype html>
       ${TEXTES.etapes.map((e, i) => `<li><span class="numero">${i + 1}</span><span><span class="fr" lang="fr">${e.fr}</span><span class="en" lang="en">${e.en}</span></span></li>`).join("\n      ")}
     </ol>
     <div class="qr">
-      ${QR}
+      <div class="code">${QR}</div>
       <span class="fr" lang="fr">${TEXTES.scanner.fr}</span>
       <span class="en" lang="en">${TEXTES.scanner.en}</span>
       <span class="adresse">touristorder.com</span>
