@@ -215,6 +215,8 @@ const ru: Dictionnaire = {
     ville: "Город",
     choisir: "Выберите…",
     villeSupplement: "{ville} (доставка +{prix})",
+    zoneAutre: "Похоже, этот адрес относится к зоне «{ville}», а не «{choisie}». Стоимость доставки зависит от фактического адреса.",
+    zoneChoisir: "Выбрать «{ville}»",
     adresse: "Улица и номер дома",
     adressePlaceholder: "Например: ул. Герцля, 12",
     etage: "Этаж",

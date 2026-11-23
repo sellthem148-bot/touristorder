@@ -7,6 +7,7 @@ import { PHOTOS_FRAIS } from "./photos-frais";
 import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
+import { CLE_GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, supplementsDeLaGrille } from "./zones-1123";
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
@@ -108,6 +109,36 @@ async function operationFaite(prisma: PrismaClient, cle: string): Promise<boolea
 /** À mettre dans la même transaction que l'opération : elle ne se refera pas. */
 function noterOperation(prisma: PrismaClient, cle: string) {
   return prisma.reglages.update({ where: { id: 1 }, data: { operationsFaites: { push: cle } } });
+}
+
+/**
+ * La grille des zones du gérant (prisma/zones-1123.ts : Netanya 30 ₪, son quartier Ir Yamim / Poleg 40 ₪,
+ * le Sharon 50 ₪, Herzliya 100 ₪, Tel Aviv 150 ₪), appliquée une seule fois : chaque ville de la grille
+ * encore dans sa liste prend son supplément (le prix voulu moins la livraison de base de SES réglages),
+ * et le quartier est créé juste après Netanya. Une ville qu'il a retirée ou renommée n'est pas recréée ;
+ * ce qu'il règle ensuite dans « Villes » n'est plus touché.
+ */
+export async function appliquerLaGrilleDesZones(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_GRILLE_DES_ZONES);
+  if (faite === null) return "Grille des zones : réglages pas encore créés, rien de changé.";
+  if (faite) return "Grille des zones : déjà appliquée, rien de changé.";
+  const [reglages, villes] = await Promise.all([
+    prisma.reglages.findUniqueOrThrow({ where: { id: 1 }, select: { fraisLivraison: true } }),
+    prisma.ville.findMany({ select: { id: true, nom: true, ordre: true } }),
+  ]);
+  const parNom = new Map(villes.map((v) => [v.nom, v]));
+  const cibles = supplementsDeLaGrille(reglages.fraisLivraison);
+  const aRegler = cibles.filter((c) => parNom.has(c.nom));
+  const quartier = cibles.find((c) => c.nom === QUARTIER_IR_YAMIM);
+  const ville = parNom.get("Netanya");
+  // Le quartier n'a de sens que si sa ville est livrée ; il se range juste après elle.
+  const aCreer = quartier && ville && !parNom.has(QUARTIER_IR_YAMIM) ? [{ ...quartier, ordre: ville.ordre + 1 }] : [];
+  await prisma.$transaction([
+    ...aRegler.map((c) => prisma.ville.update({ where: { id: parNom.get(c.nom)!.id }, data: { supplementLivraison: c.supplementLivraison } })),
+    ...aCreer.map((data) => prisma.ville.create({ data })),
+    noterOperation(prisma, CLE_GRILLE_DES_ZONES),
+  ]);
+  return `Grille des zones : ${aRegler.length} zone(s) mise(s) au prix du gérant${aCreer.length ? ", quartier « " + QUARTIER_IR_YAMIM + " » créé" : ""}.`;
 }
 
 /**

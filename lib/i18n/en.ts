@@ -218,6 +218,8 @@ const en: Dictionnaire = {
     ville: "City",
     choisir: "Choose…",
     villeSupplement: "{ville} (delivery +{prix})",
+    zoneAutre: "This address appears to be in {ville}, not {choisie}. The delivery price depends on the actual address.",
+    zoneChoisir: "Choose {ville}",
     adresse: "Street and number",
     adressePlaceholder: "E.g. Herzl St 12",
     etage: "Floor",

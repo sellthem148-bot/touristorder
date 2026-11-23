@@ -19,3 +19,11 @@ export function livraisonLaMoinsChere(tarif: Pick<Tarif, "fraisLivraison">, vill
   if (villes.length === 0) return tarif.fraisLivraison;
   return tarif.fraisLivraison + Math.min(...villes.map((v) => v.supplementLivraison));
 }
+
+/**
+ * La livraison d'une commande dont le gérant change la zone : le reste (tarif du moment, express) ne bouge
+ * pas, seul le supplément de l'ancienne zone laisse la place à celui de la nouvelle.
+ */
+export function livraisonApresChangementDeZone(livraison: number, ancienSupplement: number, nouveauSupplement: number): number {
+  return Math.max(0, livraison - ancienSupplement + nouveauSupplement);
+}

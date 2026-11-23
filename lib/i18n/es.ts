@@ -213,6 +213,8 @@ const es: Dictionnaire = {
     ville: "Ciudad",
     choisir: "Elegir…",
     villeSupplement: "{ville} (entrega +{prix})",
+    zoneAutre: "Esta dirección parece estar en {ville}, y no en {choisie}. El precio de la entrega depende de la dirección real.",
+    zoneChoisir: "Elegir {ville}",
     adresse: "Calle y número",
     adressePlaceholder: "Ej.: calle Herzl 12",
     etage: "Piso",

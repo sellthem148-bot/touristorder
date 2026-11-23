@@ -245,6 +245,9 @@ model Ville {
   nom                 String   @unique
   supplementLivraison Int      @default(0) // en agorot, ajouté à la livraison
   minimumCommande     Int      @default(0) // minimum d'articles pour cette ville (0 = celui des Réglages)
+  // Ce qui, dans une adresse, désigne cette zone : rues, hôtels, résidences, quartiers (séparés par des
+  // virgules ou des retours à la ligne). Sert à signaler une adresse qui n'est pas dans la zone choisie.
+  reperes             String   @default("")
   active              Boolean  @default(true)
   ordre               Int      @default(0)
   createdAt           DateTime @default(now())

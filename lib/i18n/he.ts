@@ -212,6 +212,8 @@ const he: Dictionnaire = {
     ville: "עיר",
     choisir: "בחרו…",
     villeSupplement: "{ville} (תוספת משלוח: {prix})",
+    zoneAutre: "נראה שהכתובת הזו שייכת לאזור {ville}, ולא לאזור {choisie}. מחיר המשלוח נקבע לפי הכתובת בפועל.",
+    zoneChoisir: "לבחור: {ville}",
     adresse: "רחוב ומספר בית",
     adressePlaceholder: "לדוגמה: רחוב הרצל 12",
     etage: "קומה",

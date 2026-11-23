@@ -2867,6 +2867,7 @@ const he: TraductionsCatalogue = {
   // Villes livrées
   villes: {
     "Netanya": "נתניה",
+    "Netanya – Ir Yamim / Poleg": "נתניה – עיר ימים / פולג",
     "Even Yehuda": "אבן יהודה",
     "Kfar Yona": "כפר יונה",
     "Kadima-Tsoran": "קדימה-צורן",

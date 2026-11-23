@@ -1,3 +1,4 @@
+import { communeDe } from "./zones";
 import type { StatutCommande } from "@prisma/client";
 import { formatPrix } from "./argent";
 import { paieParBit, type EtatPaiement } from "./paiement";
@@ -76,7 +77,10 @@ export function messageJArrive(i: { prenom: string; reference: string; reste: nu
   return `${remplir(m.debut, { prenom: i.prenom, site: i.site })} ${remplir(m.jArrive, { reference: i.reference })}${i.hotel ? ` ${m.hotel}` : ""}${reglement}`;
 }
 
-/** Lien Waze vers l'adresse du client (ouvre l'appli sur téléphone). */
+/**
+ * Lien Waze vers l'adresse du client (ouvre l'appli sur téléphone). Pour une zone qui est un quartier
+ * (« Netanya – Ir Yamim / Poleg »), Waze reçoit la ville : il ne connaît pas nos noms de zones.
+ */
 export function lienWaze(adresse: string, ville: string): string {
-  return `https://waze.com/ul?q=${encodeURIComponent(`${adresse.replace(/\s+/g, " ").trim()}, ${ville}`)}&navigate=yes`;
+  return `https://waze.com/ul?q=${encodeURIComponent(`${adresse.replace(/\s+/g, " ").trim()}, ${communeDe(ville)}`)}&navigate=yes`;
 }

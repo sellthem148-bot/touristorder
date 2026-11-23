@@ -48,6 +48,7 @@ export default async function Conditions() {
       <Article titre={c.prix.titre}>
         <Paragraphe langue={langue} texte={c.prix.p1} />
         <Paragraphe langue={langue} texte={c.prix.p2} />
+        <Paragraphe langue={langue} texte={c.prix.p3} />
       </Article>
 
       <Article titre={c.paiement.titre}>

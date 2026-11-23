@@ -10,6 +10,8 @@ import { prenomDe } from "./messages-client";
 import { NOM_DU_SITE } from "./marque";
 import { messageDeReglement } from "./paiement";
 import { envoyerTelegram, texteDeLAlerte } from "./telegram";
+import { zoneCitee } from "./zones";
+import { zonesLivrees } from "./zones-lecture";
 import { adresseComplete } from "./adresse";
 import { referenceDeCommande } from "./reference";
 import { prefixeDe, remplir } from "./langues";
@@ -94,13 +96,15 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
     }
     // L'alerte Telegram du gérant (si le robot est relié, Réglages) : immédiate, sur son téléphone.
     if (reglages.telegramJeton && reglages.telegramDiscussion) {
+      // L'adresse désigne-t-elle une autre zone que celle choisie ? Le gérant le sait dès l'alerte.
+      const zoneAVerifier = zoneCitee(c.adresse, c.ville, await zonesLivrees());
       envois.push(
         envoyerTelegram(
           reglages.telegramJeton,
           reglages.telegramDiscussion,
           texteDeLAlerte({
             numero: c.numero, reference, nomClient: c.nomClient, ville: c.ville, jour: donnees.jour, creneau: c.creneau, total: c.total, paiement: c.paiement,
-            nombreArticles: c.lignes.reduce((s, l) => s + l.quantite, 0), demandeLibre: c.demandeLibre, lienAdmin: `${site}/admin/commandes/${c.id}`,
+            nombreArticles: c.lignes.reduce((s, l) => s + l.quantite, 0), demandeLibre: c.demandeLibre, zoneAVerifier, lienAdmin: `${site}/admin/commandes/${c.id}`,
           }),
         ),
       );

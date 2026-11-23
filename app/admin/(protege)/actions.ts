@@ -14,7 +14,9 @@ import { erreursParChamp } from "@/lib/validation";
 import { enregistrerPhoto, supprimerPhoto } from "@/lib/stockage";
 import { slugDe } from "@/lib/slug";
 import { lireReglages } from "@/lib/reglages";
-import { lirePrix } from "@/lib/argent";
+import { formatPrix, lirePrix } from "@/lib/argent";
+import { livraisonApresChangementDeZone } from "@/lib/villes";
+import { LONGUEUR_MAXIMALE_DES_REPERES } from "@/lib/zones";
 import { derniereDiscussion, envoyerTelegram, estJetonTelegram, robotTelegram } from "@/lib/telegram";
 import { COOKIE_VUE_CLIENT, DUREE_VUE_CLIENT_S, oublierLeReglageDesPhotos } from "@/lib/vue-gerant";
 
@@ -105,6 +107,36 @@ export async function ajouterLigneLibre(form: FormData) {
     return true;
   });
   redirect(avecMessage(chemin, ajoutee ? "ok" : "erreur", ajoutee ? "Article ajouté : le total est à jour." : "Impossible d'ajouter cet article."));
+}
+
+/**
+ * Change la zone de livraison d'une commande : l'adresse du client n'est pas dans la ville ou le quartier
+ * qu'il avait choisi. La livraison prend le supplément de la nouvelle zone et le total est recalculé —
+ * une commande déjà payée montre alors un complément à recevoir (ou un remboursement).
+ */
+export async function changerLaZone(form: FormData) {
+  await exigerAdmin();
+  const commandeId = id(form);
+  if (!commandeId) return;
+  const nom = texte(form, "ville").trim();
+  const chemin = `/admin/commandes/${commandeId}`;
+  const resultat = await prisma.$transaction(async (tx) => {
+    const [c, ville] = await Promise.all([
+      tx.commande.findUnique({ where: { id: commandeId }, select: { ville: true, statut: true, tarifLivraison: true, supplementVille: true } }),
+      tx.ville.findFirst({ where: { nom }, select: { nom: true, supplementLivraison: true } }),
+    ]);
+    if (!c || !ville) return { erreur: "Zone introuvable : rien n'a été changé." };
+    if (c.statut === "ANNULEE") return { erreur: "Cette commande est annulée : sa zone ne change plus." };
+    if (ville.nom === c.ville) return { erreur: `La commande est déjà à ${ville.nom}.` };
+    const tarifLivraison = livraisonApresChangementDeZone(c.tarifLivraison, c.supplementVille, ville.supplementLivraison);
+    await tx.commande.update({
+      where: { id: commandeId },
+      data: { ville: ville.nom, supplementVille: ville.supplementLivraison, tarifLivraison },
+    });
+    await recalculer(tx, commandeId);
+    return { ok: `Zone changée : ${ville.nom}, livraison ${formatPrix(tarifLivraison)}. Le total est à jour.` };
+  });
+  redirect(avecMessage(chemin, resultat.ok ? "ok" : "erreur", resultat.ok ?? resultat.erreur ?? ""));
 }
 
 /**
@@ -478,7 +510,7 @@ export async function enregistrerVilles(form: FormData) {
   await exigerAdmin();
   const ids = [...new Set(form.getAll("ids").map(String))].filter((x) => x.length > 0 && x.length <= 40).slice(0, 200);
   const erreurs: string[] = [];
-  const aGarder: { id: string; nom: string; supplementLivraison: number; minimumCommande: number; active: boolean }[] = [];
+  const aGarder: { id: string; nom: string; supplementLivraison: number; minimumCommande: number; reperes: string; active: boolean }[] = [];
   const aRetirer: string[] = [];
   for (const villeId of ids) {
     if (form.get(`retirer_${villeId}`) === "on") {
@@ -491,8 +523,11 @@ export async function enregistrerVilles(form: FormData) {
     if (nom.length < 2 || nom.length > 60) erreurs.push(`nom « ${nom || "vide"} »`);
     if (supplement == null) erreurs.push(`supplément de ${nom}`);
     if (minimum == null) erreurs.push(`minimum de ${nom}`);
-    if (supplement == null || minimum == null) continue;
-    aGarder.push({ id: villeId, nom, supplementLivraison: supplement, minimumCommande: minimum, active: form.get(`active_${villeId}`) === "on" });
+    // Les repères : ce qui, dans une adresse, désigne cette zone (rues, hôtels, quartiers).
+    const reperes = texte(form, `rep_${villeId}`).replace(/\r/g, "").trim();
+    if (reperes.length > LONGUEUR_MAXIMALE_DES_REPERES) erreurs.push(`repères de ${nom} (trop longs)`);
+    if (supplement == null || minimum == null || reperes.length > LONGUEUR_MAXIMALE_DES_REPERES) continue;
+    aGarder.push({ id: villeId, nom, supplementLivraison: supplement, minimumCommande: minimum, reperes, active: form.get(`active_${villeId}`) === "on" });
   }
   const noms = aGarder.map((v) => v.nom.toLowerCase());
   const doublons = noms.filter((n, i) => noms.indexOf(n) !== i);

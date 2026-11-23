@@ -30,7 +30,7 @@ try {
   const recap = admin.locator("section", { hasText: "Prix de livraison par ville" });
   const cellule = (ville) => recap.locator("tr", { has: admin.getByRole("cell", { name: ville, exact: true }) });
   verifier(espaces(await cellule("Netanya").innerText()).includes("30 ₪"), "récap : Netanya = 30 ₪ en tarif de base");
-  verifier(espaces(await cellule("Tel Aviv").innerText()).startsWith("Tel Aviv 55 ₪"), "récap : Tel Aviv = 30 + 25 = 55 ₪");
+  verifier(espaces(await cellule("Tel Aviv").innerText()).startsWith("Tel Aviv 150 ₪"), "récap : Tel Aviv = 30 + 120 = 150 ₪ (la grille du gérant)");
 
   // 2. Une valeur illisible : rien n'est enregistré
   await ligne("Herzliya").locator('input[name^="supp_"]').fill("vingt");

@@ -12,6 +12,7 @@ import { calculerTotaux } from "@/lib/calcul";
 import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
 import { RecapMontants } from "@/components/RecapMontants";
 import { fraisDeLivraison, minimumPour } from "@/lib/villes";
+import { zoneCitee, type ZoneReperee } from "@/lib/zones";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { REMPLACEMENTS, type Remplacement } from "@/lib/choix-commande";
 import { estLogement, LOGEMENTS, type Logement } from "@/lib/adresse";
@@ -32,6 +33,8 @@ type Props = {
   demande: string | null;
   /** Les noms des villes et des tarifs dans la langue du client (clé : le nom saisi par le gérant). */
   affichage: { villes: Record<string, string>; tarifs: Record<string, string> };
+  /** Ce qui désigne chaque zone dans une adresse : pour prévenir le client qui n'a pas choisi la sienne. */
+  zones: ZoneReperee[];
 };
 
 type Valeurs = {
@@ -71,7 +74,7 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
   );
 }
 
-export function PageDuPanier({ reglages, jours, limitePassee, client, demande, affichage }: Props) {
+export function PageDuPanier({ reglages, jours, limitePassee, client, demande, affichage, zones }: Props) {
   const panier = usePanier();
   const { langue, t, lien } = useTraduction();
   const p = t.panier;
@@ -162,6 +165,9 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   const express = v.express && expressPossible;
   // La ville choisie ajoute son supplément de livraison (et peut avoir son minimum).
   const ville = reglages.villes.find((x) => x.nom === v.ville);
+  // L'adresse tapée désigne-t-elle une autre zone que celle choisie (une autre ville, un quartier à son
+  // propre prix) ? On le dit au client, qui change d'un geste ; rien n'est corrigé à sa place.
+  const autreZone = v.ville && v.adresse.trim().length >= 3 ? zoneCitee(v.adresse, v.ville, zones) : null;
   const livraison = fraisDeLivraison(tarif, ville, false);
   const minimum = minimumPour(ville, reglages.minimumCommande);
   const totaux = calculerTotaux(
@@ -359,6 +365,14 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
               <label htmlFor="adresse" className="etiquette">{v.logement === "HOTEL" ? p.hotelNom : p.adresse}</label>
               <input {...texte("adresse")} autoComplete={v.logement === "HOTEL" ? "organization" : "address-line1"} maxLength={200} placeholder={v.logement === "HOTEL" ? p.hotelNomPlaceholder : p.adressePlaceholder} required />
               {messageErreur("adresse")}
+              {autreZone && (
+                <div role="status" data-zone-citee className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                  <p>{remplir(p.zoneAutre, { ville: nomDeVille(autreZone), choisie: nomDeVille(v.ville) })}</p>
+                  <button type="button" onClick={() => changer("ville", autreZone)} className="bouton-secondaire mt-2 px-3 py-1.5 text-sm">
+                    {remplir(p.zoneChoisir, { ville: nomDeVille(autreZone) })}
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {v.logement === "APPARTEMENT" && (

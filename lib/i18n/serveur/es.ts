@@ -143,6 +143,7 @@ const es: DictionnaireServeur = {
         titre: "3. Los precios",
         p1: "Los precios se indican en séqueles (₪). El importe de su pedido incluye el precio de los artículos, los gastos de servicio y los gastos de entrega. Estos gastos pueden variar según la ciudad, el día y la hora de entrega, o si elige la entrega exprés: siempre se muestran antes de confirmar el pedido. La propina es opcional.",
         p2: "El precio de un artículo puede cambiar de un día para otro; el precio aplicado es el que se muestra en el momento de su pedido.",
+        p3: "Los gastos de entrega dependen de la dirección real de entrega (ciudad o barrio). Si la zona elegida al hacer el pedido no corresponde a su dirección, aplicamos la tarifa de la zona correcta y se lo comunicamos antes del pago.",
       },
       paiement: {
         titre: "4. El pago",

@@ -151,6 +151,7 @@ const en: DictionnaireServeur = {
         titre: "3. Prices",
         p1: "Prices are shown in shekels (₪). The amount of your order includes the price of the items, the service fee and the delivery fee. These fees may vary depending on the city, the day and the time of delivery, or if you choose express delivery: they are always shown before you confirm your order. The tip is optional.",
         p2: "The price of an item may change from one day to the next; the price charged is the one shown at the time of your order.",
+        p3: "The delivery fee depends on the actual delivery address (town or neighbourhood). If the area chosen when ordering does not match your address, we apply the fee for the correct area and let you know before payment.",
       },
       paiement: {
         titre: "4. Payment",

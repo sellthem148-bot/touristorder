@@ -223,6 +223,8 @@ const fr = {
     ville: "Ville",
     choisir: "Choisir…",
     villeSupplement: "{ville} (livraison +{prix})",
+    zoneAutre: "Cette adresse semble se trouver à {ville}, et non à {choisie}. Le prix de la livraison dépend de l'adresse réelle.",
+    zoneChoisir: "Choisir {ville}",
     adresse: "Rue et numéro",
     adressePlaceholder: "Ex. : rue Herzl 12",
     etage: "Étage",

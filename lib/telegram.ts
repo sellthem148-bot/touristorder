@@ -24,6 +24,8 @@ export type AlerteCommande = {
   paiement: string;
   nombreArticles: number;
   demandeLibre: string;
+  /** L'adresse désigne une autre zone que celle que le client a choisie : son nom. */
+  zoneAVerifier?: string | null;
   lienAdmin: string;
 };
 
@@ -38,6 +40,7 @@ export function texteDeLAlerte(c: AlerteCommande): string {
       ? `${c.nombreArticles} article${c.nombreArticles > 1 ? "s" : ""} · ${formatPrix(c.total)} à recevoir${c.paiement ? ` (${c.paiement})` : ""}`
       : "Aucun article du catalogue",
     ...(demande ? [`Demande hors catalogue : ${demande.length > 300 ? `${demande.slice(0, 300)}…` : demande}`] : []),
+    ...(c.zoneAVerifier ? [`Zone à vérifier : l'adresse désigne ${c.zoneAVerifier}, le client a choisi ${c.ville}`] : []),
     c.lienAdmin,
   ].join("\n");
 }

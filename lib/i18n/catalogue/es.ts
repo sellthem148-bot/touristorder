@@ -2856,6 +2856,7 @@ const es: TraductionsCatalogue = {
   // Villes livrées
   villes: {
     "Netanya": "Netanya",
+    "Netanya – Ir Yamim / Poleg": "Netanya – Ir Yamim / Poleg",
     "Even Yehuda": "Even Yehuda",
     "Kfar Yona": "Kfar Yona",
     "Kadima-Tsoran": "Kadima-Tzoran",

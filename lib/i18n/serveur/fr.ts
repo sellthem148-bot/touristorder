@@ -156,6 +156,7 @@ const fr = {
         titre: "3. Les prix",
         p1: "Les prix sont indiqués en shekels (₪). Le montant de votre commande comprend le prix des articles, les frais de service et les frais de livraison. Ces frais peuvent varier selon la ville, le jour et l'heure de livraison, ou si vous choisissez la livraison express : ils sont toujours affichés avant la validation de la commande. Le pourboire est facultatif.",
         p2: "Le prix d'un article peut évoluer d'un jour à l'autre ; le prix appliqué est celui affiché au moment de votre commande.",
+        p3: "Les frais de livraison dépendent de l'adresse réelle de livraison (ville ou quartier). Si la zone choisie à la commande ne correspond pas à votre adresse, nous appliquons le tarif de la bonne zone et vous en informons avant le paiement.",
       },
       paiement: {
         titre: "4. Le paiement",

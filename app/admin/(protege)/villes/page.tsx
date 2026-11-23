@@ -7,6 +7,7 @@ import { NOM_TARIF_DE_BASE, tarifDeBase } from "@/lib/tarifs";
 import { fraisDeLivraison } from "@/lib/villes";
 import { Messages } from "@/components/admin/Messages";
 import { ajouterVille, enregistrerVilles } from "../actions";
+import { LONGUEUR_MAXIMALE_DES_REPERES, lireReperes } from "@/lib/zones";
 
 export const metadata = { title: "Villes" };
 
@@ -66,6 +67,22 @@ export default async function PageVilles({ searchParams }: PageProps<"/admin/vil
                   <input type="checkbox" name={`retirer_${v.id}`} className="h-5 w-5 accent-red-600" /> Retirer
                 </label>
               </div>
+              {/* Ce qui, dans l'adresse d'un client, désigne cette zone : sert à signaler une commande passée dans la mauvaise. */}
+              <details className="sm:col-span-5" open={lireReperes(v.reperes).length > 0}>
+                <summary className="cursor-pointer text-xs font-semibold text-marque">
+                  Rues et repères de cette zone{lireReperes(v.reperes).length > 0 ? ` (${lireReperes(v.reperes).length})` : ""}
+                </summary>
+                <label htmlFor={`rep-${v.id}`} className="sr-only">Rues et repères de {v.nom}</label>
+                <textarea
+                  id={`rep-${v.id}`}
+                  name={`rep_${v.id}`}
+                  rows={2}
+                  defaultValue={v.reperes}
+                  maxLength={LONGUEUR_MAXIMALE_DES_REPERES}
+                  placeholder="Noms de rues, d'hôtels, de résidences, séparés par des virgules"
+                  className="champ mt-1.5 text-sm"
+                />
+              </details>
             </li>
           ))}
         </ul>
@@ -77,6 +94,22 @@ export default async function PageVilles({ searchParams }: PageProps<"/admin/vil
         <p className="text-xs text-slate-500">
           « Livrée » décoché : la ville n&apos;est plus proposée mais reste dans la liste. « Retirer » la supprime ; les anciennes commandes gardent leur ville.
         </p>
+        <div className="rounded-2xl bg-sky-50 p-3 text-sm text-sky-950">
+          <p className="font-semibold">Les zones se définissent par les adresses</p>
+          <ul className="mt-1 list-disc space-y-1 ps-5">
+            <li>
+              Un quartier à son propre prix s&apos;écrit <strong>Ville – Quartier</strong> (un tiret entouré d&apos;espaces), par exemple « Netanya – Ir Yamim / Poleg ».
+              Le client le choisit dans la liste comme une ville.
+            </li>
+            <li>
+              Dans « Rues et repères », écris ce qui se trouve dans cette zone : noms de rues, d&apos;hôtels, de résidences. Le nom de la ville et celui du quartier comptent déjà, dans toutes les langues.
+            </li>
+            <li>
+              Quand un client choisit une zone et que son adresse en désigne une autre, il est prévenu au panier, et sa commande t&apos;est signalée « Zone à vérifier » :
+              tu changes la zone dans la commande, la livraison et le total suivent avant que tu demandes le paiement.
+            </li>
+          </ul>
+        </div>
       </form>
 
       <section className="carte p-5">
@@ -84,7 +117,7 @@ export default async function PageVilles({ searchParams }: PageProps<"/admin/vil
         <form action={ajouterVille} className="grid gap-3 sm:grid-cols-[1fr_130px_130px_auto] sm:items-end">
           <div>
             <label htmlFor="nouvelle-ville" className="etiquette">Ville</label>
-            <input id="nouvelle-ville" name="nom" required placeholder="Ex. Kfar Vitkin" className="champ" />
+            <input id="nouvelle-ville" name="nom" required placeholder="Ex. Kfar Vitkin, ou Netanya – Ir Yamim" className="champ" />
           </div>
           <div>
             <label htmlFor="nouvelle-supp" className="etiquette">Supplément ₪</label>

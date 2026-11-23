@@ -6,6 +6,7 @@ import { clientConnecte } from "@/lib/client";
 import { libelleDuJour } from "@/lib/dates";
 import { traduction } from "@/lib/traduction";
 import { nomTarif, nomVille } from "@/lib/i18n/catalogue";
+import { zonesLivrees } from "@/lib/zones-lecture";
 import { PageDuPanier } from "./PageDuPanier";
 
 export const dynamic = "force-dynamic";
@@ -34,5 +35,8 @@ export default async function Panier({ searchParams }: PageProps<"/panier">) {
     villes: Object.fromEntries(reglages.villes.map((v) => [v.nom, nomVille(v.nom, langue)])),
     tarifs: Object.fromEntries(reglages.plages.map((p) => [p.nom, nomTarif(p.nom, langue)])),
   };
-  return <PageDuPanier reglages={reglages} jours={jours} limitePassee={limitePassee} client={client} demande={demande} affichage={affichage} />;
+  // Ce qui désigne chaque zone dans une adresse (nom de la ville ou du quartier, repères du gérant) : le
+  // panier prévient le client dont l'adresse n'est pas dans la zone qu'il a choisie.
+  const zones = (await zonesLivrees()).map(({ nom, noms, reperes }) => ({ nom, noms, reperes }));
+  return <PageDuPanier reglages={reglages} jours={jours} limitePassee={limitePassee} client={client} demande={demande} affichage={affichage} zones={zones} />;
 }

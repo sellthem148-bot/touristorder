@@ -3,6 +3,8 @@
 // les prix dans Admin → Prix rapides, et ils passent en ligne.
 // Options : une par ligne, « Nom : choix 1 | choix 2 » (voir lib/options.ts).
 
+import { supplementsDeLaGrille } from "./zones-1123";
+
 export const CATEGORIES = [
   { nom: "Courses & épicerie", emoji: "🛒" },
   { nom: "Boissons", emoji: "🥤" },
@@ -203,30 +205,8 @@ export const PLAGES_EXEMPLE = [
   { nom: "Fin de soirée", jours: [0, 1, 2, 3, 4, 5, 6], debut: "22:00", fin: "00:00", fraisService: 1500, fraisLivraison: 4000, fraisExpress: 0, majorationPct: 10, ordre: 20 },
 ];
 
-// Les villes livrées au départ, autour de Netanya, créées seulement si aucune
-// n'existe encore. Suppléments de livraison D'EXEMPLE (agorot), à ajuster dans
-// Admin → Villes : proches = prix de base, puis +15 ₪ (~20 km), puis +25 ₪ (~30 km et plus).
-export const VILLES_EXEMPLE = [
-  // Netanya et alentours immédiats
-  { nom: "Netanya", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Even Yehuda", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Kfar Yona", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Kadima-Tsoran", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Pardesia", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Beit Yitzhak", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Tsur Moshe", supplementLivraison: 0, minimumCommande: 0 },
-  { nom: "Udim", supplementLivraison: 0, minimumCommande: 0 },
-  // Un peu plus loin
-  { nom: "Herzliya", supplementLivraison: 1500, minimumCommande: 0 },
-  { nom: "Ra'anana", supplementLivraison: 1500, minimumCommande: 0 },
-  { nom: "Kfar Saba", supplementLivraison: 1500, minimumCommande: 0 },
-  { nom: "Hod Hasharon", supplementLivraison: 1500, minimumCommande: 0 },
-  { nom: "Hadera", supplementLivraison: 1500, minimumCommande: 0 },
-  // Tel Aviv et sa région
-  { nom: "Tel Aviv", supplementLivraison: 2500, minimumCommande: 0 },
-  { nom: "Ramat HaSharon", supplementLivraison: 2500, minimumCommande: 0 },
-  { nom: "Ramat Gan", supplementLivraison: 2500, minimumCommande: 0 },
-  { nom: "Givatayim", supplementLivraison: 2500, minimumCommande: 0 },
-  { nom: "Petah Tikva", supplementLivraison: 2500, minimumCommande: 0 },
-  { nom: "Césarée", supplementLivraison: 2500, minimumCommande: 0 },
-];
+// Les villes et zones livrées au départ, créées seulement si aucune n'existe encore : la grille du gérant
+// (prisma/zones-1123.ts — Netanya 30 ₪, son quartier Ir Yamim / Poleg 40 ₪, le Sharon 50 ₪, Herzliya 100 ₪,
+// Tel Aviv 150 ₪), en suppléments par rapport à la livraison de base de départ (30 ₪).
+const LIVRAISON_DE_BASE_DE_DEPART = 3000;
+export const VILLES_EXEMPLE = supplementsDeLaGrille(LIVRAISON_DE_BASE_DE_DEPART).map((v) => ({ ...v, minimumCommande: 0 }));

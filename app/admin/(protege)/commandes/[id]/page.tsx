@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import type { StatutCommande } from "@prisma/client";
 import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { formatPrix } from "@/lib/argent";
+import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { formatDateHeure, libelleDuJour } from "@/lib/dates";
 import { margeEstimee } from "@/lib/calcul";
 import { COULEUR_STATUT, LIBELLE_STATUT } from "@/lib/statuts";
@@ -22,7 +22,10 @@ import { IconeEclair, IconeWhatsapp } from "@/components/Icones";
 import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { COULEUR_PAIEMENT, etatDuPaiement, libelleDuSolde, libellePaiement } from "@/lib/paiement";
 import { lireReglages } from "@/lib/reglages";
-import { ajouterLigneLibre, annulerPaiement, changerStatut, enregistrerNoteInterne, modifierLigne, solderCommande } from "../../actions";
+import { ajouterLigneLibre, annulerPaiement, changerLaZone, changerStatut, enregistrerNoteInterne, modifierLigne, solderCommande } from "../../actions";
+import { zoneCitee } from "@/lib/zones";
+import { zonesLivrees } from "@/lib/zones-lecture";
+import { livraisonApresChangementDeZone } from "@/lib/villes";
 import { referenceDeCommande } from "@/lib/reference";
 
 export const metadata = { title: "Commande" };
@@ -45,14 +48,24 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   await exigerAdmin();
   const { id } = await params;
   const { ok, erreur } = await searchParams;
-  const [c, reglages] = await Promise.all([
+  const [c, reglages, zones, villes] = await Promise.all([
     prisma.commande.findUnique({
       where: { id },
       include: { lignes: { orderBy: [{ boutique: "asc" }, { nom: "asc" }], include: { produit: { select: { nomWolt: true } } } } },
     }),
     lireReglages(),
+    zonesLivrees(),
+    prisma.ville.findMany({ orderBy: [{ ordre: "asc" }, { nom: "asc" }], select: { nom: true, supplementLivraison: true, active: true } }),
   ]);
   if (!c) notFound();
+
+  // La zone de livraison : le client l'a choisie dans une liste, son adresse en désigne peut-être une autre
+  // (le nom d'une autre ville, d'un quartier, ou un repère saisi dans « Villes »). Tant que rien n'est livré,
+  // on le signale ici, et la zone se change d'un geste : la livraison et le total suivent.
+  const zoneModifiable = c.statut !== "ANNULEE" && c.statut !== "LIVREE";
+  const autreZone = zoneModifiable ? zoneCitee(c.adresse, c.ville, zones) : null;
+  const livraisonA = (supplement: number) => livraisonApresChangementDeZone(c.tarifLivraison, c.supplementVille, supplement);
+  const supplementDe = (nom: string) => villes.find((v) => v.nom === nom)?.supplementLivraison ?? 0;
 
   const lienSuivi = `${await adresseDuSite()}/suivi/${c.jeton}`;
   const paiement = etatDuPaiement(c);
@@ -311,6 +324,37 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
             <p className="whitespace-pre-line">{c.adresse}</p>
             {precisions && <p className="font-medium">{precisions}</p>}
             <p>{c.ville}</p>
+            {autreZone && (
+              <div data-zone-a-verifier className="space-y-2 rounded-lg bg-amber-50 p-3 text-amber-950 ring-1 ring-inset ring-amber-300">
+                <p>
+                  <strong>Zone à vérifier.</strong> L&apos;adresse désigne <strong>{autreZone}</strong> (livraison {formatPrixCourt(livraisonA(supplementDe(autreZone)))}),
+                  le client a choisi <strong>{c.ville}</strong> (livraison {formatPrixCourt(c.tarifLivraison)}).
+                </p>
+                <form action={changerLaZone}>
+                  <input type="hidden" name="id" value={c.id} />
+                  <input type="hidden" name="ville" value={autreZone} />
+                  <button type="submit" className="bouton w-full py-2 text-sm">Passer la commande à {autreZone}</button>
+                </form>
+                <p className="text-xs">Si l&apos;adresse est bien à {c.ville}, ne change rien : ce n&apos;est qu&apos;un signalement.</p>
+              </div>
+            )}
+            {zoneModifiable && (
+              <details className="rounded-lg border border-slate-200 p-2">
+                <summary className="cursor-pointer text-sm font-semibold text-marque">Changer la zone de livraison</summary>
+                <form action={changerLaZone} className="mt-2 flex flex-wrap items-end gap-2">
+                  <input type="hidden" name="id" value={c.id} />
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor="zone" className="block text-[11px] font-semibold text-slate-500">Nouvelle zone (la livraison et le total suivent)</label>
+                    <select id="zone" name="ville" defaultValue={autreZone ?? c.ville} className="champ py-1.5">
+                      {villes.filter((v) => v.active || v.nom === c.ville).map((v) => (
+                        <option key={v.nom} value={v.nom}>{v.nom} — livraison {formatPrixCourt(livraisonA(v.supplementLivraison))}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button type="submit" className="bouton-secondaire px-3 py-1.5">Changer</button>
+                </form>
+              </details>
+            )}
             {langueClient.langue !== "fr" && (
               <p className="rounded-lg bg-sky-50 p-2 text-sky-900">
                 Langue du client : <strong>{NOM_DE_LA_LANGUE[langueClient.langue]}</strong>. Ton message WhatsApp et son e-mail sont écrits dans sa langue.
