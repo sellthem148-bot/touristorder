@@ -5,7 +5,7 @@
 // « Maps JavaScript API » et « Places API (New) »), pas le secret. Le gérant ne peut pas ouvrir les réglages
 // de Vercel : elle vit donc ici, dans le code, et nulle part ailleurs (tests/adresse-google.test.ts).
 // Vide : rien de Google n'est chargé, le champ d'adresse reste un champ ordinaire.
-export const CLE_GOOGLE_MAPS_DU_SITE = "";
+export const CLE_GOOGLE_MAPS_DU_SITE: string = "AIzaSyBZ6c6BSehXIUvQMfDyvTUBkHHXGxseu7k";
 
 /**
  * La clé que la page du panier donne au navigateur — à lire côté SERVEUR seulement.
