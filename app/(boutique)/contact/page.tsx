@@ -10,6 +10,7 @@ import { NOM_DU_SITE } from "@/lib/marque";
 import { adressesParLangue, remplir } from "@/lib/langues";
 import { traduction } from "@/lib/traduction";
 import { nomVille } from "@/lib/i18n/catalogue";
+import { communesLivrees } from "@/lib/zones";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +57,7 @@ export default async function Contact() {
         {i.villes.length > 0 && (
           <div className="flex gap-3 bg-white p-4">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-slate-500" strokeWidth={1.6} aria-hidden="true" />
-            <div><dt className="text-[13px] text-slate-500">{t.contact.villesLivrees}</dt><dd className="text-sm">{i.villes.map((v) => nomVille(v, langue)).join(" · ")}</dd></div>
+            <div><dt className="text-[13px] text-slate-500">{t.contact.villesLivrees}</dt><dd className="text-sm">{communesLivrees(i.villes).map((v) => nomVille(v, langue)).join(" · ")}</dd></div>
           </div>
         )}
       </dl>

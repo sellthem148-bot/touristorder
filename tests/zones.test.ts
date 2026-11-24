@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { communeDe, lireReperes, quartiersDe, zoneCitee, zoneReperee } from "@/lib/zones";
+import { communeDe, communesLivrees, lireReperes, quartiersDe, zoneCitee, zoneReperee } from "@/lib/zones";
 import { fraisDeLivraison, livraisonApresChangementDeZone } from "@/lib/villes";
 import { lienWaze } from "@/lib/messages-client";
 import { texteDeLAlerte } from "@/lib/telegram";
@@ -38,6 +38,19 @@ describe("une zone : une ville, ou un quartier à son propre prix", () => {
     expect(communeDe("Kadima-Tsoran")).toBe("Kadima-Tsoran");
     expect(quartiersDe("Kadima-Tsoran")).toEqual([]);
     expect(quartiersDe("Tel Aviv")).toEqual([]);
+  });
+
+  it("un quartier n'est pas une ville de plus : 20 zones, 19 villes livrées (l'accueil, le contact, le flyer)", () => {
+    const zones = GRILLE_DES_ZONES.map((z) => z.nom);
+    expect(zones).toHaveLength(20);
+    const villes = communesLivrees(zones);
+    expect(villes).toHaveLength(19);
+    expect(villes.slice(0, 2)).toEqual(["Netanya", "Even Yehuda"]);
+    expect(villes).not.toContain(QUARTIER_IR_YAMIM);
+    // L'accueil et la page de contact comptent et listent des villes, jamais des zones.
+    const lireSource = (f: string) => readFileSync(path.join(process.cwd(), f), "utf8");
+    expect(lireSource("app/(boutique)/page.tsx")).toContain("communesLivrees(reglages.villes.map((v) => v.nom))");
+    expect(lireSource("app/(boutique)/contact/page.tsx")).toContain("communesLivrees(i.villes)");
   });
 
   it("les repères du gérant : un par virgule ou par ligne, simplifiés, sans doublon ni mot trop court", () => {

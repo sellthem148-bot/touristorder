@@ -1,6 +1,8 @@
 # Tourist Order (touristorder.com)
 
-Service de livraison pour les touristes en Israël : le client commande sur le site, le gérant passe la commande sur Wolt, réceptionne, reconditionne et livre. Paiement à la livraison (espèces ou Bit).
+Service de livraison pour les touristes en Israël : le client commande et règle sur le site (Bit, PayBox ou virement), le gérant fait les achats sur Wolt dans la journée, reconditionne et livre le soir, à l'appartement, à la maison ou à l'hôtel.
+
+**Où en est le site** : voir « État de la production » plus bas (mis à jour le 24 novembre 2026). **Les décisions du gérant et les règles à respecter**, dans le détail : `CLAUDE.md`.
 
 Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_SITE` (ou `lib/marque.ts`).
 
@@ -8,11 +10,11 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 
 **Côté client** (web app mobile, en cinq langues — français, anglais, russe, hébreu, espagnol —, sans compte)
 - Présentation à la manière du site de Wolt (fond clair, bannière avec le nom de la boutique et bande d'informations sur l'accueil, colonne des rayons sur ordinateur, cartes d'articles blanches avec une zone d'image, le « + » dans le coin et le prix en bleu) — avec le nom, le logo et les textes de Tourist Order. Un article sans photo montre l'icône de son rayon à la place.
-- Catalogue « comme sur Wolt » : des rayons, et dans chaque grand rayon des **sous-rayons** (Eaux, Colas, Jus… dans Boissons) — un aperçu de chacun avec « Tout voir », une rangée de sous-rayons qui reste en haut de l'écran sur téléphone, une colonne des rayons sur ordinateur. Les articles sont des tuiles (deux par ligne sur téléphone), rangés tout seuls dans leur sous-rayon d'après leur nom. Sur l'accueil : les rayons, puis une rangée à faire défiler par rayon et « Les plus demandés » (produits Populaire / Promo). Recherche « vivante » dans tout le catalogue : les articles s'affichent pendant qu'on tape, sans valider, et la recherche ne tient compte ni des accents ni des tirets (« coca zero », « oeufs », « cafe »).
+- Catalogue « comme sur Wolt » : des rayons, et dans chaque grand rayon des **sous-rayons** (Eaux, Colas, Jus… dans Boissons) — un aperçu de chacun — **une seule rangée de six articles au plus, à faire défiler de côté**, pour que la page respire — avec « Tout voir », une rangée de sous-rayons qui reste en haut de l'écran sur téléphone, une colonne des rayons sur ordinateur. Les articles sont des tuiles (deux par ligne sur téléphone), rangés tout seuls dans leur sous-rayon d'après leur nom. Sur l'accueil : les rayons, puis une rangée à faire défiler par rayon et « Les plus demandés » (produits Populaire / Promo). Recherche « vivante » dans tout le catalogue : les articles s'affichent pendant qu'on tape, sans valider, et la recherche ne tient compte ni des accents ni des tirets (« coca zero », « oeufs », « cafe »).
 - **Fiche produit** au toucher : grande photo, description, **options obligatoires** (taille, modèle, couleur… avec supplément éventuel), quantité.
 - Badges Populaire / Nouveau / Promo (avec prix barré) ; un produit **épuisé** reste visible mais ne se commande pas.
 - Panier enregistré dans le navigateur ; à l'ouverture, prix et options sont remis à jour depuis la base et ce qui n'existe plus est retiré.
-- Commande : nom, **numéro de téléphone (WhatsApp)**, e-mail, ville, **où le client loge (appartement, maison ou hôtel)** et la rue (ou le nom de l'hôtel) — tous obligatoires : la commande n'est pas enregistrée (donc pas payée) tant qu'il en manque un, et le client est amené sur le champ à compléter. L'étage et le numéro d'appartement ne sont demandés (et exigés) que pour un appartement ; une maison n'en a pas. **À l'hôtel, on ne monte pas dans les chambres** : le client en est prévenu dès qu'il choisit « Hôtel » (numéro de chambre facultatif), on l'appelle à l'arrivée et il descend à la réception. Code d'entrée facultatif ; jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
+- Commande : nom, **numéro de téléphone (WhatsApp)**, e-mail, ville, **où le client loge (appartement, maison ou hôtel)** et la rue (ou le nom de l'hôtel) — tous obligatoires : la commande n'est pas enregistrée (donc pas payée) tant qu'il en manque un, et le client est amené sur le champ à compléter. L'étage et le numéro d'appartement ne sont demandés (et exigés) que pour un appartement ; une maison n'en a pas. **À l'hôtel, on ne monte pas dans les chambres** : le client en est prévenu dès qu'il choisit « Hôtel » (numéro de chambre facultatif), on l'appelle à l'arrivée et il descend à la réception. Code d'entrée facultatif. **Le prix de la livraison dépend de la zone** que le client choisit dans la liste (une ville, ou un quartier vendu à son prix) ; s'il tape une adresse qui désigne une autre zone — le nom d'une autre ville, d'un quartier, ou une rue que le gérant a notée —, le panier le lui dit et lui propose de la choisir, sans jamais le bloquer. Puis jour, créneau, **livraison express** (supplément), **si un article manque** (me contacter / remplacer / retirer), **mode de paiement**, **pourboire**, note libre.
 - **Paiement à la commande** (Bit, PayBox, virement) : le client règle avant que le gérant commande sur Wolt. Les coordonnées de paiement ne sont jamais sur le site : le client les reçoit sur WhatsApp. Sa page de suivi dit où en est le paiement (en attente avec le montant, reçu, complément à régler, remboursement à venir). Seule exception : si le gérant a collé son **lien de paiement Bit** dans Réglages, le client qui a choisi Bit voit un bouton « Payer avec Bit » sur son suivi tant qu'il reste à régler, avec le montant et la référence à indiquer.
 - **Référence de commande** : le client ne lit jamais « commande n°1 » mais une référence, par exemple **BC-58001** — ses initiales, deux chiffres qui ne comptent pas, puis le numéro de la commande (001 → n°1). Elle est sur son suivi, dans son espace, ses e-mails, son reçu et tous les messages WhatsApp. Le gérant voit le numéro et la référence, et retrouve une commande par l'un ou l'autre (champ « Retrouver une commande »).
 - **« Je ne trouve pas mon article »** : une demande libre, dans le panier ou seule (recherche sans résultat → « Demander cet article »). Le gérant cherche l'article, l'ajoute à la commande avec son prix ; rien n'est à régler avant.
@@ -21,6 +23,7 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
 - **E-mail de confirmation** à chaque commande (l'adresse e-mail est demandée à la commande) : livraison, articles, total, bouton « Suivre ma commande » et accès direct à l'espace client.
 - **Espace client** (`/compte`), sans mot de passe : on y entre par un lien reçu par e-mail (celui de la confirmation, valable 7 jours, ou un lien demandé sur la page de connexion, valable 30 minutes). Tableau de bord (commandes, en cours, articles, total dépensé), commande en cours avec son avancement, articles préférés, historique d'achat détaillé avec **« Commander à nouveau »**, informations (nom, WhatsApp, ville, adresse) qui pré-remplissent la commande suivante, déconnexion, suppression de l'espace. L'espace est créé à la première commande.
 - **Mes commandes** : le navigateur garde aussi les liens de suivi de ses commandes (sans se connecter).
+- **Un site qui bouge, sans en faire trop** : les blocs arrivent en fondu, l'article s'envole vers le panier au « + », les quantités et les montants répondent, l'en-tête se resserre quand on fait défiler, une fine barre en haut de l'écran pendant qu'une page se charge. Tout est coupé pour qui a demandé moins d'animations à son appareil, et rien n'est caché sans JavaScript.
 
 **Côté gérant** (`/admin`, protégé par mot de passe)
 - **Commandes** : en cours, livrées, annulées. Rafraîchissement automatique toutes les 30 s.
@@ -29,13 +32,14 @@ Le nom affiché se change en un seul endroit : la variable `NEXT_PUBLIC_NOM_DU_S
   - l'ajustement d'une quantité ou le marquage « indisponible », qui recalcule le total ;
   - le bouton d'étape suivante ;
   - le bouton « Écrire au client sur WhatsApp », avec un message pré-rempli adapté à l'étape ;
-  - la marge estimée et une note interne.
+  - la marge estimée et une note interne ;
+  - **« Zone à vérifier »** quand l'adresse tapée désigne une autre zone que celle choisie (les deux prix sont affichés) : un bouton passe la commande à la bonne zone, la livraison et le total sont recalculés, et une commande déjà payée montre un complément. « Changer la zone de livraison » est toujours disponible. Le même signalement est dans la liste des commandes et dans l'alerte Telegram.
 - **La photo de Wolt** de chaque article (tirée de tes captures, pour reconnaître un article que tu ne connais pas) s'affiche partout dans ton espace : dans la liste « Produits », sur la fiche d'un article, dans « Photos rapides », « Prix rapides », « Ma journée » et la commande. Elle porte l'étiquette « Wolt » : le client ne la voit jamais. Un toucher l'ouvre en entier.
 - **Les photos de Wolt sur ton site** : un article qui n'a pas encore sa photo montre celle de Wolt à la place de l'icône du rayon. Qui la voit se règle dans « Réglages » → **« Photos de Wolt pour tout le monde »** : cochée (ta décision du 17 novembre, le site n'ayant pas encore de client), tout visiteur la voit, sans avoir à se connecter ; décochée, toi seul la vois, connecté à ton espace. Ces photos sont celles de Wolt et des marques : décoche la case avant d'ouvrir le site aux clients, ou remplace-les d'ici là par les tiennes. Connecté à ton espace, tu as en plus un bandeau sombre « Vue du gérant », une étiquette « Wolt » sur chaque photo à remplacer, et sur la fiche de l'article « Mettre sa photo », qui ouvre « Photos rapides » sur sa ligne. « Voir comme un client » montre le site tel que les visiteurs le voient.
 - **Photos rapides** : les articles en ligne sans photo, rayon par rayon. Le plus rapide : « Chercher une image » (une recherche sur le nom exact de l'article sur Wolt, dans un autre onglet), tu copies l'image choisie (appui long ou clic droit → « Copier l'image »), tu reviens et tu appuies sur **« Coller »** — sur ordinateur, Ctrl + V ou l'image glissée sur la ligne marchent aussi. Une image trop petite est refusée, la même image deux fois de suite est signalée. « Ajouter » ouvre l'appareil photo ou la galerie. Dans tous les cas la photo est allégée et enregistrée aussitôt.
 - **Prix rapides** : tous les articles d'une catégorie (ou « À compléter » : ceux sans prix) sur un écran, prix de vente, prix d'achat et « En ligne » pour chacun, un seul bouton pour tout enregistrer. Une valeur illisible n'enregistre rien et nomme l'article à corriger.
 - **Tarifs** (selon le moment de la livraison) : des plages horaires (jours cochés + heures, minuit passé ou journée entière) avec leurs propres frais de service, livraison, express (0 = pas d'express) et une **majoration en % des articles** (ex. +10 % la nuit). La première plage active (par priorité) qui contient le moment s'applique, sinon le tarif de base des Réglages. Une grille de la semaine montre quel tarif s'applique à chaque heure. Le client voit le tarif changer en direct quand il choisit le jour et le créneau ; la commande garde le tarif appliqué.
-- **Villes** : les villes livrées (19 au départ, autour de Netanya), chacune avec un **supplément de livraison** et, si besoin, un **minimum de commande**. Livraison payée par le client = livraison du moment (Tarifs) + supplément de la ville. Toute la liste se modifie d'un coup ; un tableau montre le prix de livraison de chaque ville pour chaque tarif (base, week-end, nuit…).
+- **Villes** (les zones de livraison) : 20 zones au départ — 19 villes, et un quartier de Netanya vendu à son propre prix, nommé « Ville – Quartier » (« Netanya – Ir Yamim / Poleg »). Chacune a son **supplément de livraison** et, si besoin, un **minimum de commande** ; livraison payée par le client = livraison du moment (Tarifs) + supplément de la zone. Sous chaque zone, **« Rues et repères de cette zone »** : les rues, hôtels et résidences que tu y connais (séparés par des virgules ou des retours à la ligne) — c'est ce qui permet au site de reconnaître qu'une adresse appartient à cette zone. Toute la liste se modifie d'un coup ; un tableau montre le prix de livraison de chaque zone pour chaque tarif (base, week-end, nuit…). Voir « Zones de livraison » plus bas.
 - **Clients** : chaque client (nom, e-mail, WhatsApp, ville), son nombre de commandes et le montant livré, les meilleurs d'abord ; recherche ; bouton WhatsApp.
 - **Avis de nouvelle commande** : un e-mail au gérant (`EMAIL_GERANT`) à chaque commande, avec le lien vers la commande, et une **alerte Telegram** immédiate sur son téléphone (Réglages → « Alerte Telegram », en trois étapes numérotées : créer un robot avec @BotFather et coller son jeton, lui dire bonjour dans Telegram, appuyer sur « Relier ». L'état est écrit en clair — « Pas installée », « À terminer », « Active » — et « Envoyer un essai » le vérifie à tout moment).
 - **Paiement** : chaque commande porte son étiquette (à payer, payée, reste à payer, à rembourser). Un bouton envoie au client, sur WhatsApp, le montant, le mode et les coordonnées de paiement (saisies une fois dans Réglages, privées ; le lien Bit s'y ajoute pour un paiement par Bit) ; un autre note « Paiement reçu ». Un article ajouté après le paiement fait apparaître un complément, un article indisponible un remboursement. Filtre « À payer » dans les commandes.
@@ -61,20 +65,58 @@ Le site côté client existe en **français, anglais, russe, hébreu (de droite 
 - **Tu réponds en français, en anglais ou en hébreu** : ces trois sites annoncent un service dans la langue du client, et la page de contact le dit dans les cinq langues. Le site ne promet jamais de répondre en russe ni en espagnol (les messages WhatsApp que l'admin te prépare, eux, sont déjà écrits dans la langue du client).
 - Les textes sont dans `lib/i18n/` (un fichier par langue ; `fr.ts` est la référence) ; le catalogue traduit dans `lib/i18n/catalogue/` (du texte français de `prisma/*.ts` à sa traduction). Vérifier une traduction : `npx tsx tests/outils/verifier-langue.ts he`. Le parcours `tests/navigateur/parcours-langues.mjs` vérifie les cinq langues dans un vrai navigateur.
 
+## Zones de livraison
+
+Les clients donnent une adresse, pas une zone, et peuvent se tromper — ou choisir exprès la moins chère. Les zones sont donc **définies par les adresses** (23 novembre 2026).
+
+- **Une zone** est une ligne de « Villes » : une ville entière, ou un quartier vendu à son propre prix, nommé « Ville – Quartier ».
+- **Ce qui relie une adresse à une zone, ce sont des mots** : le nom d'une ville (dans les cinq langues), le nom d'un quartier, et les **repères** que tu saisis sous chaque zone (rues, hôtels, résidences). C'est toi qui connais tes rues : le site n'en invente aucune.
+- **Le site ne corrige rien tout seul et ne bloque jamais une commande** (une rue peut porter le nom d'une ville). Il fait trois choses : au panier, un avis sous l'adresse et un bouton « Choisir {ville} » ; dans ton espace, la commande signalée **« Zone à vérifier »** (commande, liste des commandes, alerte Telegram) tant qu'elle n'est ni livrée ni annulée ; et un bouton pour passer la commande à la bonne zone, qui recalcule la livraison et le total. Les conditions générales de vente disent au client que les frais suivent l'adresse réelle.
+- Waze reçoit la ville, pas le nom de la zone.
+
+**Ta grille** (prix de la livraison au tarif de base ; une plage tarifaire s'y ajoute comme avant ; les frais de service — 15 ₪ au départ — sont en plus) :
+
+| Livraison | Zones |
+|---|---|
+| 30 ₪ | Netanya |
+| 40 ₪ | Netanya – Ir Yamim / Poleg |
+| 50 ₪ | Even Yehuda, Kfar Yona, Kadima-Tsoran, Pardesia, Beit Yitzhak, Tsur Moshe, Udim |
+| 70 ₪ | Ra'anana, Kfar Saba, Hod Hasharon, Hadera |
+| 100 ₪ | Césarée, Herzliya, Ramat HaSharon |
+| 150 ₪ | Tel Aviv, Ramat Gan, Givatayim, Petah Tikva |
+
+Elle a été posée une seule fois à la mise en ligne (`prisma/zones-1123.ts`) ; depuis, les prix se changent dans « Villes » et ne sont plus touchés par le code. Les villages à 50 ₪ viennent de ta règle « tout le Sharon, plus ou moins, 50 » : à corriger dans « Villes » si l'un d'eux doit coûter autre chose. L'accueil, la page de contact et le flyer comptent des **villes** (19), pas des zones (20).
+
+**L'étape d'après, quand tu auras ta clé Google** : l'adresse vérifiée par Google — le client choisit son adresse dans les propositions, et le site trouve seul la ville et le quartier. Voir « Pas encore fait ».
+
+Code : `lib/zones.ts` (pur : `communeDe`, `quartiersDe`, `zoneCitee`, `communesLivrees`), `lib/zones-lecture.ts` (les zones et leurs mots, côté serveur), `changerLaZone` (`app/admin/(protege)/actions.ts`). Tests : `tests/zones.test.ts`, `tests/navigateur/parcours-zones.mjs`.
+
 ## Apparence
 
-Côté client, le site est volontairement sobre : texte et boutons en encre, fond clair, traits fins, une seule couleur d'accent, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un article s'affiche comme une tuile — sa photo en haut s'il en a une, puis nom, format, prix — et c'est avec des photos que le catalogue ressemble le plus à Wolt (elles s'ajoutent dans l'espace gérant : « Photos rapides », ou la fiche du produit). Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
+Côté client, le site reprend la **présentation** d'une boutique sur Wolt — jamais sa marque : le nom, le logo et les textes restent ceux de Tourist Order.
+
+- **Fond clair**, texte et boutons en encre, police Geist. Pas d'emoji : des icônes au trait (`lucide-react`). Un fond sombre (« nuit ») ou ivoire reste à un interrupteur (`lib/fond.ts`) ; tout texte posé sur le fond porte donc sa variante `nuit:` (`tests/navigateur/contrastes.mjs` vérifie que rien n'est illisible).
+- **Accueil** : une bannière (mosaïque de photos libres de droits, le sigle, le nom, le titre), une bande d'informations (horaires, prochaine livraison, frais, paiement, villes livrées), puis les rayons et une rangée d'articles par rayon.
+- **Carte d'article** : blanche, une zone d'image en haut, le « + » encre dans le coin haut gauche (dans toutes les langues, hébreu compris), puis le prix en bleu, le nom, le format. Une promotion a son étiquette jaune et l'ancien prix barré.
+- **Un peu de couleur** : une teinte douce par rayon (la pastille de son icône, le bandeau en tête de sa page) et le jaune du logo sur quelques repères. Jamais un texte, un titre ni un bouton.
+- **De l'air** : une seule rangée par sous-rayon, six articles par rangée sur l'accueil ; sur ordinateur une rangée tombe juste (jamais une carte coupée au bord) et une flèche mène à la suite.
+- **Du mouvement** : voir « Ce que fait le site ». Tout est dans `app/globals.css` ; `tests/navigateur/mouvement.mjs` le vérifie.
+
+Les réglages communs (couleurs, arrondis, graisses, boutons, champs) sont dans `app/globals.css`.
 
 ### Photos des produits
 
-Un article montre sa photo seulement s'il en a une. Deux sources :
+Ce que montre la carte d'un article, dans l'ordre :
 
-- **Les photos du gérant** : espace gérant → « Photos rapides » (ou la fiche du produit). Elles sont enregistrées dans le stockage du site.
-- **Des photos d'illustration libres de droits** pour les produits frais sans marque (fruits, légumes, œufs, viande et poisson à la coupe) : 41 photos de Wikimedia Commons, dans `public/produits/frais`, recadrées en carré de 600 px. La correspondance article → photo est dans `prisma/photos-frais.ts` ; les auteurs et les licences dans `lib/credits-photos.ts`, affichés sur la page `/credits` (lien « Crédits photos » en bas du site) — c'est l'attribution que ces licences demandent. Elles sont posées **une seule fois** à la mise en ligne, et seulement sur un article sans photo : une photo ajoutée, remplacée ou retirée par le gérant n'est jamais écrasée. Jamais de photo d'illustration pour un article de marque.
+1. **Sa photo**, s'il en a une. Deux sources : **les tiennes** (espace gérant → « Photos rapides » : « Coller » une image copiée, ou « Ajouter » depuis l'appareil photo ; enregistrées dans le stockage du site) et **des photos d'illustration libres de droits** pour les produits frais sans marque (fruits, légumes, œufs) : des photos de Wikimedia Commons dans `public/produits/frais`, la correspondance article → photo dans `prisma/photos-frais.ts`, les auteurs et les licences dans `lib/credits-photos.ts`, affichés sur `/credits` — c'est l'attribution que ces licences demandent. Elles sont posées une seule fois, seulement sur un article sans photo, et jamais pour un article de marque.
+2. Sinon, **la photo de Wolt** tirée de tes captures — tant que « Photos de Wolt pour tout le monde » est cochée dans Réglages (ta décision du 17 novembre ; décochée, toi seul la vois, connecté à ton espace). Ces photos sont celles de Wolt et des marques : elles restent hors des fichiers publics du site (`prive/reperes-wolt`), ne sont jamais enregistrées comme photo d'un article, et les moteurs de recherche n'y vont pas.
+3. Sinon, **l'icône du rayon** sur sa couleur.
+
+Où on en est le 24 novembre : sur 678 articles en vente, **42 ont leur propre photo** (38 fruits et légumes, 4 en crèmerie) et **636 montrent celle de Wolt**. Chaque image que tu colles dans « Photos rapides » prend la place de celle de Wolt, pour toi comme pour tes clients.
 
 ### Logo
 
-Le sigle est un **T** et un **O plein, couleur soleil**, dans une tuile encre : les initiales de Tourist Order, le O en soleil. Le jaune (`#f2b632`) ne sert qu'à lui. Un seul tracé (`lib/sigle.ts`) dessine le logo du site (`components/Sigle.tsx`), l'icône de l'onglet, l'icône de téléphone et la carte d'aperçu de lien.
+Le sigle est un **T** et un **O plein, couleur soleil**, dans une tuile encre : les initiales de Tourist Order, le O en soleil. Le jaune (`#f2b632`) est celui du logo : sur le site il reste rare (quelques repères, le compteur du panier, la barre de chargement). Un seul tracé (`lib/sigle.ts`) dessine le logo du site (`components/Sigle.tsx`), l'icône de l'onglet, l'icône de téléphone et la carte d'aperçu de lien.
 
 Les fichiers à réutiliser ailleurs (WhatsApp, Instagram, autocollants, cartes) sont dans `public/logo/`, donc aussi téléchargeables depuis le site (`https://www.touristorder.com/logo/<fichier>`) :
 
@@ -88,6 +130,15 @@ Les fichiers à réutiliser ailleurs (WhatsApp, Instagram, autocollants, cartes)
 
 Les `.svg` sont vectoriels (impression, toute taille) et le nom y est tracé en courbes : ils ne dépendent d'aucune police. `tests/logo.test.ts` vérifie que ces fichiers portent le même tracé que le site. La police de la carte d'aperçu est dans `assets/polices/` (Geist, licence OFL jointe).
 
+## Flyer et affiche
+
+Les documents à imprimer sont dans `affiches/` (jamais publiés avec le site) ; `affiches/README.md` les décrit.
+
+- **Le flyer** (`affiches/flyer/`) : A5, deux pages — français puis anglais —, avec le logo de l'agence partenaire **Elite Home Group**. C'est le document de référence, fourni par le gérant le 24 novembre 2026 : `flyer-tourist-order.pdf` pour l'imprimeur, une page par langue (`-fr`, `-en`) en PDF et en image. Son QR code ouvre le site dans la langue du téléphone.
+- **L'affiche A4** (`affiches/sortie/`) : une page, français et anglais ensemble, même logo partenaire ; `node affiches/generer.mjs` la refait.
+
+Le flyer annonce ce que le site annonce (19 h – 00 h, commande avant 17 h, livraison dès 30 ₪, Bit / PayBox / virement, plus de 650 articles, 19 villes, le numéro WhatsApp, réponses en français, anglais et hébreu) : **si l'un de ces réglages change, le flyer est à refaire**. `tests/affiche.test.ts` le signale pour ce qui se lit dans le code.
+
 ## Lancer en local
 
 Prérequis : Node 20.9 ou plus récent, et PostgreSQL.
@@ -96,7 +147,7 @@ Prérequis : Node 20.9 ou plus récent, et PostgreSQL.
 cp .env.example .env        # puis renseigner ADMIN_PASSWORD et SESSION_SECRET
 npm install
 npx prisma db push          # crée les tables
-npm run seed                # 12 catégories, réglages, 19 villes et 2 plages tarifaires d'exemple, et la base du catalogue
+npm run seed                # 12 catégories, réglages, 20 zones de livraison et 2 plages tarifaires d'exemple, et la base du catalogue
                             # (135 articles SANS prix, masqués) — sans danger en production : n'écrase rien
 npm run seed:demo           # (local seulement) + des prix inventés sur 18 articles, pour tester
 npm run dev                 # http://localhost:3000, admin sur /admin
@@ -104,7 +155,7 @@ npm run dev                 # http://localhost:3000, admin sur /admin
 
 En local, sans Supabase, les photos sont enregistrées dans `public/uploads/`.
 
-Vérifications : `npm run typecheck`, `npm run lint`, `npm test`, et les parcours dans un vrai navigateur (`tests/navigateur/README.md`).
+Vérifications : `npm run typecheck`, `npm run lint`, `npm test` (40 fichiers de tests), et 23 parcours dans un vrai navigateur (`tests/navigateur/README.md`) — ceux qui ne modifient rien (`mouvement`, `contrastes`, `recherche-vivante`, `parcours-rayons`) se lancent aussi sur le vrai site.
 
 ## Mettre en ligne (Vercel + Supabase)
 
@@ -116,10 +167,18 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 4. **Redéployer**. À chaque mise en ligne de production, `npm run build` lance `prisma/preparer.ts`, qui :
    - crée ou met à jour les tables (`prisma db push`, sans `--accept-data-loss` : un changement qui effacerait des données arrête la mise en ligne) ;
    - active la « row level security » sur toutes les tables (`prisma/rls.sql`), sinon la clé publique de Supabase pourrait les lire ;
-   - sur une base toute neuve seulement, installe la base du catalogue (articles sans prix, masqués), les catégories, les villes et les plages d'exemple ;
-   - installe les **articles réels de Wolt avec leur prix**, lot par lot et chaque lot une seule fois : 177 articles de Wolt Market Netanya Center (`prisma/articles-wolt.ts`, relevé du 10 novembre 2026, avec quatre rayons en plus : Crèmerie & œufs, Pain & pâtisserie, Boucherie & poisson, Surgelés & glaces) 30 articles d'électronique de Dynamica Netanya (`prisma/articles-dynamica.ts`, 11 novembre 2026) et 73 articles de plus de Wolt Market, d'après les fiches produit envoyées par le gérant (`prisma/articles-wolt-fiches.ts`, 11 novembre 2026 : nom, prix normal et description tirés de la fiche ; les cinq fiches d'articles déjà installés enrichissent leur description, sans jamais remplacer un texte du gérant). Ensuite les prix se changent dans l'admin (« Prix rapides »). Pour ajouter une boutique ou un relevé : un nouveau fichier d'articles et une ligne dans `LOTS_WOLT` (`prisma/remplissage.ts`) ;
-   - installe, une seule fois, la **liste de produits dressée par le gérant** (`prisma/articles-liste.ts`, 395 articles) : des articles « à compléter », sans prix de vente donc masqués, avec le prix indicatif de sa liste gardé à part (`Produit.prixIndicatif`) et rappelé dans « Prix rapides ». Ce prix n'est pas celui de Wolt. Le gérant a décidé de mettre ces articles en vente tout de suite au prix de sa liste : la mise en ligne le fait une seule fois, pour 360 d'entre eux (ni l'alcool ni la mélatonine), sans toucher à un article qu'il a déjà modifié. Ils restent repérés « prix non vérifié » dans son espace (« Prix rapides » → « Prix à vérifier », et la liste de courses de « Journée ») tant qu'il n'a pas noté le prix de Wolt dans « Achat » ;
-   - applique, une seule fois chacune (`Reglages.operationsFaites`), les décisions du gérant sur le catalogue : la viande et la volaille retirées de la vente (masquées, `prisma/retrait-viande.ts` ; le rayon devient « Poisson ») ; puis, le 16 novembre, les 40 articles masqués qui ont leur photo de Wolt remis en vente à ta demande — 7 boissons, 20 poissons surgelés, 13 viandes (`prisma/remise-en-vente-1116.ts` ; le rayon redevient « Boucherie & poisson ») ; puis, le 19 novembre, la viande et le poulet frais de nouveau masqués à ta demande — 7 articles ; la charcuterie sous vide reste (`prisma/retrait-viande-fraiche-1119.ts`) —, puis le poisson frais et le poisson surgelé de « Boucherie & poisson » (22 articles, `prisma/retrait-poisson-1119.ts`) et la viande, le poisson et les glaces de « Surgelés & glaces » (11 articles, `prisma/retrait-surgeles-1119.ts`), tous masqués et non effacés ; le 22 novembre, ce rayon, qui ne vend plus de glaces, est renommé « Surgelés » (`prisma/renommage-surgeles-1122.ts` ; son adresse ne change pas) ; sa liste « Dynamica Store » installée « à compléter », masquée (`prisma/articles-liste-dynamica.ts`) ;
+   - sur une base toute neuve seulement, installe la base du catalogue (articles sans prix, masqués), les catégories, les zones de livraison et les plages d'exemple ;
+   - installe les **articles réels de Wolt avec leur prix**, lot par lot et chaque lot une seule fois (`LOTS_WOLT`, `prisma/remplissage.ts`) : Wolt Market Netanya Center (`prisma/articles-wolt.ts`, 10 novembre), Dynamica (`articles-dynamica.ts`), les fiches produit du 11 novembre (`articles-wolt-fiches.ts`), puis ce que montraient tes captures du 12 novembre (`releve-wolt-1112.ts`, `articles-wolt-captures.ts`, `articles-wolt-captures-boissons.ts`) et deux articles de Dynamica (13 novembre). Toujours le prix normal de Wolt, jamais le prix en promotion. Ensuite les prix se changent dans l'admin (« Prix rapides ») : le code ne remplace jamais un prix que tu as posé. Pour ajouter un relevé : un fichier d'articles et une ligne dans `LOTS_WOLT` ;
+   - installe, une seule fois, **ta liste de produits** (`prisma/articles-liste.ts`, 395 articles) avec son prix indicatif gardé à part ; tu as décidé d'en mettre 360 en vente au prix de ta liste (ni l'alcool ni la mélatonine) — ils restent repérés « prix non vérifié » tant que tu n'as pas noté le prix de Wolt. Ta liste « Dynamica Store » est installée masquée (`articles-liste-dynamica.ts`) et le reste ;
+   - applique, **une seule fois chacune** (leur clé est notée dans `Reglages.operationsFaites`), tes décisions sur le catalogue et les prix. Ce que tu changes ensuite dans l'admin n'est jamais refait. Dans l'ordre :
+     - les relevés de prix d'après tes captures (12 et 15 novembre) ;
+     - les rayons Crèmerie et Boissons raccourcis le 12 novembre puis remis en entier le 13 ;
+     - ce que Wolt ne vend pas, **supprimé** (les 5 introuvables de ta liste, 16 boissons absentes de la page entière du rayon) ;
+     - le 15 novembre, les 339 articles sans photo de Wolt **masqués** « pour le moment » ; le 16, les 40 articles masqués qui avaient leur photo remis en vente ;
+     - le 17, « Photos de Wolt pour tout le monde » cochée ;
+     - le 19, la viande et le poulet frais, le poisson frais et surgelé, puis la viande, le poisson et les glaces des surgelés **masqués** (40 articles, gardés dans ta base avec nom, prix et photo) ; le 22, le rayon renommé « Surgelés » (son adresse ne change pas) ;
+     - les photos libres de droits des produits frais ;
+     - le 23, **ta grille des zones de livraison** et sa correction du soir (`prisma/zones-1123.ts`) ;
    - crée le dossier public `produits` de Supabase Storage (photos).
 
    Un aperçu (preview) ne touche jamais à la base. Sans base branchée, la mise en ligne continue et le dit dans son journal (`[base] …`).
@@ -134,15 +193,33 @@ Le site est fait pour que **rien ne soit à recopier à la main** : pas de mot d
 
 **Autre façon** (base Supabase créée à la main, sur son propre compte) : poser `DATABASE_URL` (« Transaction pooler », port 6543) et `DIRECT_URL` (« Session pooler », port 5432), `NEXT_PUBLIC_SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` dans Vercel. Ces noms passent avant ceux de l'intégration ; le reste est identique.
 
-## État de la production (11 novembre 2026)
+## État de la production (24 novembre 2026)
 
 - **Site** : https://www.touristorder.com (`touristorder.com` redirige vers `www`), aussi sur https://touristorder.vercel.app. Domaine acheté chez Hostinger, DNS pointés sur Vercel.
-- **Code** : dépôt GitHub `sellthem148-bot/touristorder`, branche `main`. **Chaque `git push` sur `main` met le site en ligne** (1 à 2 minutes) : c'est la seule façon de redéployer, le bouton « Redeploy » de Vercel demande au gérant un code par e-mail qu'il ne reçoit pas.
+- **Code** : dépôt GitHub `sellthem148-bot/touristorder`, branche `main`. **Chaque `git push` sur `main` met le site en ligne** (1 à 2 minutes) : c'est la seule façon de redéployer, le bouton « Redeploy » de Vercel demande au gérant un code par e-mail qu'il ne reçoit pas. Chaque page porte `<meta name="version">` = le commit en service : à relire après chaque envoi (une mise en ligne qui échoue laisse l'ancienne version sans rien montrer). Plusieurs conversations envoient sur ce même `main` : toujours récupérer la dernière version avant de travailler.
 - **Vercel** : équipe « Sellthem148 » (offre Hobby), projet `touristorder`, fonctions à Francfort (`vercel.json`). Une variable d'environnement ajoutée ou changée n'est prise en compte qu'à la mise en ligne suivante.
-- **Base** : Supabase créée depuis Vercel (Storage), branchée au projet ; les tables, la sécurité (RLS) et le catalogue ont été installés par `prisma/preparer.ts`.
+- **Base** : Supabase créée depuis Vercel (Storage), branchée au projet ; les tables, la sécurité (RLS) et le catalogue sont installés par `prisma/preparer.ts`.
 - **Variables posées dans Vercel** : `ADMIN_PASSWORD`, `RESEND_API_KEY`, `EMAIL_EXPEDITEUR`, `EMAIL_GERANT` (plus celles de l'intégration Supabase). Pas de `SESSION_SECRET` : la clé est dérivée (`lib/cle-session.ts`).
 - **E-mails** : domaine `touristorder.com` ajouté chez Resend (DKIM et SPF en place). Le domaine n'a pas de boîte de réception : une réponse d'un client à un e-mail du site se perd, sauf si `EMAIL_REPONSE` est posée.
-- **Catalogue en ligne** : 205 articles visibles (175 de Wolt Market Netanya Center, 30 de Dynamica Netanya), bière et vin installés hors ligne, aucune photo pour l'instant.
+- **Catalogue en ligne** : **678 articles en vente**, dans dix rayons —
+
+  | Rayon | Articles |
+  |---|---|
+  | Crèmerie & œufs | 235 |
+  | Boissons | 157 |
+  | Chargeurs & électronique | 80 |
+  | Pain & pâtisserie | 75 |
+  | Fruits & légumes | 40 |
+  | Courses & épicerie | 27 |
+  | Boucherie & poisson (fumé, salé, charcuterie sous vide, sauces) | 24 |
+  | Apéro & snacks | 22 |
+  | Maison & entretien | 15 |
+  | Surgelés (pizzas et plats) | 3 |
+
+  Trois rayons sont vides et ne sont plus proposés (Bébé & enfants, Pharmacie & hygiène, Shabbat & casher). Restent **masqués** dans la base : les articles sans photo de Wolt (en attente de tes captures de leur rayon), les 40 articles retirés le 19 novembre, l'alcool (« à réfléchir ») et la liste Dynamica Store.
+- **Photos** : 42 articles ont leur propre photo, 636 montrent celle de Wolt (« Photos de Wolt pour tout le monde » est cochée). `/admin/repere/etat` dit, sans connexion et sans rien montrer, combien de photos le serveur sait lire et l'état de ce réglage.
+- **Livraison** : le soir, cinq créneaux de 19 h à minuit, commande avant 17 h livrée le soir même ; 20 zones (19 villes), de 30 ₪ à 150 ₪ — voir « Zones de livraison ».
+- **Clients** : le site n'était pas encore ouvert aux clients le 17 novembre ; le flyer part maintenant chez l'agence partenaire (Elite Home Group).
 - **À savoir** : le dépôt est public. Avant de le passer en privé, vérifier que Vercel (offre Hobby) déploie encore les envois dont l'auteur n'est pas le propriétaire du compte.
 
 ## Référencement
@@ -178,9 +255,21 @@ En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fi
 - **Options d'un produit** : une seule définition (`lib/options.ts`) pour la saisie admin, le panier et le serveur, qui revérifie le choix et recalcule le supplément.
 - **Mobile** : une case masquée (`sr-only`) doit rester dans un parent `relative` (la classe `pastille` l'est), et un `fieldset` doit pouvoir rétrécir (`min-inline-size: 0`, dans `globals.css`). Sans cela, une rangée qui défile élargissait toute la page sur téléphone.
 
-## Pas encore fait (V2)
+## Pas encore fait
+
+**Ce qui attend le gérant**
+
+- **Adresse vérifiée par Google** : le client choisit son adresse dans les propositions de Google, et le site trouve seul la ville et le quartier (donc la zone et son prix). Il faut **sa** clé Google Maps Platform — un projet Google Cloud avec un compte de facturation (carte bancaire ; chaque produit a un quota gratuit par mois), les API « Places API (New) » et « Maps JavaScript API » activées, la clé limitée aux adresses `https://www.touristorder.com/*` et `https://touristorder.com/*` et à ces deux API. La clé se pose dans Vercel (Settings → Environment Variables), jamais dans une conversation. À construire une fois la clé créée. Ne pas brancher à la place le service public de recherche d'adresses d'OpenStreetMap (Nominatim) : sa charte l'interdit pour ce genre de site.
+- **Les rues d'Ir Yamim / Poleg** (et de toute zone à part) à saisir dans « Villes » → « Rues et repères de cette zone » : sans elles, le site ne reconnaît ce quartier qu'à son nom.
+- **Ses propres photos** : 636 articles montrent encore celle de Wolt. Avant d'ouvrir le site aux clients, les remplacer (« Photos rapides » → « Coller ») ou décocher « Photos de Wolt pour tout le monde ».
+- **Les captures de Wolt des rayons restants** (épicerie, apéro, entretien, pharmacie, bébé…) : un article masqué que la capture montre reçoit sa photo et revient en vente.
+- **Les « prix non vérifiés »** : les articles de sa liste vendus au prix de la liste tant qu'il n'a pas noté le prix de Wolt (« Prix rapides » → « Prix à vérifier »).
+- Ses décisions en attente : l'alcool, la liste Dynamica Store, les 40 articles retirés le 19 novembre (gardés masqués).
+
+**Ce que le site ne fait pas**
 
 - Paiement par carte bancaire en ligne (il faut un compte chez un prestataire de paiement israélien : PayPlus, Grow, Tranzila, CardCom…).
 - Facture fiscale : le reçu du site n'en est pas une ; elle se fait dans un logiciel de facturation agréé.
 - Traduction automatique de ce que le gérant écrit lui-même dans l'admin (nouvel article, nouvelle ville).
-- Fiche produit détaillée et variantes (tailles).
+- Compter les visites venues du flyer (son QR code porte `?via=flyer`, que le site ne lit pas encore).
+- La source du flyer A5 n'est pas dans le dépôt (seulement le PDF) : pour le modifier, il faut le reconstruire d'après ce PDF.

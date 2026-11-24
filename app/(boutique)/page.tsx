@@ -12,6 +12,7 @@ import { reglagesPublics } from "@/lib/reglages";
 import { formatPrixCourt } from "@/lib/argent";
 import { momentPresent, NOM_TARIF_DE_BASE, tarifDeBase, tarifPour } from "@/lib/tarifs";
 import { livraisonLaMoinsChere } from "@/lib/villes";
+import { communesLivrees } from "@/lib/zones";
 import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { joursOuverts } from "@/lib/livraisons";
 import { ADRESSE_DU_SITE, MESSAGE_ACCUEIL_PAR_DEFAUT, NOM_DU_SITE } from "@/lib/marque";
@@ -82,7 +83,8 @@ export default async function Accueil() {
   // La prochaine livraison possible : le premier créneau qui n'est ni passé ni complet.
   const prochaine = (await joursOuverts(reglages))[0];
   const expressQuelquefois = reglages.fraisExpress > 0 || reglages.plages.some((p) => p.fraisExpress > 0);
-  const villes = reglages.villes.map((v) => nomVille(v.nom, langue));
+  // Les villes, pas les zones : un quartier vendu à son prix (« Netanya – Ir Yamim / Poleg ») n'en est pas une de plus.
+  const villes = communesLivrees(reglages.villes.map((v) => v.nom)).map((v) => nomVille(v, langue));
 
   const faits: Fait[] = [];
   if (amplitude) {

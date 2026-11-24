@@ -23,6 +23,12 @@ export function communeDe(nom: string): string {
   return nom.split(TIRET_DE_QUARTIER)[0].trim();
 }
 
+/** Les VILLES livrées, sans doublon et dans l'ordre : un quartier vendu à son prix n'est pas une ville de plus
+ *  (« 19 villes livrées », pas 20 — ce que disent l'accueil, la page de contact et le flyer). */
+export function communesLivrees(zones: string[]): string[] {
+  return [...new Set(zones.map(communeDe).filter(Boolean))];
+}
+
 /** Les quartiers que nomme une zone (« Ir Yamim », « Poleg ») ; aucun pour une ville entière. */
 export function quartiersDe(nom: string): string[] {
   const [, ...suite] = nom.split(TIRET_DE_QUARTIER);

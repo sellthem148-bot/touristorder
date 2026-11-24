@@ -5,6 +5,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { ADRESSE_DU_SITE, PAIEMENTS_PAR_DEFAUT } from "@/lib/marque";
 import { SIGLE } from "@/lib/sigle";
+import { communesLivrees } from "@/lib/zones";
+import { GRILLE_DES_ZONES } from "../prisma/zones-1123";
 
 const racine = process.cwd();
 const lire = (f: string) => readFileSync(path.join(racine, f), "utf8");
@@ -58,5 +60,67 @@ describe("l'affiche partenaire", () => {
     expect(generateur).toContain("En partenariat avec");
     expect(generateur).toContain("In partnership with");
     expect(generateur).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+});
+
+// Le flyer A5 que le gérant a fourni le 24 novembre 2026 (fait dans une autre conversation) : c'est son
+// document de référence. Sa source n'est pas ici, seul le PDF l'est ; `texte.txt` en est le texte extrait.
+describe("le flyer A5 (français, anglais)", () => {
+  const dossier = path.join(racine, "affiches/flyer");
+  const texte = lire("affiches/flyer/texte.txt");
+
+  it("le PDF reçu, une page par langue et leurs aperçus sont dans le dépôt, hors du site", () => {
+    for (const f of ["flyer-tourist-order.pdf", "flyer-tourist-order-fr.pdf", "flyer-tourist-order-en.pdf", "flyer-tourist-order-fr.png", "flyer-tourist-order-en.png", "texte.txt"]) {
+      expect(existsSync(path.join(dossier, f)), f).toBe(true);
+    }
+    expect(readFileSync(path.join(dossier, "flyer-tourist-order.pdf")).subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    const publies = readdirSync(path.join(racine, "public"), { recursive: true }).map(String);
+    expect(publies.filter((f) => /flyer/i.test(f))).toEqual([]);
+    expect(lire("affiches/README.md")).toContain("flyer/");
+  });
+
+  it("deux pages : le français puis l'anglais, avec l'agence partenaire sur chacune", () => {
+    const [fr, en] = texte.split("\f");
+    expect(fr).toContain("Vos courses livrées à votre");
+    expect(fr).toContain("EN PARTENARIAT AVEC");
+    expect(en).toContain("Your groceries delivered to");
+    expect(en).toContain("IN PARTNERSHIP WITH");
+    expect(texte).not.toMatch(/\p{Extended_Pictographic}/u);
+  });
+
+  it("il annonce ce que le site annonce : si l'un de ces points change, le flyer est à refaire", () => {
+    // Le soir, de 19 h à minuit ; avant 17 h, livré le soir même.
+    expect(lire("prisma/remplissage.ts")).toMatch(/creneaux: \["19:00 – 20:00".*"23:00 – 00:00"\]/);
+    expect(texte).toContain("19h – 00h");
+    expect(texte).toContain("7 pm – midnight");
+    expect(lire("prisma/schema.prisma")).toMatch(/heureLimite\s+String\s+@default\("17:00"\)/);
+    expect(texte).toContain("COMMANDEZ AVANT 17H");
+    expect(texte).toContain("ORDER BEFORE 5 PM");
+    // La livraison la moins chère de la grille du gérant : Netanya.
+    const moinsChere = Math.min(...GRILLE_DES_ZONES.map((z) => z.livraison)) / 100;
+    expect(moinsChere).toBe(30);
+    expect(texte).toContain(`dès ${moinsChere} ₪`);
+    expect(texte).toContain(`from ₪${moinsChere}`);
+    // Les modes de paiement de départ.
+    expect(PAIEMENTS_PAR_DEFAUT).toEqual(["Bit", "PayBox", "Virement"]);
+    expect(texte).toContain("par Bit, PayBox ou virement");
+    expect(texte).toContain("by Bit, PayBox or bank transfer");
+    // Des VILLES, pas des zones : le quartier de Netanya n'en est pas une de plus.
+    const villes = communesLivrees(GRILLE_DES_ZONES.map((z) => z.nom));
+    expect(texte).toContain(`${villes.length} villes livrées`);
+    expect(texte).toContain(`${villes.length} cities served`);
+    for (const v of ["Netanya", "Herzliya", "Ra'anana", "Kfar Saba", "Hadera", "Césarée", "Tel Aviv"]) {
+      expect(villes, v).toContain(v);
+      expect(texte, v).toContain(v);
+    }
+    // Le numéro WhatsApp du gérant, celui de la page de contact.
+    const numero = lire("prisma/remplissage.ts").match(/WHATSAPP_DU_GERANT = "([^"]+)"/)?.[1] ?? "";
+    expect(numero).not.toBe("");
+    expect(texte.split(numero).length - 1).toBe(2);
+    // Il répond en français, en anglais et en hébreu — le russe et l'espagnol ne sont jamais promis.
+    expect(texte).toContain("Nous répondons en français, en anglais et en hébreu.");
+    expect(texte).toContain("We reply in English, French and Hebrew.");
+    expect(texte).not.toMatch(/russe|espagnol|Russian|Spanish/);
+    expect(texte).toContain("touristorder.com");
   });
 });
