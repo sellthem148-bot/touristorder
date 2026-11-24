@@ -86,11 +86,32 @@ export const RUES_A_CONFIRMER: { nom: string; pourquoi: string }[] = [
   { nom: "Zvi Moissescu", pourquoi: "à plus d'un kilomètre au nord-est d'Uzi Hitman (latitude 32,293, longitude 34,858)" },
   { nom: "Rotem", pourquoi: "à 250 mètres au nord d'Uzi Hitman, et plus à l'est (latitude 32,284, longitude 34,847)" },
   { nom: "Sderot Pinchas Lavon", pourquoi: "un boulevard au nord-est du quartier (du n° 40, latitude 32,2825, au n° 1, latitude 32,287 ; longitude 34,854 à 34,856)" },
-  { nom: "HaIrusim", pourquoi: "aucune rue de ce nom chez Google à Netanya : il connaît la rue « Irus HaArgaman » et le centre commercial des iris, à 450 mètres au nord d'Uzi Hitman (latitude 32,286)" },
+  { nom: "HaIrusim", pourquoi: "Google l'écrit « האיריסים » (HaIrisim) et situe la rue à Ramat Poleg, mais ses numéros ailleurs, au nord-est : laissée à la position de chaque adresse (prisma/limites-ir-yamim-1124.ts)" },
 ];
 
 /** Uzi Hitman, la limite nord que donne le gérant, est à 32,282 : aucune rue de la liste n'est plus au nord. */
 export const LATITUDE_NORD_DU_QUARTIER = 32.283;
+
+/**
+ * Les repères d'une zone avec des rues en plus : à la suite de ce que le gérant a déjà écrit, une rue par ligne,
+ * seulement les écritures absentes — rien n'est retiré ni réécrit. `place` : la longueur que le champ accepte
+ * (une rue entière, ou rien).
+ */
+export function reperesAvec(dejaEcrit: string, rues: RueDuQuartier[], lire: (texte: string) => string[], place: number): { texte: string; rues: number } {
+  const deja = new Set(lire(dejaEcrit));
+  let texte = dejaEcrit.trim();
+  let ajoutees = 0;
+  for (const rue of rues) {
+    const nouvelles = rue.noms.filter((nom) => lire(nom).some((r) => !deja.has(r)));
+    if (nouvelles.length === 0) continue;
+    const suite = texte ? `${texte}\n${nouvelles.join(", ")}` : nouvelles.join(", ");
+    if (suite.length > place) break;
+    texte = suite;
+    ajoutees++;
+    for (const nom of nouvelles) for (const r of lire(nom)) deja.add(r);
+  }
+  return { texte, rues: ajoutees };
+}
 
 /** Le texte à poser dans « Rues et repères de cette zone » : une rue par ligne, ses écritures séparées par des virgules. */
 export function texteDesRues(rues: RueDuQuartier[] = RUES_D_IR_YAMIM): string {

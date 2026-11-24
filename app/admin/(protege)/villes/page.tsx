@@ -7,7 +7,7 @@ import { NOM_TARIF_DE_BASE, tarifDeBase } from "@/lib/tarifs";
 import { fraisDeLivraison } from "@/lib/villes";
 import { Messages } from "@/components/admin/Messages";
 import { ajouterVille, enregistrerVilles } from "../actions";
-import { LONGUEUR_MAXIMALE_DES_REPERES, lireReperes } from "@/lib/zones";
+import { LONGUEUR_MAXIMALE_DES_LIMITES, LONGUEUR_MAXIMALE_DES_REPERES, lireLimites, lireReperes, quartiersDe } from "@/lib/zones";
 import { cleGoogleMaps } from "@/lib/google-maps";
 
 
@@ -87,6 +87,30 @@ export default async function PageVilles({ searchParams }: PageProps<"/admin/vil
                   className="champ mt-1.5 text-sm"
                 />
               </details>
+              {/* Un quartier à son prix : ses limites sur la carte. La position que Google donne à une adresse dit si elle y est. */}
+              {(quartiersDe(v.nom).length > 0 || v.limites) && (
+                <details className="sm:col-span-5" data-limites={lireLimites(v.limites).length} open={lireLimites(v.limites).length > 0}>
+                  <summary className="cursor-pointer text-xs font-semibold text-marque">
+                    Limites sur la carte{lireLimites(v.limites).length > 0 ? ` (${lireLimites(v.limites).length} rectangle${lireLimites(v.limites).length > 1 ? "s" : ""})` : ""}
+                  </summary>
+                  <p className="mt-1.5 text-xs text-slate-600">
+                    Une adresse choisie dans les propositions de Google porte sa position : si elle tombe dans l&apos;un de ces rectangles (et dans la ville du quartier), elle est dans cette zone,
+                    même si sa rue n&apos;est pas dans tes repères. Un rectangle par ligne — « nord 32.2832, est 34.8475 » veut dire : au sud de cette latitude et à l&apos;ouest de cette longitude.
+                    Vide : seuls les repères comptent.
+                  </p>
+                  <label htmlFor={`lim-${v.id}`} className="sr-only">Limites sur la carte de {v.nom}</label>
+                  <textarea
+                    id={`lim-${v.id}`}
+                    name={`lim_${v.id}`}
+                    rows={2}
+                    dir="ltr"
+                    defaultValue={v.limites}
+                    maxLength={LONGUEUR_MAXIMALE_DES_LIMITES}
+                    placeholder="nord 32.2832, est 34.8475"
+                    className="champ mt-1.5 font-mono text-sm"
+                  />
+                </details>
+              )}
             </li>
           ))}
         </ul>

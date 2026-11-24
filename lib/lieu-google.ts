@@ -1,7 +1,7 @@
 // Ce que Google renvoie pour une adresse choisie dans ses propositions, ramené à ce dont le site a besoin :
 // la ligne d'adresse du client, et le lieu (ville, quartier, rue) d'où `zonePourLieu` tire la zone.
 // Pur, sans rien de Google : des objets simples, pour être testé et partagé (navigateur, serveur).
-import { SEPARATEUR_DE_NOMS, type LieuReconnu } from "./zones";
+import { SEPARATEUR_DE_NOMS, type LieuReconnu, type Position } from "./zones";
 
 /** Un composant d'adresse de Google (`Place.addressComponents`). */
 export type ComposantGoogle = { longText?: string | null; shortText?: string | null; types?: readonly string[] | null };
@@ -31,14 +31,16 @@ const uniques = (textes: string[]) => [...new Set(textes.map((t) => t.replace(/\
  * Le lieu, d'après les composants d'adresse — une liste par langue demandée (celle du client, puis l'hébreu :
  * les noms de villes s'y écrivent d'une seule façon, et le gérant peut avoir saisi ses rues dans l'une ou l'autre).
  * `nom` : le nom du lieu quand c'en est un (hôtel, résidence) — un repère du gérant peut le désigner.
+ * `position` : là où Google le situe sur la carte — c'est elle qui dit le quartier quand la rue n'est pas un repère.
  */
-export function lieuDepuisGoogle(listes: (readonly ComposantGoogle[] | null | undefined)[], nom = ""): LieuReconnu {
+export function lieuDepuisGoogle(listes: (readonly ComposantGoogle[] | null | undefined)[], nom = "", position: Position | null = null): LieuReconnu {
   const toutes = listes.map((l) => l ?? []);
   return {
     villes: uniques(toutes.flatMap((l) => avecType(l, TYPES_DE_VILLE))),
     // Google ne range pas toujours une rue dans un quartier (aucun pour Ir Yamim, à Netanya) : c'est alors
     // la RUE qui dit le quartier, par les repères du gérant.
     precisions: uniques([...toutes.flatMap((l) => lesDeuxNoms(l, TYPES_DE_QUARTIER)), ...toutes.flatMap((l) => lesDeuxNoms(l, ["route"])), nom]),
+    position,
   };
 }
 
@@ -73,11 +75,14 @@ export function nomsEnTexte(noms: string[], longueur: number): string {
   return texte;
 }
 
-/** Ce que le formulaire envoie avec la commande (trois champs cachés) pour une adresse reconnue. */
-export function champsGoogle(adresse: string, lieu: LieuReconnu): { adresseGoogle: string; villeGoogle: string; reperesGoogle: string } {
+/** Ce que le formulaire envoie avec la commande (cinq champs cachés) pour une adresse reconnue. */
+export function champsGoogle(adresse: string, lieu: LieuReconnu): { adresseGoogle: string; villeGoogle: string; reperesGoogle: string; latitudeGoogle: string; longitudeGoogle: string } {
   return {
     adresseGoogle: adresse.replace(/\s+/g, " ").trim().slice(0, LONGUEUR_ADRESSE_GOOGLE),
     villeGoogle: nomsEnTexte(lieu.villes, LONGUEUR_VILLE_GOOGLE),
     reperesGoogle: nomsEnTexte(lieu.precisions, LONGUEUR_REPERES_GOOGLE),
+    // Six décimales : une dizaine de centimètres, bien plus qu'il n'en faut.
+    latitudeGoogle: lieu.position ? lieu.position.lat.toFixed(6) : "",
+    longitudeGoogle: lieu.position ? lieu.position.lng.toFixed(6) : "",
   };
 }

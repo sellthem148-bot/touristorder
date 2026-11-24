@@ -42,11 +42,11 @@ try {
   verifier(noms[0] === "Netanya" && noms[1] === QUARTIER, "le quartier est rangé juste après sa ville");
   verifier(await admin.getByText("Les zones se définissent par les adresses").isVisible(), "la page explique comment définir une zone par ses adresses");
   const ligneQuartier = admin.locator("li", { has: admin.locator(`input[value="${QUARTIER}"]`) });
-  await ligneQuartier.locator("summary").click();
-  await ligneQuartier.locator("textarea").fill("Ehud Manor, Sea Opera");
+  await ligneQuartier.locator("summary").first().click();
+  await ligneQuartier.locator('textarea[name^="rep_"]').fill("Ehud Manor, Sea Opera");
   await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
   await admin.getByText("Villes enregistrées.").waitFor();
-  verifier((await ligneQuartier.locator("textarea").inputValue()) === "Ehud Manor, Sea Opera" && espaces(await ligneQuartier.locator("summary").innerText()).includes("(2)"), "repères du quartier enregistrés (2), la ligne reste ouverte");
+  verifier((await ligneQuartier.locator('textarea[name^="rep_"]').inputValue()) === "Ehud Manor, Sea Opera" && espaces(await ligneQuartier.locator("summary").first().innerText()).includes("(2)"), "repères du quartier enregistrés (2), la ligne reste ouverte");
   verifier(!(await deborde(admin)), "« Villes » : pas de défilement horizontal sur téléphone");
   if (OUT) await admin.screenshot({ path: `${OUT}/zones-1-villes.png` });
 

@@ -8,7 +8,7 @@ import { LONGUEUR_MAXIMALE_DES_REPERES, REPERES_AU_PLUS, lireReperes, zoneASigna
 import { nomVille } from "@/lib/i18n/catalogue";
 import { LANGUES } from "@/lib/langues";
 import { QUARTIER_IR_YAMIM } from "../prisma/zones-1123";
-import { CLE_RUES_D_IR_YAMIM, LATITUDE_NORD_DU_QUARTIER, RUES_A_CONFIRMER, RUES_D_IR_YAMIM, texteDesRues } from "../prisma/rues-ir-yamim-1124";
+import { CLE_RUES_D_IR_YAMIM, LATITUDE_NORD_DU_QUARTIER, RUES_A_CONFIRMER, RUES_D_IR_YAMIM, reperesAvec, texteDesRues } from "../prisma/rues-ir-yamim-1124";
 
 const lire = (f: string) => readFileSync(path.join(process.cwd(), f), "utf8");
 const zone = (nom: string, reperes = "") => zoneReperee(nom, reperes, LANGUES.map((l) => nomVille(nom, l)));
@@ -148,11 +148,24 @@ describe("posées une seule fois, sans rien retirer de ce que le gérant a écri
     expect(preparer.indexOf("ajouterLesRuesDIrYamim(prisma)")).toBeLessThan(preparer.indexOf("mettreLesReglagesANiveau(prisma)"));
   });
 
+  it("ce que le gérant a écrit reste en tête, tel quel ; seules les écritures absentes s'ajoutent", () => {
+    const { texte, rues } = reperesAvec("Ehud Manor, Résidence Lagoon\nרחוב סביון", RUES_D_IR_YAMIM, lireReperes, LONGUEUR_MAXIMALE_DES_REPERES);
+    expect(texte.startsWith("Ehud Manor, Résidence Lagoon\nרחוב סביון\n")).toBe(true);
+    expect(rues).toBe(47);
+    // « Ehud Manor » y était : seule son écriture en hébreu est ajoutée ; « סביון » y était : seul « Savyon » l'est.
+    expect(texte.split("\n")).toContain("אהוד מנור");
+    expect(texte.split("\n")).toContain("Savyon");
+    expect(lireReperes(texte)).toContain("residence lagoon");
+    // Une seconde fois : plus rien à ajouter. Et jamais au-delà de la place du champ.
+    expect(reperesAvec(texte, RUES_D_IR_YAMIM, lireReperes, LONGUEUR_MAXIMALE_DES_REPERES)).toEqual({ texte, rues: 0 });
+    expect(reperesAvec("", RUES_D_IR_YAMIM, lireReperes, 40).texte.length).toBeLessThanOrEqual(40);
+  });
+
   it("une clé à elle ; elle ajoute à la suite du texte du gérant et ne supprime rien", () => {
     expect(CLE_RUES_D_IR_YAMIM).toBe("rues-ir-yamim-1124");
     expect(fonction).toContain("operationFaite(prisma, CLE_RUES_D_IR_YAMIM)");
     expect(fonction).toContain("noterOperation(prisma, CLE_RUES_D_IR_YAMIM)");
-    expect(fonction).toContain("let texte = zone.reperes.trim();");
+    expect(fonction).toContain("reperesAvec(zone.reperes, RUES_D_IR_YAMIM, lireReperes, LONGUEUR_MAXIMALE_DES_REPERES)");
     expect(fonction).not.toMatch(/delete|deleteMany|create\(/);
     expect(fonction).toContain("where: { nom: QUARTIER_IR_YAMIM }");
   });

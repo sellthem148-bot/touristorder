@@ -10,6 +10,7 @@ import { fraisDeLivraison, minimumPour } from "./villes";
 import { formatPrix } from "./argent";
 import { lireGroupes, resoudreSelection } from "./options";
 import { LANGUE_PAR_DEFAUT, type Langue } from "./langues";
+import { positionValide } from "./zones";
 import { dictionnaireServeur } from "./i18n";
 
 export type ResultatCommande =
@@ -149,6 +150,9 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
       adresseGoogle: saisie.adresseGoogle,
       villeGoogle: saisie.villeGoogle,
       reperesGoogle: saisie.reperesGoogle,
+      // Sa position, si elle est plausible (deux nombres, en Israël) : sinon rien — jamais une raison de refuser.
+      latitudeGoogle: positionValide(saisie.latitudeGoogle, saisie.longitudeGoogle)?.lat ?? null,
+      longitudeGoogle: positionValide(saisie.latitudeGoogle, saisie.longitudeGoogle)?.lng ?? null,
       langue,
       dateLivraison: saisie.dateLivraison,
       creneau: saisie.creneau,

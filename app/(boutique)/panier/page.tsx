@@ -38,6 +38,8 @@ export default async function Panier({ searchParams }: PageProps<"/panier">) {
   };
   // Ce qui désigne chaque zone dans une adresse (nom de la ville ou du quartier, repères du gérant) : le
   // panier prévient le client dont l'adresse n'est pas dans la zone qu'il a choisie.
-  const zones = (await zonesLivrees()).map(({ nom, noms, reperes }) => ({ nom, noms, reperes }));
+  // Ce que le panier reçoit de chaque zone : ses noms, ses repères et, pour un quartier, ses limites sur la carte
+  // (sans elles, une adresse choisie chez Google dans une rue hors des repères resterait dans la ville entière).
+  const zones = (await zonesLivrees()).map(({ nom, noms, reperes, limites }) => ({ nom, noms, reperes, ...(limites ? { limites } : {}) }));
   return <PageDuPanier reglages={reglages} jours={jours} limitePassee={limitePassee} client={client} demande={demande} affichage={affichage} zones={zones} cleGoogle={cleGoogleMaps()} />;
 }

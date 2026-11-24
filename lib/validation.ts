@@ -22,6 +22,9 @@ type MessagesErreur = DictionnaireServeur["erreurs"];
 const reconnuParGoogle = (longueur: number) =>
   z.unknown().optional().transform((v) => (typeof v === "string" ? v.slice(0, longueur * 4).replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, longueur) : ""));
 
+/** Une coordonnée de la position que Google a donnée (« 32.276012 ») : un nombre, ou rien — jamais une erreur. */
+const coordonneeGoogle = z.unknown().optional().transform((v) => (typeof v === "string" && /^-?\d{1,3}(\.\d{1,10})?$/.test(v.trim()) ? Number(v.trim()) : null));
+
 /**
  * Les schémas de saisie, avec leurs messages dans une langue (les erreurs s'affichent sous les champs).
  * Le client doit donner son nom, son téléphone, son e-mail et son adresse AVANT que la commande soit
@@ -67,6 +70,8 @@ export function schemasPour(m: MessagesErreur) {
     adresseGoogle: reconnuParGoogle(LONGUEUR_ADRESSE_GOOGLE),
     villeGoogle: reconnuParGoogle(LONGUEUR_VILLE_GOOGLE),
     reperesGoogle: reconnuParGoogle(LONGUEUR_REPERES_GOOGLE),
+    latitudeGoogle: coordonneeGoogle,
+    longitudeGoogle: coordonneeGoogle,
     dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: m.jourRequis }),
     creneau: texte(1, 60, m.creneauRequis),
     notes: z.string().trim().max(1000, { error: max(1000) }).default(""),

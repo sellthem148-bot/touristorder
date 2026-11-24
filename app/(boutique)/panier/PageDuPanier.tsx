@@ -424,6 +424,8 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
                   <input type="hidden" name="adresseGoogle" value={google.adresseGoogle} />
                   <input type="hidden" name="villeGoogle" value={google.villeGoogle} />
                   <input type="hidden" name="reperesGoogle" value={google.reperesGoogle} />
+                  <input type="hidden" name="latitudeGoogle" value={google.latitudeGoogle} />
+                  <input type="hidden" name="longitudeGoogle" value={google.longitudeGoogle} />
                 </>
               )}
               {autreZone && (

@@ -16,7 +16,7 @@ import { slugDe } from "@/lib/slug";
 import { lireReglages } from "@/lib/reglages";
 import { formatPrix, lirePrix } from "@/lib/argent";
 import { livraisonApresChangementDeZone } from "@/lib/villes";
-import { LONGUEUR_MAXIMALE_DES_REPERES } from "@/lib/zones";
+import { LONGUEUR_MAXIMALE_DES_LIMITES, LONGUEUR_MAXIMALE_DES_REPERES, lireLimites } from "@/lib/zones";
 import { derniereDiscussion, envoyerTelegram, estJetonTelegram, robotTelegram } from "@/lib/telegram";
 import { COOKIE_VUE_CLIENT, DUREE_VUE_CLIENT_S, oublierLeReglageDesPhotos } from "@/lib/vue-gerant";
 
@@ -510,7 +510,7 @@ export async function enregistrerVilles(form: FormData) {
   await exigerAdmin();
   const ids = [...new Set(form.getAll("ids").map(String))].filter((x) => x.length > 0 && x.length <= 40).slice(0, 200);
   const erreurs: string[] = [];
-  const aGarder: { id: string; nom: string; supplementLivraison: number; minimumCommande: number; reperes: string; active: boolean }[] = [];
+  const aGarder: { id: string; nom: string; supplementLivraison: number; minimumCommande: number; reperes: string; limites?: string; active: boolean }[] = [];
   const aRetirer: string[] = [];
   for (const villeId of ids) {
     if (form.get(`retirer_${villeId}`) === "on") {
@@ -526,8 +526,14 @@ export async function enregistrerVilles(form: FormData) {
     // Les repères : ce qui, dans une adresse, désigne cette zone (rues, hôtels, quartiers).
     const reperes = texte(form, `rep_${villeId}`).replace(/\r/g, "").trim();
     if (reperes.length > LONGUEUR_MAXIMALE_DES_REPERES) erreurs.push(`repères de ${nom} (trop longs)`);
-    if (supplement == null || minimum == null || reperes.length > LONGUEUR_MAXIMALE_DES_REPERES) continue;
-    aGarder.push({ id: villeId, nom, supplementLivraison: supplement, minimumCommande: minimum, reperes, active: form.get(`active_${villeId}`) === "on" });
+    // Les limites sur la carte (un quartier seulement) : le champ n'est pas toujours dans la page — absent, on n'y touche pas.
+    const saisies = form.get(`lim_${villeId}`);
+    const limites = typeof saisies === "string" ? saisies.replace(/\r/g, "").trim() : undefined;
+    const lignes = (limites ?? "").split(/[\n;]/).filter((l) => l.trim());
+    const limitesIllisibles = limites !== undefined && (limites.length > LONGUEUR_MAXIMALE_DES_LIMITES || lireLimites(limites).length !== lignes.length);
+    if (limitesIllisibles) erreurs.push(`limites de ${nom} (une ligne par rectangle, par exemple « nord 32.2832, est 34.8475 »)`);
+    if (supplement == null || minimum == null || reperes.length > LONGUEUR_MAXIMALE_DES_REPERES || limitesIllisibles) continue;
+    aGarder.push({ id: villeId, nom, supplementLivraison: supplement, minimumCommande: minimum, reperes, ...(limites !== undefined ? { limites } : {}), active: form.get(`active_${villeId}`) === "on" });
   }
   const noms = aGarder.map((v) => v.nom.toLowerCase());
   const doublons = noms.filter((n, i) => noms.indexOf(n) !== i);

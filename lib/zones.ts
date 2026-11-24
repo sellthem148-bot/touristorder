@@ -68,6 +68,53 @@ export function lireReperes(texte: string): string[] {
   return [...new Set(mots)].slice(0, REPERES_AU_PLUS);
 }
 
+// ---------------------------------------------------------------------------------------------------------
+// Les limites d'un quartier sur la carte (demande du gérant, 24 novembre 2026 : « fais par la position, tout au
+// sud d'Uzi Hitman »). Une liste de rues n'est jamais complète ; la position d'une adresse, elle, ne ment pas.
+// ---------------------------------------------------------------------------------------------------------
+
+/** Un rectangle sur la carte : ce qui est au sud de `nord`, au nord de `sud`, à l'ouest de `est`, à l'est de `ouest`. */
+export type Rectangle = { nord?: number; sud?: number; est?: number; ouest?: number };
+/** Une position : latitude et longitude, en degrés. */
+export type Position = { lat: number; lng: number };
+
+export const LONGUEUR_MAXIMALE_DES_LIMITES = 600;
+export const RECTANGLES_AU_PLUS = 8;
+// Israël, à grands traits : une position ou une borne hors de là est une faute de frappe, ou une invention.
+const EN_ISRAEL = { latitude: [29, 34] as const, longitude: [34, 36.5] as const };
+const entre = (x: number, [min, max]: readonly [number, number]) => x >= min && x <= max;
+
+/** Une position plausible (deux nombres, en Israël) — sinon rien. Ce que le navigateur envoie n'est pas fiable. */
+export function positionValide(lat: unknown, lng: unknown): Position | null {
+  if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return entre(lat, EN_ISRAEL.latitude) && entre(lng, EN_ISRAEL.longitude) ? { lat, lng } : null;
+}
+
+/**
+ * Les limites saisies pour un quartier : un rectangle par ligne, écrit en clair — « nord 32.2832, est 34.8475 »
+ * (ce qui est au sud de la latitude 32,2832 ET à l'ouest de la longitude 34,8475). Une borne absente ne limite
+ * rien ; une ligne sans borne lisible est ignorée ; plusieurs lignes = plusieurs rectangles (un quartier en « L »).
+ */
+export function lireLimites(texte: string): Rectangle[] {
+  const rectangles: Rectangle[] = [];
+  for (const ligne of texte.split(/[\n;]/)) {
+    const r: Rectangle = {};
+    for (const m of ligne.toLowerCase().matchAll(/(?<![a-zà-ÿ])(nord|sud|est|ouest)\s*[:=]?\s*(\d{1,2}(?:[.,]\d+)?)/g)) {
+      const cote = m[1] as keyof Rectangle;
+      const valeur = Number(m[2].replace(",", "."));
+      if (entre(valeur, cote === "nord" || cote === "sud" ? EN_ISRAEL.latitude : EN_ISRAEL.longitude)) r[cote] = valeur;
+    }
+    if (Object.keys(r).length > 0) rectangles.push(r);
+    if (rectangles.length === RECTANGLES_AU_PLUS) break;
+  }
+  return rectangles;
+}
+
+/** La position est-elle dans l'un des rectangles ? */
+export function dansLesLimites(p: Position, limites: Rectangle[]): boolean {
+  return limites.some((r) => (r.nord === undefined || p.lat < r.nord) && (r.sud === undefined || p.lat > r.sud) && (r.est === undefined || p.lng < r.est) && (r.ouest === undefined || p.lng > r.ouest));
+}
+
 export type ZoneReperee = {
   /** Le nom enregistré (celui que porte la commande). */
   nom: string;
@@ -75,13 +122,16 @@ export type ZoneReperee = {
   noms: string[];
   /** Ce qui la désigne à coup sûr : les repères du gérant et, pour un quartier, les noms de ses quartiers. */
   reperes: string[];
+  /** Pour un quartier : ses limites sur la carte. Une adresse de sa ville dont la position y tombe est à lui. */
+  limites?: Rectangle[];
 };
 
 /**
  * Ce qui désigne une zone dans une adresse.
  * `nomsTraduits` : le nom de la zone dans les autres langues (le client tape son adresse dans la sienne).
+ * `limites` : pour un quartier seulement — une ville entière, c'est Google qui la nomme.
  */
-export function zoneReperee(nom: string, reperes: string, nomsTraduits: string[] = []): ZoneReperee {
+export function zoneReperee(nom: string, reperes: string, nomsTraduits: string[] = [], limites = ""): ZoneReperee {
   const tous = [nom, ...nomsTraduits];
   const estUnQuartier = quartiersDe(nom).length > 0;
   const uniques = (mots: string[]) => [...new Set(mots.map(simplifier).filter(estUnRepere))];
@@ -89,6 +139,7 @@ export function zoneReperee(nom: string, reperes: string, nomsTraduits: string[]
     nom,
     noms: estUnQuartier ? [] : uniques(tous),
     reperes: [...new Set([...lireReperes(reperes), ...uniques(tous.flatMap(quartiersDe))])],
+    ...(estUnQuartier && lireLimites(limites).length > 0 ? { limites: lireLimites(limites) } : {}),
   };
 }
 
@@ -146,6 +197,8 @@ export type LieuReconnu = {
   villes: string[];
   /** Ce qui le situe dans la ville : quartier(s), rue(s), nom de l'hôtel ou de la résidence. */
   precisions: string[];
+  /** Sa position sur la carte, quand l'annuaire la donne. */
+  position?: Position | null;
 };
 
 export type ZoneDuLieu = {
@@ -179,7 +232,8 @@ function memeVille(notre: string, annuaire: string): 0 | 1 | 2 {
  * La zone où se trouve un lieu reconnu.
  * - sa ville est celle d'une zone (son nom dans l'une des cinq langues) : cette zone, sauf si un QUARTIER de
  *   cette ville vendu à son prix le revendique — par le nom du quartier ou par un repère du gérant (la rue,
- *   la résidence, l'hôtel) retrouvé dans ce qui situe le lieu ; le repère le plus long l'emporte ;
+ *   la résidence, l'hôtel) retrouvé dans ce qui situe le lieu ; le repère le plus long l'emporte ; à défaut de
+ *   repère, par sa POSITION, quand elle tombe dans les limites d'un quartier de cette ville ;
  * - sa ville n'est celle d'aucune zone : `villeNonLivree`. On ne regarde alors pas les repères : la rue
  *   Herzl d'une autre ville n'est pas celle du gérant ;
  * - aucune ville donnée : seul un repère peut désigner une zone.
@@ -211,11 +265,14 @@ export function zonePourLieu(lieu: LieuReconnu, zones: ZoneReperee[]): ZoneDuLie
   if (!commune) return { zone: null, villeNonLivree: lieu.villes.find((v) => v.trim())?.trim() ?? null };
 
   const deLaCommune = zones.filter((z) => communeDe(z.nom) === commune);
-  return { zone: laPlusCitee(deLaCommune) ?? entiere?.nom ?? null, villeNonLivree: null };
+  // Les limites d'un quartier ne valent que dans SA ville : un rectangle ouvert vers le sud couvrirait Tel Aviv.
+  const position = lieu.position ?? null;
+  const parPosition = position ? deLaCommune.find((z) => z.limites && dansLesLimites(position, z.limites))?.nom ?? null : null;
+  return { zone: laPlusCitee(deLaCommune) ?? parPosition ?? entiere?.nom ?? null, villeNonLivree: null };
 }
 
 /** Une commande, pour ce qui touche à sa zone. Les champs « Google » sont vides pour une adresse tapée à la main. */
-export type AdresseDeCommande = { adresse: string; ville: string; villeGoogle?: string | null; reperesGoogle?: string | null };
+export type AdresseDeCommande = { adresse: string; ville: string; villeGoogle?: string | null; reperesGoogle?: string | null; latitudeGoogle?: number | null; longitudeGoogle?: number | null };
 
 /** Ce qui sépare plusieurs noms dans un champ enregistré (« Netanya | נתניה »). */
 export const SEPARATEUR_DE_NOMS = " | ";
@@ -223,7 +280,7 @@ const nomsEnregistres = (texte: string | null | undefined) => (texte ?? "").spli
 
 /** Ce que l'annuaire avait reconnu pour cette commande, relu de ses champs ; rien pour une adresse tapée à la main. */
 export function lieuDeLaCommande(c: AdresseDeCommande): LieuReconnu | null {
-  const lieu = { villes: nomsEnregistres(c.villeGoogle), precisions: nomsEnregistres(c.reperesGoogle) };
+  const lieu = { villes: nomsEnregistres(c.villeGoogle), precisions: nomsEnregistres(c.reperesGoogle), position: positionValide(c.latitudeGoogle, c.longitudeGoogle) };
   return lieu.villes.length + lieu.precisions.length > 0 ? lieu : null;
 }
 

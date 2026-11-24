@@ -41,7 +41,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
       orderBy: !trouver && (filtre === "en-cours" || filtre === "a-payer") ? [{ dateLivraison: "asc" }, { createdAt: "asc" }] : [{ createdAt: "desc" }],
       take: 100,
       select: {
-        id: true, numero: true, statut: true, nomClient: true, ville: true, adresse: true, villeGoogle: true, reperesGoogle: true,
+        id: true, numero: true, statut: true, nomClient: true, ville: true, adresse: true, villeGoogle: true, reperesGoogle: true, latitudeGoogle: true, longitudeGoogle: true,
         dateLivraison: true, creneau: true, total: true, createdAt: true, express: true,
         montantPaye: true, payeLe: true, demandeLibre: true,
         _count: { select: { lignes: true } },

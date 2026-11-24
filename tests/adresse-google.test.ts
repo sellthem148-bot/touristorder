@@ -190,11 +190,17 @@ describe("ce que Google renvoie, ramené à un lieu et à une ligne d'adresse", 
     expect(zonePourLieu(lieu, avecRepere).zone).toBe(QUARTIER_IR_YAMIM);
   });
 
-  it("ce qui part avec la commande : trois champs bornés, des noms entiers, jamais le séparateur dans un nom", () => {
+  it("ce qui part avec la commande : des champs bornés, des noms entiers, jamais le séparateur dans un nom, et la position", () => {
     const lieu = lieuDepuisGoogle([MANOR, MANOR_EN_HEBREU]);
     const champs = champsGoogle("  Ehud Manor St 5,\n Netanya, Israël ", lieu);
-    expect(champs).toEqual({ adresseGoogle: "Ehud Manor St 5, Netanya, Israël", villeGoogle: "Netanya | נתניה", reperesGoogle: "Ehud Manor Street | Ehud Manor St | אהוד מנור" });
-    expect(lieuDeLaCommande({ adresse: "", ville: "", ...champs })).toEqual(lieu);
+    expect(champs).toEqual({ adresseGoogle: "Ehud Manor St 5, Netanya, Israël", villeGoogle: "Netanya | נתניה", reperesGoogle: "Ehud Manor Street | Ehud Manor St | אהוד מנור", latitudeGoogle: "", longitudeGoogle: "" });
+    // Relu de la commande : le même lieu (la position revient en nombres, ou pas du tout).
+    const { latitudeGoogle: _lat, longitudeGoogle: _lng, ...textes } = champs;
+    expect([_lat, _lng]).toEqual(["", ""]);
+    expect(lieuDeLaCommande({ adresse: "", ville: "", ...textes })).toEqual(lieu);
+    const place = lieuDepuisGoogle([MANOR, MANOR_EN_HEBREU], "", { lat: 32.2766012345, lng: 34.8389 });
+    expect(champsGoogle("Ehud Manor St 5", place)).toMatchObject({ latitudeGoogle: "32.276601", longitudeGoogle: "34.838900" });
+    expect(lieuDeLaCommande({ adresse: "", ville: "", ...textes, latitudeGoogle: 32.276601, longitudeGoogle: 34.8389 })).toEqual({ ...lieu, position: { lat: 32.276601, lng: 34.8389 } });
     expect(nomsEnTexte(["a".repeat(100), "b".repeat(100), "c"], 160)).toBe("a".repeat(100));
     expect(lieuDepuisGoogle([[{ longText: "Tel | Aviv", types: ["locality"] }]]).villes).toEqual(["Tel Aviv"]);
     expect(champsGoogle("x".repeat(1000), lieu).adresseGoogle).toHaveLength(LONGUEUR_ADRESSE_GOOGLE);

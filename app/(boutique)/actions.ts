@@ -59,6 +59,8 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     adresseGoogle: form.get("adresseGoogle") ?? "",
     villeGoogle: form.get("villeGoogle") ?? "",
     reperesGoogle: form.get("reperesGoogle") ?? "",
+    latitudeGoogle: form.get("latitudeGoogle") ?? "",
+    longitudeGoogle: form.get("longitudeGoogle") ?? "",
     dateLivraison: form.get("dateLivraison") ?? "",
     creneau: form.get("creneau") ?? "",
     notes: form.get("notes") ?? "",

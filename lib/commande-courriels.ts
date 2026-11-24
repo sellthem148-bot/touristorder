@@ -28,7 +28,7 @@ export async function envoyerCourrielsDeCommande(commandeId: string, site: strin
       prisma.commande.findUnique({
         where: { id: commandeId },
         select: {
-          id: true, numero: true, jeton: true, email: true, clientId: true, nomClient: true, telephone: true, ville: true, logement: true, adresse: true, villeGoogle: true, reperesGoogle: true, etage: true, appartement: true, codeEntree: true, langue: true,
+          id: true, numero: true, jeton: true, email: true, clientId: true, nomClient: true, telephone: true, ville: true, logement: true, adresse: true, villeGoogle: true, reperesGoogle: true, latitudeGoogle: true, longitudeGoogle: true, etage: true, appartement: true, codeEntree: true, langue: true,
           dateLivraison: true, creneau: true, paiement: true, notes: true, demandeLibre: true, express: true, tarifNom: true, majorationPct: true,
           sousTotal: true, majoration: true, fraisService: true, fraisLivraison: true, pourboire: true, total: true,
           // Jamais le prix d'achat, la boutique ni le lien Wolt dans un e-mail au client.

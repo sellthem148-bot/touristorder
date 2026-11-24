@@ -7,7 +7,7 @@
 // adresse écrite, types) — jamais `displayName`, qui ferait passer la lecture au tarif supérieur.
 import type { Langue } from "./langues";
 import { lieuDepuisGoogle, ligneDAdresse, type ComposantGoogle } from "./lieu-google";
-import type { LieuReconnu } from "./zones";
+import { positionValide, type LieuReconnu, type Position } from "./zones";
 
 /** La mention que Google exige sous ses propositions affichées sans carte. Une marque : elle ne se traduit pas. */
 export const MENTION_GOOGLE = "Powered by Google";
@@ -30,6 +30,8 @@ type LieuGoogle = {
   id?: string;
   addressComponents?: ComposantGoogle[] | null;
   formattedAddress?: string | null;
+  /** La position du lieu : chez Google, un objet dont `lat` et `lng` sont des fonctions. */
+  location?: { lat: number | (() => number); lng: number | (() => number) } | null;
   types?: string[] | null;
   fetchFields(options: { fields: string[] }): Promise<{ place?: LieuGoogle } | undefined>;
 };
@@ -142,7 +144,19 @@ export async function proposerDesAdresses(places: Places, saisie: string, langue
 }
 
 // Des champs « Essentials » seulement : `displayName` ferait passer la lecture au tarif supérieur.
-const CHAMPS_ESSENTIELS = ["addressComponents", "formattedAddress", "types"];
+const CHAMPS_ESSENTIELS = ["addressComponents", "formattedAddress", "types", "location"];
+
+/** La position que Google donne au lieu, si elle est plausible. */
+function positionDe(lieu: LieuGoogle): Position | null {
+  const l = lieu.location;
+  if (!l) return null;
+  const nombre = (v: number | (() => number)) => (typeof v === "function" ? v() : v);
+  try {
+    return positionValide(nombre(l.lat), nombre(l.lng));
+  } catch {
+    return null;
+  }
+}
 const CHAMPS_DES_AUTRES_LECTURES = ["addressComponents", "formattedAddress"];
 
 /**
@@ -179,6 +193,6 @@ export async function lireLAdresseChoisie(places: Places, proposition: Propositi
     ligne: ligneDAdresse(proposition.principal, types, lu.addressComponents),
     adresse: (pourLeGerant ?? "").trim() || [proposition.principal, proposition.secondaire].filter(Boolean).join(", "),
     // Le nom du lieu (un hôtel, une résidence) peut être un repère du gérant ; une adresse de rue l'est déjà par sa rue.
-    lieu: lieuDepuisGoogle([lu.addressComponents, ...relus.map((r) => r.lieu.addressComponents)], proposition.principal),
+    lieu: lieuDepuisGoogle([lu.addressComponents, ...relus.map((r) => r.lieu.addressComponents)], proposition.principal, positionDe(lu)),
   };
 }

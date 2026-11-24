@@ -15,10 +15,10 @@ export async function zonesLivrees(): Promise<ZoneLivree[]> {
   const villes = await prisma.ville.findMany({
     where: { active: true },
     orderBy: [{ ordre: "asc" }, { nom: "asc" }],
-    select: { nom: true, reperes: true, supplementLivraison: true },
+    select: { nom: true, reperes: true, limites: true, supplementLivraison: true },
   });
   return villes.map((v) => ({
-    ...zoneReperee(v.nom, v.reperes, LANGUES.map((l) => nomVille(v.nom, l))),
+    ...zoneReperee(v.nom, v.reperes, LANGUES.map((l) => nomVille(v.nom, l)), v.limites),
     supplementLivraison: v.supplementLivraison,
   }));
 }

@@ -33,6 +33,18 @@ const FIN = [c("HaSharon", null, "administrative_area_level_2", "political"), c(
 const voie = (numero, long, court, ville) => [c(numero, null, "street_number"), c(long, court, "route"), c(ville, null, "locality", "political"), ...FIN];
 const enHebreu = (numero, voie, ville) => [c(numero, null, "street_number"), c(voie, null, "route"), c(ville, null, "locality", "political"), c("ישראל", "IL", "country", "political")];
 const LIEUX = {
+  // Une rue d'Ir Yamim que le gérant n'a PAS notée : seule sa position (au sud d'Uzi Hitman) dit le quartier.
+  bashan: {
+    mots: ["yigal", "bashan", "יגאל"], types: ["street_address"], position: { lat: 32.27363, lng: 34.83824 },
+    fr: { principal: "Yigal Bashan Street 3", secondaire: "Netanya, Israël", adresse: "Yigal Bashan St 3, Netanya, Israël", composants: voie("3", "Yigal Bashan Street", "Yigal Bashan St", "Netanya") },
+    he: { principal: "יגאל בשן 3", secondaire: "נתניה, ישראל", adresse: "יגאל בשן 3, נתניה, ישראל", composants: enHebreu("3", "יגאל בשן", "נתניה") },
+  },
+  // Une rue de Kiryat Nordau : à la même hauteur, mais à l'est du boulevard Ben Gurion — hors des limites.
+  hayesod: {
+    mots: ["keren", "hayesod", "קרן היסוד"], types: ["street_address"], position: { lat: 32.28276, lng: 34.84905 },
+    fr: { principal: "Keren HaYesod Street 10", secondaire: "Netanya, Israël", adresse: "Keren HaYesod St 10, Netanya, Israël", composants: voie("10", "Keren HaYesod Street", "Keren HaYesod St", "Netanya") },
+    he: { principal: "קרן היסוד 10", secondaire: "נתניה, ישראל", adresse: "קרן היסוד 10, נתניה, ישראל", composants: enHebreu("10", "קרן היסוד", "נתניה") },
+  },
   // Une rue du centre de Netanya : aucun repère du gérant, donc Netanya.
   nitsa: {
     mots: ["nitsa"], types: ["street_address"],
@@ -103,6 +115,8 @@ const fauxGoogle = (mode) => `(() => {
       // En anglais, le pays s'écrit « Israel ».
       if (fields.includes("formattedAddress")) this.formattedAddress = this.langue === "en" ? l.adresse.replace("Israël", "Israel") : l.adresse;
       if (fields.includes("types")) this.types = lieu.types;
+      // La position : chez Google, un objet dont lat et lng sont des fonctions. Tous les lieux n'en ont pas ici.
+      if (fields.includes("location") && lieu.position) this.location = { lat: () => lieu.position.lat, lng: () => lieu.position.lng };
       return { place: this };
     }
   }
@@ -199,10 +213,24 @@ try {
     await admin.goto(BASE + "/admin/villes");
     verifier(espaces(await admin.locator('[data-adresses-google="actives"]').innerText()).startsWith("Adresse vérifiée par Google : active."), "« Villes » dit au gérant que l'adresse vérifiée par Google est active");
     const ligneQuartier = admin.locator("li", { has: admin.locator(`input[value="${QUARTIER}"]`) });
-    await ligneQuartier.locator("summary").click();
-    await ligneQuartier.locator("textarea").fill("Rue Ehud Manor, רחוב בני בנימין");
+    await ligneQuartier.locator("summary").first().click();
+    await ligneQuartier.locator('textarea[name^="rep_"]').fill("Rue Ehud Manor, רחוב בני בנימין");
+    // Les limites sur la carte : proposées au quartier seulement ; une ligne illisible est refusée, rien n'est enregistré.
+    verifier((await admin.locator("details[data-limites]").count()) === 1 && (await ligneQuartier.locator("details[data-limites]").count()) === 1, "« Limites sur la carte » : proposées au quartier seulement, pas aux villes entières");
+    await ligneQuartier.locator("details[data-limites] summary").click();
+    await ligneQuartier.locator('textarea[name^="lim_"]').fill("tout le sud de la ville");
+    await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
+    await admin.getByText("Rien n'a été enregistré").waitFor();
+    verifier(espaces(await admin.locator("body").innerText()).includes(`limites de ${QUARTIER} (une ligne par rectangle, par exemple « nord 32.2832, est 34.8475 »)`), "une limite illisible est refusée avec l'exemple à suivre, et rien n'est enregistré");
+    await admin.goto(BASE + "/admin/villes");
+    verifier((await ligneQuartier.locator('textarea[name^="rep_"]').inputValue()) === "", "… ni les repères saisis en même temps");
+    await ligneQuartier.locator("summary").first().click();
+    await ligneQuartier.locator('textarea[name^="rep_"]').fill("Rue Ehud Manor, רחוב בני בנימין");
+    await ligneQuartier.locator("details[data-limites] summary").click();
+    await ligneQuartier.locator('textarea[name^="lim_"]').fill("nord 32,2832, est 34,8475\nnord 32.2772, est 34.8525");
     await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
     await admin.getByText("Villes enregistrées.").waitFor();
+    verifier((await ligneQuartier.locator("details[data-limites]").getAttribute("data-limites")) === "2", "les limites du quartier sont enregistrées : 2 rectangles (la virgule des décimales est comprise)");
     ok("le gérant a noté deux rues du quartier : « Rue Ehud Manor » et, en hébreu, « רחוב בני בנימין »");
 
     // ------------------------------------------------------------------------------------------------
@@ -314,13 +342,30 @@ try {
     verifier((await rue.inputValue()) === "Ehud Manor Street 5" && (await zone()) === QUARTIER, "« Ehud Manor Street 5 » : Google ne nomme aucun quartier — c'est la rue, notée « Rue Ehud Manor » par le gérant, qui pose la zone du QUARTIER");
     verifier(espaces(await reconnue.innerText()) === `Adresse reconnue. Zone de livraison : ${QUARTIER}.` && (await info()).includes("livraison 40 ₪") && (await total()).includes("79,90"), "le client le lit sous le champ ; livraison 40 ₪, total 24,90 + 15 + 40 = 79,90");
     const lectures = (await journal(client)).lectures.slice(-2);
-    verifier(lectures.length === 2 && lectures[0].id === "manor" && lectures[0].langue === "fr" && lectures[0].jeton === jeton && JSON.stringify(lectures[0].fields) === '["addressComponents","formattedAddress","types"]' && lectures[1].langue === "iw" && !lectures.some((l) => l.fields.includes("displayName")),
-      "Google est lu deux fois : dans la langue du site avec le jeton de la session, puis en hébreu — des champs « Essentials », jamais displayName");
+    verifier(lectures.length === 2 && lectures[0].id === "manor" && lectures[0].langue === "fr" && lectures[0].jeton === jeton && JSON.stringify(lectures[0].fields) === '["addressComponents","formattedAddress","types","location"]' && JSON.stringify(lectures[1].fields) === '["addressComponents","formattedAddress"]' && lectures[1].langue === "iw" && !lectures.some((l) => l.fields.includes("displayName")),
+      "Google est lu deux fois : dans la langue du site avec le jeton de la session (et la position), puis en hébreu — des champs « Essentials », jamais displayName");
+    verifier((await cache("latitudeGoogle")) === "" && (await cache("longitudeGoogle")) === "", "un lieu sans position : rien n'est inventé, les deux champs partent vides");
     verifier((await cache("adresseGoogle")) === "Ehud Manor St 5, Netanya, Israël" && (await cache("villeGoogle")) === "Netanya | נתניה" && (await cache("reperesGoogle")).startsWith("Ehud Manor Street | Ehud Manor St | אהוד מנור"), "ce que Google a reconnu part avec la commande (adresse entière, ville et rue dans les deux écritures)");
     if (OUT) { await rue.scrollIntoViewIfNeeded(); await client.screenshot({ path: `${OUT}/google-2-reconnue.png` }); }
     await taper("Ehud");
     await liste.waitFor();
     verifier((await journal(client)).demandes.at(-1).jeton === jeton + 1, "une nouvelle saisie ouvre une nouvelle session (un nouveau jeton)");
+
+    // La POSITION : une rue du quartier que le gérant n'a pas notée, puis une rue de Kiryat Nordau
+    await client.locator("#ville").selectOption("Netanya");
+    await taper("Yigal");
+    await liste.waitFor();
+    await options.first().click();
+    await client.waitForFunction((q) => document.querySelector("#ville").value === q, QUARTIER);
+    verifier((await rue.inputValue()) === "Yigal Bashan Street 3" && (await zone()) === QUARTIER && (await info()).includes("livraison 40 ₪"), "« Yigal Bashan Street 3 », absente des repères : c'est sa POSITION (au sud d'Uzi Hitman) qui pose la zone du quartier — livraison 40 ₪");
+    verifier((await cache("latitudeGoogle")) === "32.273630" && (await cache("longitudeGoogle")) === "34.838240", "la position que Google a donnée part avec la commande");
+    await taper("Keren");
+    await liste.waitFor();
+    await options.first().click();
+    await client.waitForFunction(() => document.querySelector("#ville").value === "Netanya");
+    verifier((await rue.inputValue()) === "Keren HaYesod Street 10" && (await zone()) === "Netanya" && (await info()).includes("livraison 30 ₪") && (await cache("latitudeGoogle")) === "32.282760", "« Keren HaYesod Street 10 » (Kiryat Nordau, à l'est du boulevard) : hors des limites — Netanya à 30 ₪");
+    await taper("Ehud");
+    await liste.waitFor();
 
     // Le client retape son adresse : ce que Google avait reconnu tombe
     await options.first().click();

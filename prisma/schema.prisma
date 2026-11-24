@@ -93,6 +93,8 @@ model Commande {
   adresseGoogle  String          @default("") // l'adresse entière, telle que Google l'écrit (Waze, le gérant)
   villeGoogle    String          @default("") // la ville, dans la langue du client et en hébreu (« Netanya | נתניה »)
   reperesGoogle  String          @default("") // quartier(s), rue(s), nom du lieu : ce qui le situe dans la ville
+  latitudeGoogle  Float?                       // la position de l'adresse choisie chez Google : pour le gérant
+  longitudeGoogle Float?                       // (« Zone à vérifier »), jamais pour un prix
   // La langue du site au moment de la commande (lib/langues.ts) : celle de l'e-mail de confirmation
   // et des messages WhatsApp que le gérant envoie au client.
   langue         String          @default("fr")
@@ -253,6 +255,11 @@ model Ville {
   // Ce qui, dans une adresse, désigne cette zone : rues, hôtels, résidences, quartiers (séparés par des
   // virgules ou des retours à la ligne). Sert à signaler une adresse qui n'est pas dans la zone choisie.
   reperes             String   @default("")
+  // Pour un quartier vendu à son prix : ses limites sur la carte, un rectangle par ligne (« nord 32.2832,
+  // est 34.8475 » = au sud de cette latitude et à l'ouest de cette longitude). Une adresse choisie chez Google
+  // porte sa position : dans l'un de ces rectangles (et dans la ville du quartier), elle est dans cette zone,
+  // même si sa rue n'est pas dans les repères. Vide : seuls les repères comptent.
+  limites             String   @default("")
   active              Boolean  @default(true)
   ordre               Int      @default(0)
   createdAt           DateTime @default(now())
