@@ -60,11 +60,11 @@ try {
   ok("ville ajoutée, doublon refusé (majuscules ignorées)");
   await admin.screenshot({ path: `${OUT}/v4-1-villes.png`, fullPage: true });
 
-  // 5. Accueil : les noms des villes, « Livraison dès »
+  // 5. Accueil : les noms des villes ; les frais de livraison ne s'y annoncent plus (24 novembre 2026)
   await client.goto(BASE + "/");
   const accueil = espaces(await client.locator("main").innerText());
   verifier(accueil.includes("villes livrées Netanya ·") && !accueil.includes("object Object"), "accueil : les noms des villes");
-  verifier(accueil.includes("Frais de livraison dès"), "accueil : « Frais de livraison dès … »");
+  verifier(!/Frais de livraison|Service \+ livraison|dès \d+ ₪/.test(accueil), "accueil : aucun frais de livraison annoncé (ils se lisent au panier)");
 
   // 6. Panier : le prix suit la ville
   await client.getByRole("button", { name: "Ajouter Pack d'eau 6 × 1,5 L au panier" }).first().click();

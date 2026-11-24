@@ -134,10 +134,10 @@ Les `.svg` sont vectoriels (impression, toute taille) et le nom y est tracé en 
 
 Les documents à imprimer sont dans `affiches/` (jamais publiés avec le site) ; `affiches/README.md` les décrit.
 
-- **Le flyer** (`affiches/flyer/`) : A5, deux pages — français puis anglais —, avec le logo de l'agence partenaire **Elite Home Group**. C'est le document de référence, fourni par le gérant le 24 novembre 2026 : `flyer-tourist-order.pdf` pour l'imprimeur, une page par langue (`-fr`, `-en`) en PDF et en image. Son QR code ouvre le site dans la langue du téléphone.
+- **Le flyer** (`affiches/flyer/`) : A5, deux pages — français puis anglais —, avec le logo de l'agence partenaire **Elite Home Group**. C'est le document de référence : `flyer-tourist-order.pdf` pour l'imprimeur, une page par langue (`-fr`, `-en`) en PDF et en image. Sa source est là aussi (`node affiches/flyer/generer.mjs` le réécrit). Son QR code ouvre le site dans la langue du téléphone.
 - **L'affiche A4** (`affiches/sortie/`) : une page, français et anglais ensemble, même logo partenaire ; `node affiches/generer.mjs` la refait.
 
-Le flyer annonce ce que le site annonce (19 h – 00 h, commande avant 17 h, livraison dès 30 ₪, Bit / PayBox / virement, plus de 650 articles, 19 villes, le numéro WhatsApp, réponses en français, anglais et hébreu) : **si l'un de ces réglages change, le flyer est à refaire**. `tests/affiche.test.ts` le signale pour ce qui se lit dans le code.
+Le flyer annonce ce que le site annonce (19 h – 00 h, commande avant 17 h, Bit / PayBox / virement, plus de 650 articles, 19 villes, le numéro WhatsApp, réponses en français, anglais et hébreu) : **si l'un de ces réglages change, le flyer est à refaire**. Il ne porte aucun prix : depuis le 24 novembre, à ta demande, les frais de livraison ne s'annoncent plus ni sur le flyer ni sur l'accueil du site — le client les lit au panier, avant de régler. `tests/affiche.test.ts` le signale pour ce qui se lit dans le code.
 
 ## Lancer en local
 
@@ -273,4 +273,3 @@ En développement, sans clé, chaque e-mail est écrit dans `.courriels/` (un fi
 - Facture fiscale : le reçu du site n'en est pas une ; elle se fait dans un logiciel de facturation agréé.
 - Traduction automatique de ce que le gérant écrit lui-même dans l'admin (nouvel article, nouvelle ville).
 - Compter les visites venues du flyer (son QR code porte `?via=flyer`, que le site ne lit pas encore).
-- La source du flyer A5 n'est pas dans le dépôt (seulement le PDF) : pour le modifier, il faut le reconstruire d'après ce PDF.

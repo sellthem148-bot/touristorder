@@ -63,14 +63,16 @@ describe("l'affiche partenaire", () => {
   });
 });
 
-// Le flyer A5 que le gérant a fourni le 24 novembre 2026 (fait dans une autre conversation) : c'est son
-// document de référence. Sa source n'est pas ici, seul le PDF l'est ; `texte.txt` en est le texte extrait.
+// Le flyer A5, document de référence du gérant. Sa source est dans le dépôt depuis le 24 novembre 2026
+// (affiches/flyer/generer.mjs, qui réécrit le PDF, une page par langue, les aperçus et `texte.txt`, le texte
+// tel qu'il s'imprime) : n'importe quelle conversation peut le modifier.
 describe("le flyer A5 (français, anglais)", () => {
   const dossier = path.join(racine, "affiches/flyer");
   const texte = lire("affiches/flyer/texte.txt");
+  const generateur_du_flyer = lire("affiches/flyer/generer.mjs");
 
-  it("le PDF reçu, une page par langue et leurs aperçus sont dans le dépôt, hors du site", () => {
-    for (const f of ["flyer-tourist-order.pdf", "flyer-tourist-order-fr.pdf", "flyer-tourist-order-en.pdf", "flyer-tourist-order-fr.png", "flyer-tourist-order-en.png", "texte.txt"]) {
+  it("le générateur, le PDF, une page par langue et leurs aperçus sont dans le dépôt, hors du site", () => {
+    for (const f of ["generer.mjs", "flyer-tourist-order.pdf", "flyer-tourist-order-fr.pdf", "flyer-tourist-order-en.pdf", "flyer-tourist-order-fr.png", "flyer-tourist-order-en.png", "texte.txt"]) {
       expect(existsSync(path.join(dossier, f)), f).toBe(true);
     }
     expect(readFileSync(path.join(dossier, "flyer-tourist-order.pdf")).subarray(0, 5).toString("latin1")).toBe("%PDF-");
@@ -96,11 +98,10 @@ describe("le flyer A5 (français, anglais)", () => {
     expect(lire("prisma/schema.prisma")).toMatch(/heureLimite\s+String\s+@default\("17:00"\)/);
     expect(texte).toContain("COMMANDEZ AVANT 17H");
     expect(texte).toContain("ORDER BEFORE 5 PM");
-    // La livraison la moins chère de la grille du gérant : Netanya.
-    const moinsChere = Math.min(...GRILLE_DES_ZONES.map((z) => z.livraison)) / 100;
-    expect(moinsChere).toBe(30);
-    expect(texte).toContain(`dès ${moinsChere} ₪`);
-    expect(texte).toContain(`from ₪${moinsChere}`);
+    // Aucun prix : le gérant a fait retirer les frais de livraison du flyer le 24 novembre 2026 (« ils n'ont pas
+    // besoin de le voir ») — ils se lisent au panier. Deux encadrés sous le titre, plus trois.
+    expect(texte).not.toMatch(/frais de livraison|delivery fee|₪|\bdès \d|from \d/i);
+    expect(generateur_du_flyer.match(/faits: \[\[[^\n]*\]\],/g)?.map((l) => l.split('"], ["').length)).toEqual([2, 2]);
     // Les modes de paiement de départ.
     expect(PAIEMENTS_PAR_DEFAUT).toEqual(["Bit", "PayBox", "Virement"]);
     expect(texte).toContain("par Bit, PayBox ou virement");
@@ -122,5 +123,22 @@ describe("le flyer A5 (français, anglais)", () => {
     expect(texte).toContain("We reply in English, French and Hebrew.");
     expect(texte).not.toMatch(/russe|espagnol|Russian|Spanish/);
     expect(texte).toContain("touristorder.com");
+  });
+
+  it("le texte vérifié est bien celui que le générateur écrit ; le QR mène au site avec le repère du flyer", () => {
+    // Chaque phrase du générateur se retrouve dans le texte du PDF : texte.txt n'est pas resté en arrière.
+    for (const phrase of ["Vos courses livrées à votre logement, le soir même.", "Un article introuvable ? Demandez-le nous : nous le cherchons pour vous.", "Can't find an item? Ask us and we'll look for it."]) {
+      expect(generateur_du_flyer).toContain(phrase);
+      expect(texte.replace(/\s+/g, " "), phrase).toContain(phrase);
+    }
+    const numero = lire("prisma/remplissage.ts").match(/WHATSAPP_DU_GERANT = "([^"]+)"/)?.[1] ?? "";
+    expect(generateur_du_flyer).toContain(`const WHATSAPP = "${numero}";`);
+    expect(generateur_du_flyer).toContain("https://www.touristorder.com/?via=flyer");
+    expect(existsSync(path.join(racine, "affiches/elements/qr-flyer.svg"))).toBe(true);
+    expect(generateur_du_flyer).toContain("elements/qr-flyer.svg");
+    // Le logo de l'agence et la bannière : les fichiers du dépôt, rien d'autre ; pas d'emoji.
+    expect(generateur_du_flyer).toContain("affiches/elements/elite-home-group-noir.png");
+    expect(generateur_du_flyer).toContain("public/accueil/banniere.jpg");
+    expect(generateur_du_flyer).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 });

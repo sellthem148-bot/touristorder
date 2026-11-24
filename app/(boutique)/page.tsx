@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarClock, ChevronRight, Clock, MapPin, Star, Truck, Wallet, type LucideIcon } from "lucide-react";
+import { CalendarClock, ChevronRight, Clock, MapPin, Star, Wallet, type LucideIcon } from "lucide-react";
 import { RailProduits } from "@/components/CarteProduit";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { Apparition } from "@/components/Apparition";
@@ -9,9 +9,6 @@ import { couleurDuRayon } from "@/lib/couleurs-rayons";
 import { misEnAvant, vitrine } from "@/lib/catalogue";
 import { libelleDuMode, nomDuRayon } from "@/lib/i18n/rayons";
 import { reglagesPublics } from "@/lib/reglages";
-import { formatPrixCourt } from "@/lib/argent";
-import { momentPresent, NOM_TARIF_DE_BASE, tarifDeBase, tarifPour } from "@/lib/tarifs";
-import { livraisonLaMoinsChere } from "@/lib/villes";
 import { communesLivrees } from "@/lib/zones";
 import { amplitudeDesCreneaux } from "@/lib/creneaux";
 import { joursOuverts } from "@/lib/livraisons";
@@ -21,7 +18,7 @@ import { Fragment } from "react";
 import { adressesParLangue, compter, heureLisible, lienPour, remplir, type Langue } from "@/lib/langues";
 import { estAujourdhui, libelleDuJour } from "@/lib/dates";
 import { traduction } from "@/lib/traduction";
-import { nomTarif, nomVille } from "@/lib/i18n/catalogue";
+import { nomVille } from "@/lib/i18n/catalogue";
 
 export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
@@ -77,8 +74,6 @@ export default async function Accueil() {
   const a = t.accueil;
   // Le message d'accueil du gérant ; tant qu'il a gardé celui de départ, le client le lit dans sa langue.
   const messageAccueil = reglages.messageAccueil === MESSAGE_ACCUEIL_PAR_DEFAUT ? a.messageParDefaut : reglages.messageAccueil;
-  // Le tarif qui s'appliquerait à une livraison maintenant.
-  const tarif = tarifPour(momentPresent(), reglages.plages, tarifDeBase(reglages));
   const amplitude = amplitudeDesCreneaux(reglages.creneaux, langue);
   // La prochaine livraison possible : le premier créneau qui n'est ni passé ni complet.
   const prochaine = (await joursOuverts(reglages))[0];
@@ -107,12 +102,8 @@ export default async function Accueil() {
       enDirect: reglages.ouvert,
     });
   }
-  faits.push({
-    icone: Truck,
-    titre: reglages.fraisRegroupes ? a.serviceLivraison : a.fraisLivraison,
-    valeur: remplir(a.desPrix, { prix: formatPrixCourt(reglages.fraisRegroupes ? tarif.fraisService + livraisonLaMoinsChere(tarif, reglages.villes) : livraisonLaMoinsChere(tarif, reglages.villes), langue) }),
-    precision: tarif.nom !== NOM_TARIF_DE_BASE ? remplir(a.tarifEnCeMoment, { nom: nomTarif(tarif.nom, langue).toLowerCase() }) : undefined,
-  });
+  // Les frais de livraison ne s'annoncent plus ici (décision du gérant, 24 novembre 2026) : le client les lit au
+  // panier, avant de régler, et dans les conditions de vente.
   faits.push({
     icone: Wallet,
     titre: a.paiement,
@@ -120,7 +111,7 @@ export default async function Accueil() {
     precision: reglages.paiements.length > 0 ? reglages.paiements.map((m) => libelleDuMode(m, t)).join(", ") : undefined,
   });
 
-  // Le détail de la livraison (horaires, frais, paiement, villes) : plus bas dans la page. En haut, la bande
+  // Le détail de la livraison (horaires, paiement, villes) : plus bas dans la page. En haut, la bande
   // d'informations sous la bannière en donne l'essentiel, comme sur la page d'une boutique de Wolt.
   const reperes = (
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-slate-200 shadow-(--shadow-tuile) lg:grid-cols-4">
