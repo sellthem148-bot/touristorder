@@ -198,7 +198,7 @@ describe("photos repère", () => {
     }
     // Les premiers lots : les douze étuis de capsules Nespresso, puis le reste de l'épicerie.
     expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(12);
-    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(258); // le rayon Crèmerie entier s'y est ajouté (228)
+    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(333); // les rayons Crèmerie (228) et Pain (75) entiers s'y sont ajoutés
     // Une photo du site lui-même (libre de droits, `public/`) n'est jamais au registre : ce n'est pas une photo de Wolt.
     for (const fichier of Object.keys(registre)) expect(existsSync(`public/produits/frais/${fichier}`), fichier).toBe(false);
     // L'outil ne pose qu'une retouche : même taille, rien que la photo en service ne montrait déjà, rien d'écrit hors du dossier privé.
@@ -234,8 +234,9 @@ describe("photos repère", () => {
     expect(detouree.gardee).toBeGreaterThan(0.2);
     expect(detouree.gardee).toBeLessThan(0.4);
     // … mais un petit bout de la photo n'en est pas une.
-    expect(ressemblance(surFondGris, image((x, y) => (x >= 14 && x < 18 && y >= 4 && y < 8 ? [200, 40, 40] : blanc))).gardee).toBeLessThan(0.2);
-    expect(outil).toContain("const PART_GARDEE = 0.2;");
+    expect(ressemblance(surFondGris, image((x, y) => (x >= 14 && x < 18 && y >= 4 && y < 8 ? [200, 40, 40] : blanc))).gardee).toBeLessThan(0.1);
+    expect(outil).toContain("const PART_GARDEE = 0.1;");
+    expect(outil).toContain("const PART_DEJA_LA = 0.8;");
     // Le nom que l'export des photos donne à un article est celui que l'outil reconnaît.
     expect(nomDeFichier("Lait Tnuva 3 % 1 L")).toBe("Lait Tnuva 3 % 1 L");
     expect(nomDeFichier('Écran 24" : modèle A/B')).toBe("Écran 24 - modèle A-B");

@@ -26,13 +26,19 @@ import { PHOTOS_FRAIS } from "../../prisma/photos-frais";
 /** Les repères déjà retouchés : fichier → le lot qui l'a apporté. Pour savoir où l'on en est. */
 const REGISTRE = "prive/reperes-retouches.json";
 const POIDS_MAX = 40_000; // comme tests/reperes-wolt.test.ts
-/** Ce que la retouche montre doit se retrouver, presque point pour point, dans la photo en service… */
-const PART_DEJA_LA = 0.9;
 /**
- * … et il doit rester une part de la photo en service : l'article lui-même. Une part seulement : sur une photo à
- * fond gris (les salades du traiteur), il DÉTOURE l'article et tout le fond disparaît — il en reste un bon tiers.
+ * Ce que la retouche montre doit se retrouver, presque point pour point, dans la photo en service… Presque : le
+ * bord d'un article détouré est adouci, et une pastille de Wolt posée SUR l'article est repeinte (la boîte du
+ * cheesecake : 89 %). Une autre image en est très loin (3 à 13 % pour un autre article, 60 à 75 % pour la même
+ * photo avant retouche).
  */
-const PART_GARDEE = 0.2;
+const PART_DEJA_LA = 0.8;
+/**
+ * … et il doit rester une part de la photo en service : l'article lui-même. Une petite part suffit : sur une photo
+ * à fond gris (les salades du traiteur, tout le pain de la boulangerie), il DÉTOURE l'article et tout le fond
+ * disparaît — il en reste un tiers pour un pain, un cinquième pour trois bagels ou une baguette.
+ */
+const PART_GARDEE = 0.1;
 
 /** Le nom de fichier que l'export des photos donne à un article (les signes interdits dans un nom de fichier retirés). */
 export function nomDeFichier(nom: string): string {
@@ -112,7 +118,7 @@ async function principal() {
       const jpeg = apres.format === "jpeg" && recu.length < POIDS_MAX ? recu : await sharp(recu).flatten({ background: "#ffffff" }).jpeg({ quality: 88 }).toBuffer();
       if (jpeg.length >= POIDS_MAX) { refusees.push(`${nom} : trop lourde (${jpeg.length} octets)`); continue; }
       if (poser) { writeFileSync(cible, jpeg); registre[fichier] = lot; }
-      posees.push(`${fichier}  ←  ${nom}  (${Math.round(r.gardee * 100)} % de la photo gardée)`);
+      posees.push(`${fichier}  ←  ${nom}  (${Math.round(r.dejaLa * 100)} % déjà là, ${Math.round(r.gardee * 100)} % de la photo gardée)`);
     } catch (e) {
       refusees.push(`${nom} : illisible (${e instanceof Error ? e.message : "erreur"})`);
     }
