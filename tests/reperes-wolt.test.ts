@@ -198,14 +198,24 @@ describe("photos repère", () => {
     }
     // Les premiers lots : les douze étuis de capsules Nespresso, puis le reste de l'épicerie.
     expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(12);
-    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(30);
+    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(258); // le rayon Crèmerie entier s'y est ajouté (228)
+    // Une photo du site lui-même (libre de droits, `public/`) n'est jamais au registre : ce n'est pas une photo de Wolt.
+    for (const fichier of Object.keys(registre)) expect(existsSync(`public/produits/frais/${fichier}`), fichier).toBe(false);
     // L'outil ne pose qu'une retouche : même taille, rien que la photo en service ne montrait déjà, rien d'écrit hors du dossier privé.
     const outil = readFileSync("tests/outils/poser-photos-retouchees.ts", "utf8");
     expect(outil).toContain("const cible = path.join(DOSSIER_DES_REPERES, fichier);");
     expect(outil).toContain("avant.width !== apres.width || avant.height !== apres.height");
     expect(outil).toContain("if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE)");
-    expect(outil.match(/writeFileSync\(/g)).toHaveLength(2); // la photo, et le registre
-    expect(outil).not.toMatch(/public\/|photoUrl/);
+    // Il n'écrit que deux choses : la photo, dans le dossier privé, et le registre. `public/` n'est que LU (pour
+    // reconnaître la photo du site, que l'export d'un rayon entier lui a donnée avec les autres), jamais écrit.
+    expect(outil.match(/writeFileSync\(/g)).toHaveLength(2);
+    expect(outil).toContain("writeFileSync(cible, jpeg)");
+    expect(outil).toContain("writeFileSync(REGISTRE, ");
+    expect(outil).not.toMatch(/photoUrl/);
+    // Ce qui n'est pas à poser est laissé, sans faire échouer le lot : la photo du site, une image non touchée,
+    // une photo déjà retouchée davantage.
+    expect(outil).toContain("c'est la photo du site");
+    expect(outil).toContain("déjà retouchée davantage");
     // Une retouche efface (le « + », une pastille, une étiquette) et n'ajoute rien ; une autre image n'en est pas une.
     const image = (dessin: (x: number, y: number) => [number, number, number]) => Buffer.from(Array.from({ length: 40 * 20 }, (_, i) => dessin(i % 40, Math.floor(i / 40))).flat());
     const blanc: [number, number, number] = [255, 255, 255];

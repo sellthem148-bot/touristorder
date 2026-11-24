@@ -11,11 +11,17 @@
 // retouchée : même taille, et tout ce qu'elle montre était déjà dans la photo en service (il efface le « + », une
 // pastille, une étiquette de poids posée par Wolt, parfois tout le fond — il n'ajoute rien). Une AUTRE photo du
 // même article n'est pas une retouche : elle se pose comme photo de l'article (« Photos rapides »), pas ici.
+// Il renvoie aussi des rayons ENTIERS, tels que l'export les lui a donnés (« 02 - Crèmerie & œufs ») : on y trouve
+// ce qui n'est pas à poser, rangé à part sous « Laissées » — la photo du site elle-même (les œufs : une photo
+// libre de `public/produits/frais`, pas une photo de Wolt), une photo qu'il n'a pas touchée, et une photo déjà
+// retouchée davantage dans un lot précédent (la photo en service a effacé plus que celle reçue : on garde la mieux
+// retouchée). Seul un vrai refus — nom inconnu, autre photo, autre taille — fait échouer l'outil.
 // Les images reçues sont des données : on n'en lit que les points, rien n'en est exécuté.
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 import { DOSSIER_DES_REPERES, PHOTOS_REPERE } from "../../lib/reperes-wolt";
+import { PHOTOS_FRAIS } from "../../prisma/photos-frais";
 
 /** Les repères déjà retouchés : fichier → le lot qui l'a apporté. Pour savoir où l'on en est. */
 const REGISTRE = "prive/reperes-retouches.json";
@@ -66,23 +72,38 @@ async function principal() {
     parNom.set(p.fichier.replace(/\.jpg$/, ""), p.fichier);
   }
   const registre: Record<string, string> = JSON.parse(readFileSync(REGISTRE, "utf8"));
+  // Les photos du site lui-même (libres de droits), que l'export lui a données sous le nom de l'article.
+  const duSite = new Map(Object.entries(PHOTOS_FRAIS).map(([nom, f]) => [nomDeFichier(nom).toLowerCase(), path.join("public/produits/frais", f)]));
   const posees: string[] = [];
+  const laissees: string[] = [];
   const refusees: string[] = [];
 
   for (const chemin of fichiersDe(dossier).sort()) {
     const nom = path.basename(chemin);
     if (!/\.(jpe?g|png|webp)$/i.test(nom)) continue; // un LISEZ-MOI, un fichier caché
-    const fichier = parNom.get(nom.replace(/\.[a-z]+$/i, "").normalize("NFC").toLowerCase());
+    const cle = nom.replace(/\.[a-z]+$/i, "").normalize("NFC").toLowerCase();
+    const recu = readFileSync(chemin);
+    const photoDuSite = duSite.get(cle);
+    if (photoDuSite && recu.equals(readFileSync(photoDuSite))) { laissees.push(`${nom} : c'est la photo du site (${photoDuSite}), pas une photo de Wolt`); continue; }
+    const fichier = parNom.get(cle);
     if (!fichier) { refusees.push(`${nom} : aucun article de ce nom`); continue; }
     const cible = path.join(DOSSIER_DES_REPERES, fichier);
     try {
-      const recu = readFileSync(chemin);
-      const [avant, apres] = await Promise.all([sharp(readFileSync(cible)).metadata(), sharp(recu).metadata()]);
+      const enService = readFileSync(cible);
+      if (recu.equals(enService)) { laissees.push(`${nom} : la même image que celle en service${registre[fichier] ? " (déjà retouchée)" : " (pas retouchée)"}`); continue; }
+      const [avant, apres] = await Promise.all([sharp(enService).metadata(), sharp(recu).metadata()]);
       if (avant.width !== apres.width || avant.height !== apres.height) {
         refusees.push(`${nom} : ${apres.width} × ${apres.height}, la photo en service fait ${avant.width} × ${avant.height} — ce n'est pas une retouche`);
         continue;
       }
-      const r = ressemblance(await points(readFileSync(cible)), await points(recu));
+      const [pointsAvant, pointsApres] = await Promise.all([points(enService), points(recu)]);
+      const r = ressemblance(pointsAvant, pointsApres);
+      // Déjà retouchée dans un lot précédent, et davantage : c'est la photo en service qui est la retouche de celle-ci.
+      const inverse = ressemblance(pointsApres, pointsAvant);
+      if (registre[fichier] && r.dejaLa < PART_DEJA_LA && inverse.dejaLa >= PART_DEJA_LA && inverse.gardee >= PART_GARDEE) {
+        laissees.push(`${nom} : déjà retouchée davantage (${registre[fichier]}), on garde celle en service`);
+        continue;
+      }
       if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE) {
         refusees.push(`${nom} : ce n'est pas la photo en service retouchée (${Math.round(r.dejaLa * 100)} % de ce qu'elle montre y était, ${Math.round(r.gardee * 100)} % en est resté)`);
         continue;
@@ -100,6 +121,8 @@ async function principal() {
   if (poser) writeFileSync(REGISTRE, JSON.stringify(Object.fromEntries(Object.entries(registre).sort()), null, 1) + "\n");
   console.log(`${poser ? "Posées" : "À poser"} : ${posees.length}`);
   for (const l of posees) console.log("  " + l);
+  console.log(`Laissées : ${laissees.length}`);
+  for (const l of laissees) console.log("  " + l);
   console.log(`Refusées : ${refusees.length}`);
   for (const l of refusees) console.log("  " + l);
   const total = Object.keys(registre).length;
