@@ -198,7 +198,8 @@ describe("photos repère", () => {
     }
     // Les premiers lots : les douze étuis de capsules Nespresso, puis le reste de l'épicerie.
     expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(12);
-    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(621); // les rayons Crèmerie (228), Pain (75), Boissons (157), Électronique (80), Boucherie & poisson (24), Apéro (22), Surgelés (3) et les deux photos de Wolt des fruits et légumes
+    // Les dix rayons sont passés : toutes les photos de Wolt des articles en vente (636) sont retouchées.
+    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(636);
     // Une photo du site lui-même (libre de droits, `public/`) n'est jamais au registre : ce n'est pas une photo de Wolt.
     for (const fichier of Object.keys(registre)) expect(existsSync(`public/produits/frais/${fichier}`), fichier).toBe(false);
     // L'outil ne pose qu'une retouche : même taille, rien que la photo en service ne montrait déjà, rien d'écrit hors du dossier privé.
