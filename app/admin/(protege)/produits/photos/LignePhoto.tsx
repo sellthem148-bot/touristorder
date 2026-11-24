@@ -98,7 +98,7 @@ export function LignePhoto({ id, nom, nomWolt, detail, photoUrl, photoWolt }: Pr
     return () => document.removeEventListener("paste", ecoute);
   }, [visee]);
 
-  // Arrivé depuis une fiche du site (« Mettre sa photo », vue du gérant) : l'adresse désigne cette ligne
+  // Arrivé depuis une fiche du site (« Changer la photo », vue du gérant) : l'adresse désigne cette ligne
   // (`#p-<id>`) — elle est visée d'office, prête à recevoir l'image.
   useEffect(() => {
     if (window.location.hash === `#p-${id}`) viser(id);

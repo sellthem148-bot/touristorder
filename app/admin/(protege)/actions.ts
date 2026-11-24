@@ -649,7 +649,7 @@ export async function delierTelegram() {
 
 /**
  * La vue du gérant sur son site (bandeau « Vue du gérant », components/admin/VueDuGerant.tsx) : avec ses repères
- * (étiquette « Wolt », « Mettre sa photo ») — le réglage de départ —, ou comme un client. Rien ne change pour
+ * (le raccourci « Changer la photo » sur la fiche d'un article) — le réglage de départ —, ou comme un client. Rien ne change pour
  * les clients : ce n'est qu'un choix d'affichage, gardé douze heures sur cet appareil.
  */
 export async function changerLaVueDuSite(form: FormData) {

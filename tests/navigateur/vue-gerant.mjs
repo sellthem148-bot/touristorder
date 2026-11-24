@@ -3,7 +3,9 @@
 // - décoché : seul le gérant connecté les voit (« grâce à ces images de Wolt je peux chercher les images qui
 //   correspondent à chaque produit ») ; un client ne reçoit ni ces photos ni leur adresse ;
 // - coché (« le site a 0 client, on est 2 à bosser dessus : active-moi les photos pour tout le monde ») : tout
-//   visiteur voit la photo, sans étiquette ; l'étiquette « Wolt » et « Mettre sa photo » restent au gérant.
+//   visiteur voit la photo ; « Changer la photo », sur la fiche, reste au gérant.
+// L'étiquette « Wolt » que le gérant voyait sur chaque photo n'existe plus (sa demande du 24 novembre 2026) :
+// le mot n'apparaît sur aucune carte ni aucune fiche, pour personne.
 // À lancer sur le catalogue ENTIER (« npx tsx tests/outils/base-complete.ts »).
 // Ce parcours COCHE et DÉCOCHE le réglage, puis le remet comme il l'a trouvé : base LOCALE seulement.
 // Sur le vrai site : SANS_GERANT=1 — il ne modifie rien et ne se connecte pas ; seule la partie « client » est
@@ -145,13 +147,13 @@ const commeLeGerant = async (pourTous, ecran, options) => {
   await p.goto(BASE + "/", { waitUntil: "networkidle" });
   const accueil = await compter(p);
   verifier(accueil.bandeau === "gerant" && accueil.pourTous === (pourTous ? "oui" : "non"), `${etat} · accueil : le bandeau « Vue du gérant » est là`);
-  verifier(accueil.wolt >= 10 && accueil.icones === 0 && accueil.etiquettes === accueil.wolt, `${etat} · accueil : ${accueil.wolt} cartes sur ${accueil.cartes} montrent la photo de Wolt, chacune avec son étiquette`);
+  verifier(accueil.wolt >= 10 && accueil.icones === 0 && accueil.etiquettes === 0, `${etat} · accueil : ${accueil.wolt} cartes sur ${accueil.cartes} montrent la photo de Wolt, sans étiquette`);
   await p.locator("main article [data-repere=carte]").first().scrollIntoViewIfNeeded();
   const vues = await chargees(p, "[data-repere=carte] img");
   verifier(vues.vues >= 2 && vues.vides === 0, `${etat} · accueil : les photos de Wolt à l'écran sont bien arrivées (${vues.vues})`);
-  verifier((await p.locator("[data-repere=carte]").first().innerText()).trim() === "Wolt", `${etat} · l'étiquette dit « Wolt »`);
+  verifier((await p.locator("main").getByText("Wolt", { exact: true }).count()) === 0 && (await p.locator("[data-repere=carte]").first().innerText()).trim() === "", `${etat} · aucune carte ne porte le mot « Wolt », même pour le gérant`);
   const texte = await p.locator("[data-vue-gerant]").innerText();
-  verifier(pourTous ? /à tout le monde/.test(texte) && /toi seul la vois/.test(texte) : /Tes clients voient l'icône du rayon, jamais ces photos/.test(texte), `${etat} · le bandeau dit qui voit ces photos : ${pourTous ? "tout le monde, l'étiquette pour lui seul" : "lui seul"}`);
+  verifier(pourTous ? /à tout le monde/.test(texte) && /toi seul vois « Changer la photo »/.test(texte) : /Tes clients voient l'icône du rayon, jamais ces photos/.test(texte), `${etat} · le bandeau dit qui voit ces photos : ${pourTous ? "tout le monde, « Changer la photo » pour lui seul" : "lui seul"}`);
   verifier((await p.locator("[data-vue-gerant] a[href='/admin/reglages']").count()) === 1, `${etat} · le bandeau mène aux réglages, où la case se coche et se décoche`);
   verifier(!(await deborde(p)), `${etat} · accueil : la page tient dans l'écran`);
   const formes = await forme(p);
@@ -166,19 +168,19 @@ const commeLeGerant = async (pourTous, ecran, options) => {
   ok(`${etat} · le « + » d'une carte à photo de Wolt ajoute toujours l'article au panier`);
   await carte.getByRole("button", { name: /^Retirer/ }).click();
 
-  // La fiche : la photo de Wolt entière et « Mettre sa photo », qui ouvre « Photos rapides » sur la ligne de l'article.
+  // La fiche : la photo de Wolt entière et « Changer la photo », qui ouvre « Photos rapides » sur la ligne de l'article.
   await carte.locator("h3 button").click();
   const fiche = p.locator("dialog[open]");
   await fiche.locator("[data-repere=fiche] img").waitFor();
   await p.waitForFunction(() => document.querySelector("dialog[open] [data-repere=fiche] img")?.complete);
   const large = await fiche.locator("[data-repere=fiche] img").evaluate((i) => ({ naturelle: i.naturalWidth, affichee: Math.round(i.getBoundingClientRect().width) }));
   verifier(large.naturelle > 0 && large.affichee >= 250, `${etat} · fiche : la photo de Wolt s'affiche en grand (${large.affichee} px)`);
-  verifier(/Photo de Wolt, en attendant la tienne/.test(await fiche.locator("[data-repere=fiche]").innerText()), `${etat} · fiche : « Photo de Wolt, en attendant la tienne »`);
+  verifier(!/Wolt/.test(await fiche.locator("[data-repere=fiche]").innerText()), `${etat} · fiche : le mot « Wolt » n'y est plus`);
   const nom = (await fiche.locator("h2").innerText()).trim();
   if (OUT) await p.screenshot({ path: `${OUT}/vue-gerant-${ecran}-${pourTous ? "pour-tous" : "lui-seul"}-2-fiche.png` });
-  const lien = fiche.getByRole("link", { name: "Mettre sa photo" });
+  const lien = fiche.getByRole("link", { name: "Changer la photo" });
   const adresse = await lien.getAttribute("href");
-  verifier(/^\/admin\/produits\/photos#p-[a-z0-9]+$/.test(adresse), `${etat} · fiche : « Mettre sa photo » mène à la ligne de l'article dans « Photos rapides »`);
+  verifier(/^\/admin\/produits\/photos#p-[a-z0-9]+$/.test(adresse), `${etat} · fiche : « Changer la photo » mène à la ligne de l'article dans « Photos rapides »`);
   await lien.click();
   await p.waitForURL(/\/admin\/produits\/photos#p-/);
   const ancre = `li${adresse.slice(adresse.indexOf("#"))}`;
@@ -205,16 +207,15 @@ const commeLeGerant = async (pourTous, ecran, options) => {
   await p.goto(BASE + "/", { waitUntil: "networkidle" });
   await p.getByRole("button", { name: "Voir comme un client" }).click();
   await p.locator("[data-vue-gerant=client]").waitFor();
-  await p.waitForFunction(() => document.querySelectorAll("main article [data-etiquette-gerant]").length === 0);
   await p.reload({ waitUntil: "networkidle" }); // relue depuis le serveur : le choix est gardé
   const commeClient = await compter(p);
   // (Le bandeau, lui, reste au gérant ; ce qu'un vrai client reçoit est vérifié plus haut, sans connexion.)
-  if (pourTous) verifier(commeClient.bandeau === "client" && commeClient.wolt === accueil.wolt && commeClient.etiquettes === 0 && (await p.locator("main").getByText("Wolt", { exact: true }).count()) === 0, `${etat} · « Voir comme un client » : les ${commeClient.wolt} photos restent, sans étiquette`);
+  if (pourTous) verifier(commeClient.bandeau === "client" && commeClient.wolt === accueil.wolt && commeClient.etiquettes === 0 && (await p.locator("main").getByText("Wolt", { exact: true }).count()) === 0, `${etat} · « Voir comme un client » : les ${commeClient.wolt} photos restent`);
   else verifier(commeClient.bandeau === "client" && commeClient.wolt === 0 && commeClient.icones === accueil.wolt && !ADRESSE_DE_PHOTO.test(await p.content()), `${etat} · « Voir comme un client » : plus aucune photo de Wolt, les ${commeClient.icones} icônes sont revenues`);
   await p.getByRole("button", { name: "Revenir à ma vue" }).click();
   await p.locator("[data-vue-gerant=gerant]").waitFor();
-  await p.waitForFunction((n) => document.querySelectorAll("main article [data-etiquette-gerant]").length === n, accueil.wolt);
-  ok(`${etat} · « Revenir à ma vue » : les photos et leurs étiquettes reviennent`);
+  await p.waitForFunction((n) => document.querySelectorAll("main article [data-repere=carte]").length === n, accueil.wolt);
+  ok(`${etat} · « Revenir à ma vue » : ses photos et son bandeau reviennent`);
 
   // Déconnecté (cookies effacés) : le site redevient celui des clients
   await ctx.clearCookies();

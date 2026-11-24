@@ -134,14 +134,19 @@ describe("photos repère", () => {
     expect(catalogue).toContain("function versPublic(p: Brut, langue: Langue = \"fr\", repere: Repere | null = null): ProduitPublic {");
     expect(catalogue.match(/versPublic\(/g)).toHaveLength(2); // sa définition, et `versPublics` : aucun lecteur ne la contourne
     expect(catalogue.slice(catalogue.indexOf("export const PRODUIT_PUBLIC"), catalogue.indexOf("satisfies Prisma.ProduitSelect"))).not.toMatch(/nomWolt|prixAchat|boutique|lienWolt|prixIndicatif/);
-    // La carte et la fiche ne la montrent que si le serveur l'a donnée ; l'étiquette « Wolt » et le lien vers
-    // « Photos rapides » n'existent que pour le gérant : le site ne nomme jamais Wolt devant un client.
+    // La carte et la fiche ne la montrent que si le serveur l'a donnée. L'étiquette « Wolt » que le gérant voyait
+    // sur chaque photo n'existe plus (sa demande du 24 novembre 2026) : ni la carte ni la fiche ne nomment Wolt,
+    // devant personne ; il ne reste au gérant que le lien de la fiche vers « Photos rapides ».
     expect(lire("components/CarteProduit.tsx")).toContain("<ApercuSurCarte repere={produit.repere} epuise={produit.epuise} />");
     expect(lire("components/FicheProduit.tsx")).toContain("<ApercuSurFiche repere={produit.repere} id={produit.id} nom={produit.nom} />");
     const apercu = lire("components/admin/ApercuGerant.tsx");
-    expect(apercu.match(/\{repere\.etiquette && \(/g)).toHaveLength(2);
-    for (const reserve of [">Wolt</span>", "Photo de Wolt, en attendant la tienne.", "href={`/admin/produits/photos#p-${id}`}"]) {
-      const avant = apercu.slice(0, apercu.indexOf(reserve));
+    const rendu = apercu.slice(apercu.indexOf("export function ApercuSurCarte"));
+    expect(rendu).not.toMatch(/Wolt<|>\s*Wolt|Photo de Wolt/); // (les commentaires, eux, expliquent d'où vient la photo)
+    expect(rendu.slice(0, rendu.indexOf("export function ApercuSurFiche"))).not.toContain("repere.etiquette");
+    expect(apercu.match(/\{repere\.etiquette && \(/g)).toHaveLength(1);
+    for (const reserve of ["href={`/admin/produits/photos#p-${id}`}", "Changer la photo"]) {
+      expect(rendu.indexOf(reserve), reserve).toBeGreaterThan(-1);
+      const avant = rendu.slice(0, rendu.indexOf(reserve));
       expect(avant.lastIndexOf("{repere.etiquette && ("), reserve).toBeGreaterThan(avant.lastIndexOf("export function"));
     }
     // Le bandeau : rien pour un client ; au gérant, il dit qui voit ces photos, et mène aux réglages.

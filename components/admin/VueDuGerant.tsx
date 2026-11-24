@@ -16,8 +16,8 @@ export async function BandeauDuGerant() {
   const bouton = "inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-white/30 px-2.5 py-1 font-semibold transition-colors hover:bg-white/10";
   const message = vue.pourTous
     ? vue.etiquettes
-      ? "Les articles sans photo montrent celle de Wolt à tout le monde. L'étiquette « Wolt », toi seul la vois : elle marque les photos à remplacer."
-      : "Tu vois le site comme tes clients : les photos de Wolt, sans leur étiquette."
+      ? "Les articles sans photo montrent celle de Wolt à tout le monde. Sur la fiche d'un article, toi seul vois « Changer la photo »."
+      : "Tu vois le site comme tes clients."
     : vue.etiquettes
       ? "Là où un article n'a pas encore sa photo, tu vois celle de Wolt. Tes clients voient l'icône du rayon, jamais ces photos."
       : "Tu vois le site comme tes clients : sans les photos de Wolt.";

@@ -11,8 +11,9 @@ import { photoRepere } from "./reperes-wolt";
 // prennent la place de l'icône du rayon quand l'article n'a pas encore sa photo. Deux décisions du gérant, le
 // 17 novembre 2026 :
 // 1. « Grâce à ces images de Wolt je peux chercher les images qui correspondent à chaque produit — alors
-//    mets-moi les images » : connecté à son espace, il les voit sur son site, avec ses repères (étiquette
-//    « Wolt », lien « Mettre sa photo »).
+//    mets-moi les images » : connecté à son espace, il les voit sur son site, avec son raccourci « Changer la
+//    photo » sur la fiche d'un article. (L'étiquette « Wolt » qu'il voyait sur chaque photo a été retirée à sa
+//    demande le 24 novembre 2026, une fois toutes les photos retouchées : components/admin/ApercuGerant.tsx.)
 // 2. « Le site a 0 client, on est 2 à bosser dessus et on ne peut pas se connecter à l'admin à chaque fois :
 //    active-moi les photos pour tout le monde » : le réglage `Reglages.photosWoltPourTous` (Réglages → « Photos
 //    de Wolt pour tout le monde ») les montre à tous les visiteurs, sans étiquette. Prévenu deux fois que ces
@@ -51,7 +52,7 @@ export type VueDuSite = {
   pourTous: boolean;
   /** Ce visiteur voit la photo de Wolt sur les articles sans photo. */
   photosDeWolt: boolean;
-  /** Avec les repères du gérant : l'étiquette « Wolt » et « Mettre sa photo » (jamais pour un client). */
+  /** Avec les repères du gérant : « Changer la photo » sur la fiche d'un article (jamais pour un client). */
   etiquettes: boolean;
 };
 
