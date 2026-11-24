@@ -38,6 +38,7 @@ export default async function Confidentialite() {
 
       <Article titre={c.partage.titre}>
         <Paragraphe langue={langue} texte={c.partage.p1} />
+        <Paragraphe langue={langue} texte={c.partage.p2} />
       </Article>
 
       <Article titre={c.cookies.titre}>

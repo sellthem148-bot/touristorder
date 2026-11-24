@@ -26,6 +26,8 @@ export type AlerteCommande = {
   demandeLibre: string;
   /** L'adresse désigne une autre zone que celle que le client a choisie : son nom. */
   zoneAVerifier?: string | null;
+  /** Google situe l'adresse dans une ville qui n'est dans aucune zone du gérant : son nom. */
+  villeHorsZones?: string | null;
   lienAdmin: string;
 };
 
@@ -41,6 +43,7 @@ export function texteDeLAlerte(c: AlerteCommande): string {
       : "Aucun article du catalogue",
     ...(demande ? [`Demande hors catalogue : ${demande.length > 300 ? `${demande.slice(0, 300)}…` : demande}`] : []),
     ...(c.zoneAVerifier ? [`Zone à vérifier : l'adresse désigne ${c.zoneAVerifier}, le client a choisi ${c.ville}`] : []),
+    ...(!c.zoneAVerifier && c.villeHorsZones ? [`Zone à vérifier : Google situe l'adresse à ${c.villeHorsZones.replace(/\s+/g, " ").slice(0, 80)} (hors de tes zones), le client a choisi ${c.ville}`] : []),
     c.lienAdmin,
   ].join("\n");
 }

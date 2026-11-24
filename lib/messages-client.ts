@@ -80,7 +80,11 @@ export function messageJArrive(i: { prenom: string; reference: string; reste: nu
 /**
  * Lien Waze vers l'adresse du client (ouvre l'appli sur téléphone). Pour une zone qui est un quartier
  * (« Netanya – Ir Yamim / Poleg »), Waze reçoit la ville : il ne connaît pas nos noms de zones.
+ * `adresseGoogle` : l'adresse entière telle que Google l'a reconnue, quand le client l'a choisie dans ses
+ * propositions — rue, numéro et ville exacts : c'est elle que Waze reçoit.
  */
-export function lienWaze(adresse: string, ville: string): string {
-  return `https://waze.com/ul?q=${encodeURIComponent(`${adresse.replace(/\s+/g, " ").trim()}, ${communeDe(ville)}`)}&navigate=yes`;
+export function lienWaze(adresse: string, ville: string, adresseGoogle?: string | null): string {
+  const reconnue = (adresseGoogle ?? "").replace(/\s+/g, " ").trim();
+  const destination = reconnue || `${adresse.replace(/\s+/g, " ").trim()}, ${communeDe(ville)}`;
+  return `https://waze.com/ul?q=${encodeURIComponent(destination)}&navigate=yes`;
 }

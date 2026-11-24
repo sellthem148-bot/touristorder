@@ -8,11 +8,15 @@ import { fraisDeLivraison } from "@/lib/villes";
 import { Messages } from "@/components/admin/Messages";
 import { ajouterVille, enregistrerVilles } from "../actions";
 import { LONGUEUR_MAXIMALE_DES_REPERES, lireReperes } from "@/lib/zones";
+import { cleGoogleMaps } from "@/lib/google-maps";
+
 
 export const metadata = { title: "Villes" };
 
 export default async function PageVilles({ searchParams }: PageProps<"/admin/villes">) {
   await exigerAdmin();
+  // L'adresse vérifiée par Google est-elle en service (la clé du site, lib/google-maps.ts) ?
+  const adressesGoogleActives = cleGoogleMaps() !== "";
   const params = await searchParams;
   const [villes, reglages, plages] = await Promise.all([
     prisma.ville.findMany({ orderBy: [{ ordre: "asc" }, { nom: "asc" }] }),
@@ -107,6 +111,19 @@ export default async function PageVilles({ searchParams }: PageProps<"/admin/vil
             <li>
               Quand un client choisit une zone et que son adresse en désigne une autre, il est prévenu au panier, et sa commande t&apos;est signalée « Zone à vérifier » :
               tu changes la zone dans la commande, la livraison et le total suivent avant que tu demandes le paiement.
+            </li>
+            <li data-adresses-google={adressesGoogleActives ? "actives" : "en-attente"}>
+              {adressesGoogleActives ? (
+                <>
+                  <strong>Adresse vérifiée par Google : active.</strong> Au panier, Google propose des adresses pendant que le client tape, et le site pose la zone tout seul.
+                  Tes rues et repères servent toujours : Google donne la rue et la ville, pas le quartier — c&apos;est par ses rues que le site reconnaît un quartier à son prix.
+                  Écris-les comme Google les écrit (tu les lis sur une commande, sous « Adresse reconnue par Google »), en lettres latines ou en hébreu ; inutile d&apos;écrire « rue », « St » ou « Sderot ».
+                </>
+              ) : (
+                <>
+                  <strong>Adresse vérifiée par Google : pas encore active.</strong> Le site est prêt ; il attend ta clé Google.
+                </>
+              )}
             </li>
           </ul>
         </div>

@@ -88,6 +88,11 @@ model Commande {
   etage          String          @default("")
   appartement    String          @default("") // numéro d'appartement ou de chambre
   codeEntree     String          @default("") // code d'entrée ou interphone (facultatif)
+  // Ce que Google a reconnu quand le client a choisi son adresse dans ses propositions (lib/lieu-google.ts).
+  // Vides pour une adresse tapée à la main. Reçus du navigateur : du texte non fiable, jamais un prix.
+  adresseGoogle  String          @default("") // l'adresse entière, telle que Google l'écrit (Waze, le gérant)
+  villeGoogle    String          @default("") // la ville, dans la langue du client et en hébreu (« Netanya | נתניה »)
+  reperesGoogle  String          @default("") // quartier(s), rue(s), nom du lieu : ce qui le situe dans la ville
   // La langue du site au moment de la commande (lib/langues.ts) : celle de l'e-mail de confirmation
   // et des messages WhatsApp que le gérant envoie au client.
   langue         String          @default("fr")

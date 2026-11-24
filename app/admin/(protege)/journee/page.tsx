@@ -286,7 +286,7 @@ export default async function MaJournee({ searchParams }: PageProps<"/admin/jour
                         {c.demandeLibre && <p className="mt-1 whitespace-pre-line rounded-lg bg-amber-50 p-2 text-amber-900">Demande hors catalogue : {c.demandeLibre}</p>}
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                        <a href={lienWaze(c.adresse, c.ville)} target="_blank" rel="noopener noreferrer" className="bouton-secondaire py-2 text-sm">Waze</a>
+                        <a href={lienWaze(c.adresse, c.ville, c.adresseGoogle)} target="_blank" rel="noopener noreferrer" className="bouton-secondaire py-2 text-sm">Waze</a>
                         {jArrive && (
                           <a href={jArrive} target="_blank" rel="noopener noreferrer" className="bouton-whatsapp py-2 text-sm">
                             <IconeWhatsapp className="h-4 w-4" /> J&apos;arrive

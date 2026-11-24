@@ -3,6 +3,7 @@ import { LIGNES_MAX, QUANTITE_MAX } from "./calcul";
 import { cleDeVariante, type Selection } from "./options";
 import { REMPLACEMENTS } from "./choix-commande";
 import { LOGEMENTS } from "./adresse";
+import { LONGUEUR_ADRESSE_GOOGLE, LONGUEUR_REPERES_GOOGLE, LONGUEUR_VILLE_GOOGLE } from "./lieu-google";
 import frServeur, { type DictionnaireServeur } from "./i18n/serveur/fr";
 
 export const ligneSchema = z.object({
@@ -12,6 +13,14 @@ export const ligneSchema = z.object({
 });
 
 type MessagesErreur = DictionnaireServeur["erreurs"];
+
+/**
+ * Ce que Google a reconnu d'une adresse choisie dans ses propositions : envoyé par le navigateur, donc du
+ * texte non fiable. Facultatif et jamais une raison de refuser une commande : tout ce qui n'est pas un texte
+ * devient vide, les caractères de contrôle et les retours à la ligne partent, la longueur est bornée.
+ */
+const reconnuParGoogle = (longueur: number) =>
+  z.unknown().optional().transform((v) => (typeof v === "string" ? v.slice(0, longueur * 4).replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, longueur) : ""));
 
 /**
  * Les schémas de saisie, avec leurs messages dans une langue (les erreurs s'affichent sous les champs).
@@ -55,6 +64,9 @@ export function schemasPour(m: MessagesErreur) {
     etage: z.string({ error: m.etageRequis }).trim().max(20, { error: max(20) }).default(""),
     appartement: z.string({ error: m.appartementRequis }).trim().max(20, { error: max(20) }).default(""),
     codeEntree: z.string().trim().max(40, { error: max(40) }).default(""),
+    adresseGoogle: reconnuParGoogle(LONGUEUR_ADRESSE_GOOGLE),
+    villeGoogle: reconnuParGoogle(LONGUEUR_VILLE_GOOGLE),
+    reperesGoogle: reconnuParGoogle(LONGUEUR_REPERES_GOOGLE),
     dateLivraison: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: m.jourRequis }),
     creneau: texte(1, 60, m.creneauRequis),
     notes: z.string().trim().max(1000, { error: max(1000) }).default(""),

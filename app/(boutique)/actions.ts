@@ -55,6 +55,10 @@ export async function passerCommande(_avant: EtatCommande, form: FormData): Prom
     etage: form.get("etage") ?? "",
     appartement: form.get("appartement") ?? "",
     codeEntree: form.get("codeEntree") ?? "",
+    // Présents seulement si le client a choisi son adresse dans les propositions de Google.
+    adresseGoogle: form.get("adresseGoogle") ?? "",
+    villeGoogle: form.get("villeGoogle") ?? "",
+    reperesGoogle: form.get("reperesGoogle") ?? "",
     dateLivraison: form.get("dateLivraison") ?? "",
     creneau: form.get("creneau") ?? "",
     notes: form.get("notes") ?? "",

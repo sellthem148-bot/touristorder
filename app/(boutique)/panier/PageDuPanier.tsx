@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { usePanier } from "@/components/panier/PanierProvider";
 import { useTraduction } from "@/components/LangueProvider";
-import { LoaderCircle, Minus, Plus, ShoppingCart, Trash2, Zap } from "lucide-react";
+import { Check, LoaderCircle, Minus, Plus, ShoppingCart, Trash2, Zap } from "lucide-react";
 import { Apparition } from "@/components/Apparition";
 import { rangDansLaCascade } from "@/lib/cascade";
 import { Photo } from "@/components/Photo";
@@ -12,7 +12,9 @@ import { calculerTotaux } from "@/lib/calcul";
 import { NOM_TARIF_DE_BASE, tarifDeLaLivraison } from "@/lib/tarifs";
 import { RecapMontants } from "@/components/RecapMontants";
 import { fraisDeLivraison, minimumPour } from "@/lib/villes";
-import { zoneCitee, type ZoneReperee } from "@/lib/zones";
+import { zoneCitee, zonePourLieu, type LieuReconnu, type ZoneReperee } from "@/lib/zones";
+import { champsGoogle } from "@/lib/lieu-google";
+import { ChampAdresse, type AdresseDuChamp } from "@/components/panier/ChampAdresse";
 import { formatPrix, formatPrixCourt } from "@/lib/argent";
 import { REMPLACEMENTS, type Remplacement } from "@/lib/choix-commande";
 import { estLogement, LOGEMENTS, type Logement } from "@/lib/adresse";
@@ -35,6 +37,8 @@ type Props = {
   affichage: { villes: Record<string, string>; tarifs: Record<string, string> };
   /** Ce qui désigne chaque zone dans une adresse : pour prévenir le client qui n'a pas choisi la sienne. */
   zones: ZoneReperee[];
+  /** La clé Google du gérant (lib/google-maps.ts, lue par le serveur). Vide : pas de propositions d'adresse. */
+  cleGoogle: string;
 };
 
 type Valeurs = {
@@ -74,7 +78,7 @@ function Section({ titre, numero, children }: { titre: string; numero: number; c
   );
 }
 
-export function PageDuPanier({ reglages, jours, limitePassee, client, demande, affichage, zones }: Props) {
+export function PageDuPanier({ reglages, jours, limitePassee, client, demande, affichage, zones, cleGoogle }: Props) {
   const panier = usePanier();
   const { langue, t, lien } = useTraduction();
   const p = t.panier;
@@ -100,6 +104,9 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
     pourboire: 0,
   });
   const [avis, setAvis] = useState("");
+  // L'adresse que le client a choisie dans les propositions de Google : ce que Google en dit, et la zone que
+  // cela donne. Tombe dès qu'il retape son adresse — c'est alors ce qu'il écrit qui compte.
+  const [reconnue, setReconnue] = useState<{ adresse: string; lieu: LieuReconnu; zone: string | null; horsZones: string | null } | null>(null);
   // Les lignes en train de quitter le panier : elles se replient d'abord (voir `retirer`).
   const [sortants, setSortants] = useState<string[]>([]);
   // Une demande sans article du catalogue : le formulaire s'affiche même avec un panier vide.
@@ -165,9 +172,18 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   const express = v.express && expressPossible;
   // La ville choisie ajoute son supplément de livraison (et peut avoir son minimum).
   const ville = reglages.villes.find((x) => x.nom === v.ville);
-  // L'adresse tapée désigne-t-elle une autre zone que celle choisie (une autre ville, un quartier à son
-  // propre prix) ? On le dit au client, qui change d'un geste ; rien n'est corrigé à sa place.
-  const autreZone = v.ville && v.adresse.trim().length >= 3 ? zoneCitee(v.adresse, v.ville, zones) : null;
+  // L'adresse désigne-t-elle une autre zone que celle choisie (une autre ville, un quartier à son propre
+  // prix) ? Pour une adresse reconnue, c'est sa zone qui le dit (le client a pu la rechanger à la main) ;
+  // sinon ce sont les mots de l'adresse tapée. On le dit au client, qui change d'un geste.
+  const autreZone = !v.ville
+    ? null
+    : reconnue?.zone
+      ? reconnue.zone !== v.ville ? reconnue.zone : null
+      : reconnue?.horsZones
+        ? null
+        : v.adresse.trim().length >= 3 ? zoneCitee(v.adresse, v.ville, zones) : null;
+  // Ce qui part avec la commande pour une adresse reconnue (le gérant voit ce que Google en dit).
+  const google = reconnue ? champsGoogle(reconnue.adresse, reconnue.lieu) : null;
   const livraison = fraisDeLivraison(tarif, ville, false);
   const minimum = minimumPour(ville, reglages.minimumCommande);
   const totaux = calculerTotaux(
@@ -194,6 +210,16 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
   });
   const messageErreur = (nom: string) =>
     erreur(nom) ? <p id={`${nom}-erreur`} className="apparait mt-1.5 text-sm font-medium text-red-700">{erreur(nom)}</p> : null;
+  // Le client a choisi une proposition de Google : sa ligne d'adresse, et sa zone posée toute seule quand
+  // Google situe l'adresse dans l'une des zones livrées. Rien n'est bloquant : il peut tout rechanger.
+  function adresseChoisie(a: AdresseDuChamp) {
+    changer("adresse", a.ligne);
+    if (!a.lieu) return setReconnue(null);
+    const r = zonePourLieu(a.lieu, zones);
+    const zone = r.zone && reglages.villes.some((x) => x.nom === r.zone) ? r.zone : null;
+    if (zone) changer("ville", zone);
+    setReconnue({ adresse: a.adresse, lieu: a.lieu, zone, horsZones: zone ? null : r.villeNonLivree });
+  }
   // Un numéro ou une adresse e-mail s'écrit de gauche à droite, même dans une page en hébreu.
   const latin = { dir: "ltr" as const };
 
@@ -363,8 +389,43 @@ export function PageDuPanier({ reglages, jours, limitePassee, client, demande, a
           {v.logement !== "" && (
             <div className="apparait">
               <label htmlFor="adresse" className="etiquette">{v.logement === "HOTEL" ? p.hotelNom : p.adresse}</label>
-              <input {...texte("adresse")} autoComplete={v.logement === "HOTEL" ? "organization" : "address-line1"} maxLength={200} placeholder={v.logement === "HOTEL" ? p.hotelNomPlaceholder : p.adressePlaceholder} required />
+              <ChampAdresse
+                langue={langue}
+                cleGoogle={cleGoogle}
+                libelle={p.adressePropositions}
+                surChoix={adresseChoisie}
+                champ={{
+                  ...texte("adresse"),
+                  // Le client retape son adresse : ce que Google avait reconnu ne vaut plus.
+                  onChange: (e) => {
+                    changer("adresse", e.target.value);
+                    setReconnue(null);
+                  },
+                  autoComplete: v.logement === "HOTEL" ? "organization" : "address-line1",
+                  maxLength: 200,
+                  placeholder: v.logement === "HOTEL" ? p.hotelNomPlaceholder : p.adressePlaceholder,
+                  required: true,
+                }}
+              />
               {messageErreur("adresse")}
+              {reconnue?.zone && reconnue.zone === v.ville && (
+                <p role="status" data-adresse-reconnue className="apparait mt-2 flex items-start gap-1.5 text-sm text-slate-700">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" strokeWidth={2.2} aria-hidden="true" />
+                  <span>{remplir(p.adresseReconnue, { ville: nomDeVille(reconnue.zone) })}</span>
+                </p>
+              )}
+              {reconnue?.horsZones && (
+                <p role="status" data-adresse-hors-zones className="apparait mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                  {p.adresseHorsZones.split("{ville}")[0]}<bdi>{reconnue.horsZones}</bdi>{p.adresseHorsZones.split("{ville}")[1] ?? ""}
+                </p>
+              )}
+              {google && (
+                <>
+                  <input type="hidden" name="adresseGoogle" value={google.adresseGoogle} />
+                  <input type="hidden" name="villeGoogle" value={google.villeGoogle} />
+                  <input type="hidden" name="reperesGoogle" value={google.reperesGoogle} />
+                </>
+              )}
               {autreZone && (
                 <div role="status" data-zone-citee className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
                   <p>{remplir(p.zoneAutre, { ville: nomDeVille(autreZone), choisie: nomDeVille(v.ville) })}</p>

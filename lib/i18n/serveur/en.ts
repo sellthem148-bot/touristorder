@@ -224,6 +224,7 @@ const en: DictionnaireServeur = {
       partage: {
         titre: "Who it is shared with",
         p1: "Only with the technical service providers needed to run the service: the hosting of the site and its database, the sending of confirmation emails, and the messaging services we use to write to you and to be notified of a new order. These providers may be located outside Israel and the European Union. The shops where we buy your items do not receive your contact details.",
+        p2: "When the site suggests addresses while you type yours, those suggestions are provided by Google: what you type in that field is then sent to Google.",
       },
       cookies: {
         titre: "Cookies and storage in your browser",

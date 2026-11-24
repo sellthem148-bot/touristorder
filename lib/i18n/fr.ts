@@ -225,6 +225,10 @@ const fr = {
     villeSupplement: "{ville} (livraison +{prix})",
     zoneAutre: "Cette adresse semble se trouver à {ville}, et non à {choisie}. Le prix de la livraison dépend de l'adresse réelle.",
     zoneChoisir: "Choisir {ville}",
+    // L'adresse choisie dans les propositions de Google (quand le gérant a posé sa clé) : rien n'est bloquant.
+    adressePropositions: "Propositions d'adresse",
+    adresseReconnue: "Adresse reconnue. Zone de livraison : {ville}.",
+    adresseHorsZones: "Nous n'avons pas reconnu la ville de cette adresse ({ville}) parmi nos zones de livraison. Vérifiez la zone choisie plus haut ; en cas de doute, écrivez-nous avant de commander.",
     adresse: "Rue et numéro",
     adressePlaceholder: "Ex. : rue Herzl 12",
     etage: "Étage",

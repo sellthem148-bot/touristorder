@@ -145,6 +145,10 @@ export async function creerCommande(entree: unknown, options: { clientConnecteId
       telephone: saisie.telephone,
       ville: saisie.ville,
       ...lieu,
+      // Ce que Google a reconnu de l'adresse, s'il l'a reconnue : pour le gérant (zone à vérifier, Waze), jamais pour le prix.
+      adresseGoogle: saisie.adresseGoogle,
+      villeGoogle: saisie.villeGoogle,
+      reperesGoogle: saisie.reperesGoogle,
       langue,
       dateLivraison: saisie.dateLivraison,
       creneau: saisie.creneau,

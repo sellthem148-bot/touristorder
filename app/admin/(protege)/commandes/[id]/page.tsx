@@ -23,7 +23,7 @@ import { estRemplacement, REMPLACEMENTS } from "@/lib/choix-commande";
 import { COULEUR_PAIEMENT, etatDuPaiement, libelleDuSolde, libellePaiement } from "@/lib/paiement";
 import { lireReglages } from "@/lib/reglages";
 import { ajouterLigneLibre, annulerPaiement, changerLaZone, changerStatut, enregistrerNoteInterne, modifierLigne, solderCommande } from "../../actions";
-import { zoneCitee } from "@/lib/zones";
+import { zoneASignaler } from "@/lib/zones";
 import { zonesLivrees } from "@/lib/zones-lecture";
 import { livraisonApresChangementDeZone } from "@/lib/villes";
 import { referenceDeCommande } from "@/lib/reference";
@@ -63,7 +63,10 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
   // (le nom d'une autre ville, d'un quartier, ou un repère saisi dans « Villes »). Tant que rien n'est livré,
   // on le signale ici, et la zone se change d'un geste : la livraison et le total suivent.
   const zoneModifiable = c.statut !== "ANNULEE" && c.statut !== "LIVREE";
-  const autreZone = zoneModifiable ? zoneCitee(c.adresse, c.ville, zones) : null;
+  // Une adresse choisie dans les propositions de Google : c'est ce que Google en dit qui parle (sa zone n'est
+  // pas celle choisie, ou sa ville n'est dans aucune zone) ; sinon, les mots de l'adresse tapée.
+  const signalement = zoneModifiable ? zoneASignaler(c, zones) : null;
+  const autreZone = signalement?.zone ?? null;
   const livraisonA = (supplement: number) => livraisonApresChangementDeZone(c.tarifLivraison, c.supplementVille, supplement);
   const supplementDe = (nom: string) => villes.find((v) => v.nom === nom)?.supplementLivraison ?? 0;
 
@@ -324,6 +327,21 @@ export default async function PageCommande({ params, searchParams }: PageProps<"
             <p className="whitespace-pre-line">{c.adresse}</p>
             {precisions && <p className="font-medium">{precisions}</p>}
             <p>{c.ville}</p>
+            {c.adresseGoogle && (
+              <p data-adresse-google className="rounded-lg bg-slate-50 p-2 text-slate-700">
+                <span className="block text-[11px] font-semibold text-slate-500">Adresse reconnue par Google</span>
+                <bdi>{c.adresseGoogle}</bdi>
+              </p>
+            )}
+            {signalement?.horsZones && (
+              <div data-zone-a-verifier className="space-y-1 rounded-lg bg-amber-50 p-3 text-amber-950 ring-1 ring-inset ring-amber-300">
+                <p>
+                  <strong>Zone à vérifier.</strong> Google situe cette adresse à <strong><bdi>{signalement.horsZones}</bdi></strong>, qui n&apos;est dans aucune de tes zones ;
+                  le client a choisi <strong>{c.ville}</strong> (livraison {formatPrixCourt(c.tarifLivraison)}).
+                </p>
+                <p className="text-xs">Si tu livres bien là, choisis la bonne zone ci-dessous ; sinon, écris au client.</p>
+              </div>
+            )}
             {autreZone && (
               <div data-zone-a-verifier className="space-y-2 rounded-lg bg-amber-50 p-3 text-amber-950 ring-1 ring-inset ring-amber-300">
                 <p>

@@ -229,6 +229,8 @@ const fr = {
       partage: {
         titre: "Avec qui elles sont partagées",
         p1: "Uniquement avec les prestataires techniques nécessaires au service : l'hébergement du site et de sa base de données, l'envoi des e-mails de confirmation, et les messageries que nous utilisons pour vous écrire et pour être prévenus d'une nouvelle commande. Ces prestataires peuvent être situés hors d'Israël et de l'Union européenne. Les commerces où nous achetons vos articles ne reçoivent pas vos coordonnées.",
+        // Les propositions d'adresse du panier (vrai que la fonction soit en service ou non : « quand »).
+        p2: "Quand le site vous propose des adresses pendant que vous écrivez la vôtre, ces propositions sont fournies par Google : ce que vous tapez dans ce champ lui est alors transmis.",
       },
       cookies: {
         titre: "Cookies et stockage dans votre navigateur",

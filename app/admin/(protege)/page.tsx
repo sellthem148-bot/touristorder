@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { exigerAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { zoneCitee } from "@/lib/zones";
+import { zoneASignaler } from "@/lib/zones";
 import { zonesLivrees } from "@/lib/zones-lecture";
 import { formatPrix } from "@/lib/argent";
 import { formatDateHeure, libelleDuJour } from "@/lib/dates";
@@ -41,7 +41,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
       orderBy: !trouver && (filtre === "en-cours" || filtre === "a-payer") ? [{ dateLivraison: "asc" }, { createdAt: "asc" }] : [{ createdAt: "desc" }],
       take: 100,
       select: {
-        id: true, numero: true, statut: true, nomClient: true, ville: true, adresse: true,
+        id: true, numero: true, statut: true, nomClient: true, ville: true, adresse: true, villeGoogle: true, reperesGoogle: true,
         dateLivraison: true, creneau: true, total: true, createdAt: true, express: true,
         montantPaye: true, payeLe: true, demandeLibre: true,
         _count: { select: { lignes: true } },
@@ -110,7 +110,7 @@ export default async function PageCommandes({ searchParams }: PageProps<"/admin"
                 {c.demandeLibre && <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-inset ring-amber-200">Demande hors catalogue</span>}
                 <span className="font-medium">{c.nomClient}</span>
                 <span className="text-slate-600">{c.ville}</span>
-                {c.statut !== "ANNULEE" && c.statut !== "LIVREE" && zoneCitee(c.adresse, c.ville, zones) && (
+                {c.statut !== "ANNULEE" && c.statut !== "LIVREE" && zoneASignaler(c, zones) && (
                   <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-inset ring-amber-300">Zone à vérifier</span>
                 )}
                 <span className="text-slate-600">

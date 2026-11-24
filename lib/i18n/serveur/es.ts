@@ -216,6 +216,7 @@ const es: DictionnaireServeur = {
       partage: {
         titre: "Con quién se comparte",
         p1: "Únicamente con los proveedores técnicos necesarios para el servicio: el alojamiento web del sitio y de su base de datos, el envío de los correos electrónicos de confirmación y los servicios de mensajería que utilizamos para escribirle y para recibir el aviso de un nuevo pedido. Estos proveedores pueden estar situados fuera de Israel y de la Unión Europea. Los comercios donde compramos sus artículos no reciben sus datos de contacto.",
+        p2: "Cuando el sitio le sugiere direcciones mientras escribe la suya, esas sugerencias las proporciona Google: lo que usted escribe en ese campo se le transmite entonces a Google.",
       },
       cookies: {
         titre: "Cookies y almacenamiento en su navegador",
