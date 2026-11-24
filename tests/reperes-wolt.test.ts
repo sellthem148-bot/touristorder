@@ -4,6 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { DOSSIER_DES_REPERES, NOMBRE_DE_PHOTOS_REPERE, PHOTOS_REPERE, estPhotoRepere, photoRepere } from "@/lib/reperes-wolt";
 import { repereWolt } from "@/lib/repere-wolt";
+import { nomDeFichier } from "./outils/poser-photos-retouchees";
 import { LOTS_WOLT } from "../prisma/remplissage";
 import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
@@ -184,6 +185,31 @@ describe("photos repère", () => {
     // Ce réglage ne fait pas partie de ce que le navigateur d'un client reçoit des réglages.
     const publics = lire("lib/reglages.ts");
     expect(publics.slice(publics.indexOf("export async function reglagesPublics"), publics.indexOf("export type ReglagesPublics"))).not.toContain("photosWoltPourTous");
+  });
+
+  it("les photos retouchées par le gérant (le « + » de Wolt effacé) prennent la place du fichier repère, et restent des photos repère", () => {
+    // « Si je t'envoie un fichier zip, tu peux le décompresser ? j'ai mes nouvelles images dedans » (24 novembre 2026).
+    const registre: Record<string, string> = JSON.parse(readFileSync("prive/reperes-retouches.json", "utf8"));
+    const fichiers = new Set(PHOTOS_REPERE.map((p) => p.fichier));
+    // Chaque retouche notée est une photo de la liste : même nom de fichier, donc même route, même réglage, même dossier privé.
+    for (const [fichier, lot] of Object.entries(registre)) {
+      expect(fichiers.has(fichier), fichier).toBe(true);
+      expect(lot, fichier).toMatch(/^\d{4}-\d{2}-\d{2} · /);
+    }
+    // Le premier lot : dix étuis de capsules Nespresso.
+    expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(10);
+    // L'outil ne pose qu'une retouche : même taille, même article au centre de l'image, rien d'écrit hors du dossier privé.
+    const outil = readFileSync("tests/outils/poser-photos-retouchees.ts", "utf8");
+    expect(outil).toContain("const cible = path.join(DOSSIER_DES_REPERES, fichier);");
+    expect(outil).toContain("avant.width !== apres.width || avant.height !== apres.height");
+    expect(outil).toContain("if (ecart > ECART_MAX)");
+    expect(outil.match(/writeFileSync\(/g)).toHaveLength(2); // la photo, et le registre
+    expect(outil).not.toMatch(/public\/|photoUrl/);
+    // Le nom que l'export des photos donne à un article est celui que l'outil reconnaît.
+    expect(nomDeFichier("Lait Tnuva 3 % 1 L")).toBe("Lait Tnuva 3 % 1 L");
+    expect(nomDeFichier('Écran 24" : modèle A/B')).toBe("Écran 24 - modèle A-B");
+    const noms = PHOTOS_REPERE.map((p) => nomDeFichier(p.nom).toLowerCase());
+    expect(new Set(noms).size).toBe(noms.length); // deux articles ne donnent jamais le même nom de fichier
   });
 
   it("ces photos appartiennent à Wolt et aux marques : aucune dans public/, et les pages de la boutique ne les connaissent que par lib/vue-gerant.ts", () => {
