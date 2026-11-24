@@ -2868,6 +2868,7 @@ const he: TraductionsCatalogue = {
   villes: {
     "Netanya": "נתניה",
     "Netanya – Ir Yamim / Poleg": "נתניה – עיר ימים / פולג",
+    "Netanya – Kiryat Nordau": "נתניה – קרית נורדאו",
     "Even Yehuda": "אבן יהודה",
     "Kfar Yona": "כפר יונה",
     "Kadima-Tsoran": "קדימה-צורן",

@@ -85,7 +85,7 @@ export const RUES_A_CONFIRMER: { nom: string; pourquoi: string }[] = [
   { nom: "HaKalanit", pourquoi: "Google la situe à l'autre bout de Netanya, tout au nord (latitude 32,351)" },
   { nom: "Zvi Moissescu", pourquoi: "à plus d'un kilomètre au nord-est d'Uzi Hitman (latitude 32,293, longitude 34,858)" },
   { nom: "Rotem", pourquoi: "à 250 mètres au nord d'Uzi Hitman, et plus à l'est (latitude 32,284, longitude 34,847)" },
-  { nom: "Sderot Pinchas Lavon", pourquoi: "un boulevard au nord-est du quartier (du n° 40, latitude 32,2825, au n° 1, latitude 32,287 ; longitude 34,854 à 34,856)" },
+  { nom: "Sderot Pinchas Lavon", pourquoi: "un boulevard au nord-est du quartier (du n° 40, latitude 32,2825, au n° 1, latitude 32,287 ; longitude 34,854 à 34,856) : c'est Kiryat Nordau, à 40 ₪ aussi depuis que ce quartier a sa zone (prisma/kiryat-nordau-1124.ts)" },
   { nom: "HaIrusim", pourquoi: "Google l'écrit « האיריסים » (HaIrisim) et situe la rue à Ramat Poleg, mais ses numéros ailleurs, au nord-est : laissée à la position de chaque adresse (prisma/limites-ir-yamim-1124.ts)" },
 ];
 

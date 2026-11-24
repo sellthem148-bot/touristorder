@@ -40,9 +40,10 @@ describe("une zone : une ville, ou un quartier à son propre prix", () => {
     expect(quartiersDe("Tel Aviv")).toEqual([]);
   });
 
-  it("un quartier n'est pas une ville de plus : 20 zones, 19 villes livrées (l'accueil, le contact, le flyer)", () => {
+  it("un quartier n'est pas une ville de plus : 21 zones, 19 villes livrées (l'accueil, le contact, le flyer)", () => {
     const zones = GRILLE_DES_ZONES.map((z) => z.nom);
-    expect(zones).toHaveLength(20);
+    // 19 villes et deux quartiers de Netanya vendus à leur prix (Ir Yamim / Poleg, puis Kiryat Nordau le 24 novembre).
+    expect(zones).toHaveLength(21);
     const villes = communesLivrees(zones);
     expect(villes).toHaveLength(19);
     expect(villes.slice(0, 2)).toEqual(["Netanya", "Even Yehuda"]);

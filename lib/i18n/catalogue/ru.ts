@@ -2865,6 +2865,7 @@ const ru: TraductionsCatalogue = {
   villes: {
     "Netanya": "Нетания",
     "Netanya – Ir Yamim / Poleg": "Нетания – Ир-Ямим / Полег",
+    "Netanya – Kiryat Nordau": "Нетания – Кирьят-Нордау",
     "Even Yehuda": "Эвен-Йехуда",
     "Kfar Yona": "Кфар-Йона",
     "Kadima-Tsoran": "Кадима-Цоран",

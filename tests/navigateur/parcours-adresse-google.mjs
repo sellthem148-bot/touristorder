@@ -11,7 +11,7 @@
 //   SANS_CLE=1 node tests/navigateur/parcours-adresse-google.mjs
 // PASSE DES COMMANDES et modifie les villes : jeu de test local seulement, sur un serveur fraîchement démarré.
 import { chromium, devices } from "playwright";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 const BASE = process.env.BASE_URL || "http://localhost:3100";
 const OUT = process.argv[2];
@@ -22,6 +22,9 @@ const ok = (m) => { etapes.push("✓ " + m); console.log("✓", m); };
 const verifier = (cond, m) => { if (!cond) throw new Error("ÉCHEC : " + m); ok(m); };
 const espaces = (t) => t.replace(/[\s  ]+/g, " ");
 const QUARTIER = "Netanya – Ir Yamim / Poleg";
+const NORDAU = "Netanya – Kiryat Nordau";
+// Les limites de Kiryat Nordau, lues là où la mise en ligne les prend : un rectangle par ligne.
+const LIMITES_NORDAU = [...readFileSync(new URL("../../prisma/kiryat-nordau-1124.ts", import.meta.url), "utf8").matchAll(/^  "(nord [^"]+)",$/gm)].map((m) => m[1]).join("\n");
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Les lieux que le faux Google connaît, dans les formes que le vrai renvoie (relevées le 24 novembre 2026 avec
@@ -39,11 +42,18 @@ const LIEUX = {
     fr: { principal: "Yigal Bashan Street 3", secondaire: "Netanya, Israël", adresse: "Yigal Bashan St 3, Netanya, Israël", composants: voie("3", "Yigal Bashan Street", "Yigal Bashan St", "Netanya") },
     he: { principal: "יגאל בשן 3", secondaire: "נתניה, ישראל", adresse: "יגאל בשן 3, נתניה, ישראל", composants: enHebreu("3", "יגאל בשן", "נתניה") },
   },
-  // Une rue de Kiryat Nordau : à la même hauteur, mais à l'est du boulevard Ben Gurion — hors des limites.
+  // Une rue de Kiryat Nordau : à la même hauteur, mais à l'est du boulevard Ben Gurion — hors des limites
+  // d'Ir Yamim / Poleg, dans celles de la zone « Netanya – Kiryat Nordau » (40 ₪ aussi, depuis le 24 novembre).
   hayesod: {
     mots: ["keren", "hayesod", "קרן היסוד"], types: ["street_address"], position: { lat: 32.28276, lng: 34.84905 },
     fr: { principal: "Keren HaYesod Street 10", secondaire: "Netanya, Israël", adresse: "Keren HaYesod St 10, Netanya, Israël", composants: voie("10", "Keren HaYesod Street", "Keren HaYesod St", "Netanya") },
     he: { principal: "קרן היסוד 10", secondaire: "נתניה, ישראל", adresse: "קרן היסוד 10, נתניה, ישראל", composants: enHebreu("10", "קרן היסוד", "נתניה") },
+  },
+  // Une rue de Givat HaIrusim, le quartier coincé entre les deux, au nord d'Uzi Hitman : dans aucune limite — Netanya.
+  rotem: {
+    mots: ["rotem", "רותם"], types: ["street_address"], position: { lat: 32.28405, lng: 34.84682 },
+    fr: { principal: "Rotem Street 1", secondaire: "Netanya, Israël", adresse: "Rotem St 1, Netanya, Israël", composants: voie("1", "Rotem Street", "Rotem St", "Netanya") },
+    he: { principal: "רותם 1", secondaire: "נתניה, ישראל", adresse: "רותם 1, נתניה, ישראל", composants: enHebreu("1", "רותם", "נתניה") },
   },
   // Une rue du centre de Netanya : aucun repère du gérant, donc Netanya.
   nitsa: {
@@ -216,7 +226,8 @@ try {
     await ligneQuartier.locator("summary").first().click();
     await ligneQuartier.locator('textarea[name^="rep_"]').fill("Rue Ehud Manor, רחוב בני בנימין");
     // Les limites sur la carte : proposées au quartier seulement ; une ligne illisible est refusée, rien n'est enregistré.
-    verifier((await admin.locator("details[data-limites]").count()) === 1 && (await ligneQuartier.locator("details[data-limites]").count()) === 1, "« Limites sur la carte » : proposées au quartier seulement, pas aux villes entières");
+    const ligneNordau = admin.locator("li", { has: admin.locator(`input[value="${NORDAU}"]`) });
+    verifier((await admin.locator("details[data-limites]").count()) === 2 && (await ligneQuartier.locator("details[data-limites]").count()) === 1 && (await ligneNordau.locator("details[data-limites]").count()) === 1, "« Limites sur la carte » : proposées aux deux quartiers de Netanya seulement, pas aux villes entières");
     await ligneQuartier.locator("details[data-limites] summary").click();
     await ligneQuartier.locator('textarea[name^="lim_"]').fill("tout le sud de la ville");
     await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
@@ -231,6 +242,13 @@ try {
     await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
     await admin.getByText("Villes enregistrées.").waitFor();
     verifier((await ligneQuartier.locator("details[data-limites]").getAttribute("data-limites")) === "2", "les limites du quartier sont enregistrées : 2 rectangles (la virgule des décimales est comprise)");
+    // L'autre quartier, Kiryat Nordau : ses limites telles que la mise en ligne les pose (prisma/kiryat-nordau-1124.ts).
+    await ligneNordau.locator("details[data-limites] summary").click();
+    await ligneNordau.locator('textarea[name^="lim_"]').fill(LIMITES_NORDAU);
+    await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
+    // « Villes enregistrées. » est déjà à l'écran depuis l'enregistrement précédent : c'est la page rendue de nouveau qu'on attend.
+    await ligneNordau.locator('details[data-limites="5"]').waitFor();
+    verifier((await ligneNordau.locator("details[data-limites]").getAttribute("data-limites")) === "5" && (await ligneQuartier.locator("details[data-limites]").getAttribute("data-limites")) === "2", "les limites de Kiryat Nordau sont enregistrées : 5 rectangles ; celles de l'autre quartier n'ont pas bougé");
     ok("le gérant a noté deux rues du quartier : « Rue Ehud Manor » et, en hébreu, « רחוב בני בנימין »");
 
     // ------------------------------------------------------------------------------------------------
@@ -362,8 +380,14 @@ try {
     await taper("Keren");
     await liste.waitFor();
     await options.first().click();
+    await client.waitForFunction((q) => document.querySelector("#ville").value === q, NORDAU);
+    verifier((await rue.inputValue()) === "Keren HaYesod Street 10" && (await zone()) === NORDAU && (await info()).includes("livraison 40 ₪") && (await cache("latitudeGoogle")) === "32.282760", "« Keren HaYesod Street 10 » (Kiryat Nordau, à l'est du boulevard) : par sa position, la zone « Netanya – Kiryat Nordau » — livraison 40 ₪ aussi");
+    verifier(espaces(await client.locator('[data-adresse-reconnue]').innerText()) === `Adresse reconnue. Zone de livraison : ${NORDAU}.`, "le client lit le nom de SON quartier sous le champ");
+    await taper("Rotem");
+    await liste.waitFor();
+    await options.first().click();
     await client.waitForFunction(() => document.querySelector("#ville").value === "Netanya");
-    verifier((await rue.inputValue()) === "Keren HaYesod Street 10" && (await zone()) === "Netanya" && (await info()).includes("livraison 30 ₪") && (await cache("latitudeGoogle")) === "32.282760", "« Keren HaYesod Street 10 » (Kiryat Nordau, à l'est du boulevard) : hors des limites — Netanya à 30 ₪");
+    verifier((await rue.inputValue()) === "Rotem Street 1" && (await zone()) === "Netanya" && (await info()).includes("livraison 30 ₪") && (await cache("latitudeGoogle")) === "32.284050", "« Rotem Street 1 » (Givat HaIrusim, entre les deux quartiers, au nord d'Uzi Hitman) : dans aucune limite — Netanya à 30 ₪");
     await taper("Ehud");
     await liste.waitFor();
 

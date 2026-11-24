@@ -10,6 +10,7 @@ import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalog
 import { CLE_CORRECTION_DE_LA_GRILLE, CLE_GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, ZONES_CORRIGEES, supplementsDeLaGrille } from "./zones-1123";
 import { CLE_RUES_D_IR_YAMIM, RUES_D_IR_YAMIM, reperesAvec } from "./rues-ir-yamim-1124";
 import { CLE_LIMITES_D_IR_YAMIM, LIMITES_D_IR_YAMIM } from "./limites-ir-yamim-1124";
+import { CLE_KIRYAT_NORDAU, LIMITES_DE_KIRYAT_NORDAU, LIVRAISON_A_KIRYAT_NORDAU, QUARTIER_KIRYAT_NORDAU, reperesDeKiryatNordau } from "./kiryat-nordau-1124";
 import { LONGUEUR_MAXIMALE_DES_REPERES, lireReperes } from "../lib/zones";
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
@@ -207,6 +208,50 @@ export async function poserLesLimitesDIrYamim(prisma: PrismaClient): Promise<str
     noterOperation(prisma, CLE_LIMITES_D_IR_YAMIM),
   ]);
   return `Limites d'Ir Yamim / Poleg : ${aLesSiennes ? "le gérant a déjà les siennes, gardées" : "posées"}.`;
+}
+
+/**
+ * La zone « Netanya – Kiryat Nordau » (prisma/kiryat-nordau-1124.ts : « mets kiryat nordau à 40 aussi », 24 novembre
+ * 2026), créée UNE SEULE FOIS, juste après l'autre quartier de Netanya : 40 ₪ au tarif de base (en supplément par
+ * rapport à la livraison de base de SES réglages), ses limites sur la carte et les rues que Google y situe.
+ * Si la zone existe déjà (une base neuve, ou il l'a créée lui-même), son prix n'est pas touché : elle ne reçoit que
+ * ce qui lui manque — des limites si elle n'en a pas, des rues si elle n'en a pas. Sans « Netanya » dans sa liste,
+ * rien n'est créé : un quartier n'a de sens que si sa ville est livrée. Ensuite la zone est à lui, dans « Villes ».
+ */
+export async function ajouterKiryatNordau(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_KIRYAT_NORDAU);
+  if (faite === null) return "Kiryat Nordau : réglages pas encore créés, rien de changé.";
+  if (faite) return "Kiryat Nordau : déjà posée, rien de changé.";
+  const [reglages, villes] = await Promise.all([
+    prisma.reglages.findUniqueOrThrow({ where: { id: 1 }, select: { fraisLivraison: true } }),
+    prisma.ville.findMany({ where: { nom: { in: ["Netanya", QUARTIER_IR_YAMIM, QUARTIER_KIRYAT_NORDAU] } }, select: { id: true, nom: true, ordre: true, reperes: true, limites: true } }),
+  ]);
+  const parNom = new Map(villes.map((v) => [v.nom, v]));
+  const zone = parNom.get(QUARTIER_KIRYAT_NORDAU);
+  const ville = parNom.get("Netanya");
+  if (zone) {
+    const manque = {
+      ...(zone.limites.trim() === "" ? { limites: LIMITES_DE_KIRYAT_NORDAU } : {}),
+      ...(zone.reperes.trim() === "" ? { reperes: reperesDeKiryatNordau() } : {}),
+    };
+    await prisma.$transaction([
+      ...(Object.keys(manque).length > 0 ? [prisma.ville.update({ where: { id: zone.id }, data: manque })] : []),
+      noterOperation(prisma, CLE_KIRYAT_NORDAU),
+    ]);
+    return `Kiryat Nordau : la zone existe déjà, son prix n'est pas touché${Object.keys(manque).length > 0 ? " ; posé : " + Object.keys(manque).join(", ") : ""}.`;
+  }
+  if (!ville) {
+    await noterOperation(prisma, CLE_KIRYAT_NORDAU);
+    return "Kiryat Nordau : Netanya n'est plus dans les zones, rien de créé.";
+  }
+  // À la suite de l'autre quartier de Netanya (à défaut, de la ville) : le client les lit l'un sous l'autre.
+  const ordre = (parNom.get(QUARTIER_IR_YAMIM)?.ordre ?? ville.ordre) + 1;
+  const supplementLivraison = Math.max(0, LIVRAISON_A_KIRYAT_NORDAU - reglages.fraisLivraison);
+  await prisma.$transaction([
+    prisma.ville.create({ data: { nom: QUARTIER_KIRYAT_NORDAU, supplementLivraison, ordre, reperes: reperesDeKiryatNordau(), limites: LIMITES_DE_KIRYAT_NORDAU } }),
+    noterOperation(prisma, CLE_KIRYAT_NORDAU),
+  ]);
+  return `Kiryat Nordau : zone « ${QUARTIER_KIRYAT_NORDAU} » créée (supplément ${supplementLivraison / 100} ₪, ${lireReperes(reperesDeKiryatNordau()).length} repères, ${LIMITES_DE_KIRYAT_NORDAU.split("\n").length} rectangles).`;
 }
 
 /**

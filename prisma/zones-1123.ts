@@ -10,6 +10,8 @@
 // supplément de la zone » (lib/villes.ts) : le supplément se déduit de la livraison de base des Réglages.
 // L'ordre de la liste est celui du choix proposé au client.
 
+import { LIVRAISON_A_KIRYAT_NORDAU, QUARTIER_KIRYAT_NORDAU } from "./kiryat-nordau-1124";
+
 export const CLE_GRILLE_DES_ZONES = "zones-1123";
 
 /** Le quartier de Netanya vendu à son propre prix : avant le tiret la ville, après lui les quartiers (lib/zones.ts). */
@@ -18,6 +20,9 @@ export const QUARTIER_IR_YAMIM = "Netanya – Ir Yamim / Poleg";
 export const GRILLE_DES_ZONES: { nom: string; livraison: number }[] = [
   { nom: "Netanya", livraison: 3000 },
   { nom: QUARTIER_IR_YAMIM, livraison: 4000 },
+  // Ajouté le 24 novembre (« mets Kiryat Nordau à 40 aussi ») : l'autre quartier de Netanya vendu à son prix.
+  // Sur sa base, déjà réglée par la grille, c'est une opération à elle qui le crée (prisma/kiryat-nordau-1124.ts).
+  { nom: QUARTIER_KIRYAT_NORDAU, livraison: LIVRAISON_A_KIRYAT_NORDAU },
   // Le Sharon : les villages autour de Netanya, puis ses villes
   { nom: "Even Yehuda", livraison: 5000 },
   { nom: "Kfar Yona", livraison: 5000 },

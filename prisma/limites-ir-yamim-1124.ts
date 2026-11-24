@@ -19,6 +19,8 @@
 //   rectangle couvre cette partie : au sud de 32,2772, à l'ouest de 34,8525.
 // Ni Kiryat Nordau ni la zone industrielle de Poleg (à l'est, 34,859 et au-delà) n'y sont : on le lui a dit, et
 // s'il les veut à 40 ₪ il le dit — une ligne à changer dans « Villes » → « Limites sur la carte ».
+// Sa réponse, le jour même : « mets kiryat nordau à 40 aussi » — Kiryat Nordau est devenu une zone à son nom, au
+// même prix, avec ses propres limites (prisma/kiryat-nordau-1124.ts). Celles d'ici n'ont pas bougé.
 //
 // « HaIrusim », de sa première liste : Google la connaît sous « האיריסים » (HaIrisim) et situe la RUE à Ramat Poleg
 // (32,2715 ; 34,8416), mais une adresse numérotée (« האיריסים 4 ») ailleurs, au nord-est (32,2887 ; 34,8548). On ne
@@ -52,7 +54,7 @@ export const DANS_LA_ZONE: [string, number, number][] = [
   ["Chelmonit", 32.2738, 34.8517],
 ];
 
-/** … et celles-là n'y sont pas. */
+/** … et celles-là n'y sont pas (celles de Kiryat Nordau sont dans SA zone depuis : prisma/kiryat-nordau-1124.ts). */
 export const HORS_DE_LA_ZONE: [string, number, number][] = [
   ["Rotem 1 (juste au nord d'Uzi Hitman)", 32.28405, 34.84682],
   ["Irus HaArgaman 1", 32.28468, 34.84581],

@@ -18,7 +18,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { createClient } from "@supabase/supabase-js";
 import { accesSupabase, adresseDirecte, BUCKET_PHOTOS } from "../lib/adresses-base";
-import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, retirerLePoissonFraisEtSurgele, retirerLesSurgeles, renommerLesSurgeles, appliquerLaGrilleDesZones, corrigerLaGrilleDesZones, ajouterLesRuesDIrYamim, poserLesLimitesDIrYamim, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
+import { allegerLaCremerie, allegerLesBoissons, remettreEnVenteRedBullEtMonster, remettreEnVenteLesRayons, retirerLesIntrouvables, supprimerLesIntrouvables, supprimerLesAbsentsDeWolt, masquerCeQuiManque, remettreEnVenteCeQuiAUnePhoto, montrerLesPhotosDeWoltATous, retirerLaViandeFraiche, retirerLePoissonFraisEtSurgele, retirerLesSurgeles, renommerLesSurgeles, appliquerLaGrilleDesZones, corrigerLaGrilleDesZones, ajouterLesRuesDIrYamim, poserLesLimitesDIrYamim, ajouterKiryatNordau, appliquerLeReleveDePrix, remplacerLesArticles, installerLaListeDuGerant, installerLaListeDynamica, installerLesArticlesWolt, installerLesPhotosFrais, mettreEnVenteLaListe, remplirLaBase, mettreLesReglagesANiveau, retirerLaViande } from "./remplissage";
 
 const dire = (m: string) => console.log(`[base] ${m}`);
 
@@ -135,6 +135,8 @@ async function main() {
     dire(await ajouterLesRuesDIrYamim(prisma));
     // … et ses limites sur la carte : la position d'une adresse dit le quartier, même pour une rue hors de la liste.
     dire(await poserLesLimitesDIrYamim(prisma));
+    // « Mets Kiryat Nordau à 40 aussi » (24 novembre) : le quartier d'à côté, une zone à son nom et au même prix.
+    dire(await ajouterKiryatNordau(prisma));
     // 4. Les réglages restés à une ancienne valeur par défaut (jamais ceux que le gérant a modifiés).
     dire(await mettreLesReglagesANiveau(prisma));
   } finally {

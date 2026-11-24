@@ -75,7 +75,8 @@ describe("au panier : la position que Google donne à l'adresse choisie", () => 
     expect(aNetanya(32.27926, 34.84676, "Beni Berman Street", "קניון עיר ימים")).toBe(QUARTIER_IR_YAMIM);
   });
 
-  it("au nord, ou à Kiryat Nordau : Netanya à 30 ₪", () => {
+  // Ces zones-ci n'ont que le premier quartier. Kiryat Nordau a la sienne depuis (tests/kiryat-nordau.test.ts).
+  it("au nord, ou à Kiryat Nordau : hors de CETTE zone", () => {
     expect(aNetanya(32.28405, 34.84682, "Rotem Street", "רותם")).toBe("Netanya");
     expect(aNetanya(32.2828, 34.84942, "Keren HaYesod Street", "קרן היסוד")).toBe("Netanya");
     expect(aNetanya(32.3277, 34.8598, "Herzl Street", "הרצל")).toBe("Netanya");
