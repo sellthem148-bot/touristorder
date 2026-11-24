@@ -36,6 +36,7 @@ export default async function Credits() {
                 )}
                 {" · "}
                 <a href={p.source} className={LIEN_TEXTE} rel="noopener noreferrer" target="_blank">{c.photoOrigine}</a>
+                {p.detouree ? <span data-detouree>{" · "}{c.fondRetire}</span> : null}
               </span>
             </li>
           ))}

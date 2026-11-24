@@ -283,9 +283,10 @@ const fr = {
       intro: "Certaines photos de produits frais sont des photos d'illustration, sous licence libre, issues de Wikimedia Commons. Elles montrent le produit, pas forcément la variété ni l'emballage livrés. Merci à leurs auteurs.",
       auteurs: "Auteurs et licences",
       photoOrigine: "photo d'origine",
+      fondRetire: "fond retiré",
       modifications: {
         titre: "Modifications",
-        p1: "Les photos ont été recadrées et allégées. Celles publiées sous une licence « partage dans les mêmes conditions » (CC BY-SA) restent disponibles, dans leur version recadrée, sous la même licence.",
+        p1: "Les photos ont été recadrées et allégées ; le fond de certaines a été retiré, ce qui est indiqué sur leur ligne. Celles publiées sous une licence « partage dans les mêmes conditions » (CC BY-SA) restent disponibles, dans leur version modifiée, sous la même licence.",
       },
     },
   },

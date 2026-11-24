@@ -268,9 +268,10 @@ const es: DictionnaireServeur = {
       intro: "Algunas fotos de productos frescos son fotos ilustrativas, con licencia libre, procedentes de Wikimedia Commons. Muestran el producto, no necesariamente la variedad ni el envase que se entregan. Gracias a sus autores.",
       auteurs: "Autores y licencias",
       photoOrigine: "foto original",
+      fondRetire: "fondo eliminado",
       modifications: {
         titre: "Modificaciones",
-        p1: "Las fotos se han recortado y comprimido. Las publicadas con una licencia «compartir igual» (CC BY-SA) siguen disponibles, en su versión recortada, con la misma licencia.",
+        p1: "Las fotos se han recortado y comprimido; a algunas se les ha quitado el fondo, lo que se indica en su línea. Las publicadas con una licencia «compartir igual» (CC BY-SA) siguen disponibles, en su versión modificada, con la misma licencia.",
       },
     },
   },

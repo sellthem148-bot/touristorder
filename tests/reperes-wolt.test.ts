@@ -198,7 +198,7 @@ describe("photos repère", () => {
     }
     // Les premiers lots : les douze étuis de capsules Nespresso, puis le reste de l'épicerie.
     expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(12);
-    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(490); // les rayons Crèmerie (228), Pain (75) et Boissons (157) entiers s'y sont ajoutés
+    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(492); // les rayons Crèmerie (228), Pain (75), Boissons (157) et les deux photos de Wolt des fruits et légumes
     // Une photo du site lui-même (libre de droits, `public/`) n'est jamais au registre : ce n'est pas une photo de Wolt.
     for (const fichier of Object.keys(registre)) expect(existsSync(`public/produits/frais/${fichier}`), fichier).toBe(false);
     // L'outil ne pose qu'une retouche : même taille, rien que la photo en service ne montrait déjà, rien d'écrit hors du dossier privé.
@@ -206,11 +206,20 @@ describe("photos repère", () => {
     expect(outil).toContain("const cible = path.join(DOSSIER_DES_REPERES, fichier);");
     expect(outil).toContain("avant.width !== apres.width || avant.height !== apres.height");
     expect(outil).toContain("if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE)");
-    // Il n'écrit que deux choses : la photo, dans le dossier privé, et le registre. `public/` n'est que LU (pour
-    // reconnaître la photo du site, que l'export d'un rayon entier lui a donnée avec les autres), jamais écrit.
-    expect(outil.match(/writeFileSync\(/g)).toHaveLength(2);
+    // Il écrit trois choses : la photo de Wolt retouchée, dans le dossier privé ; le registre ; et une photo LIBRE
+    // du site que le gérant a détourée, à la place de ce même fichier de `public/produits/frais` — jamais autre
+    // chose dans `public/` : elle doit être la photo du site elle-même, retouchée (même taille, rien qu'elle ne
+    // montrait déjà), ce qu'une photo de Wolt n'est pas.
+    expect(outil.match(/writeFileSync\(/g)).toHaveLength(3);
     expect(outil).toContain("writeFileSync(cible, jpeg)");
     expect(outil).toContain("writeFileSync(REGISTRE, ");
+    expect(outil).toContain("if (poser) writeFileSync(photoDuSite, jpegDuSite);");
+    const ecritureDuSite = outil.indexOf("writeFileSync(photoDuSite, jpegDuSite)");
+    const controleDuSite = outil.indexOf("const r = ressemblance(await points(enLigne), await points(recu));");
+    expect(controleDuSite).toBeGreaterThan(0);
+    expect(controleDuSite).toBeLessThan(ecritureDuSite);
+    expect(outil.slice(controleDuSite, ecritureDuSite)).toContain("if (r.dejaLa >= PART_DEJA_LA && r.gardee >= PART_GARDEE) {");
+    expect(outil).toContain('path.join("public/produits/frais", f)'); // la seule adresse de `public/` qu'il connaît
     expect(outil).not.toMatch(/photoUrl/);
     // Ce qui n'est pas à poser est laissé, sans faire échouer le lot : la photo du site, une image non touchée,
     // une photo déjà retouchée davantage.

@@ -16,6 +16,12 @@
 // libre de `public/produits/frais`, pas une photo de Wolt), une photo qu'il n'a pas touchée, et une photo déjà
 // retouchée davantage dans un lot précédent (la photo en service a effacé plus que celle reçue : on garde la mieux
 // retouchée). Seul un vrai refus — nom inconnu, autre photo, autre taille — fait échouer l'outil.
+// Dans un rayon entier il y a aussi les photos LIBRES du site (fruits et légumes : `public/produits/frais`,
+// 600 × 600), et il en DÉTOURE certaines (le fond retiré, l'article sur blanc). Celle-là prend la place du fichier
+// du site qu'elle retouche — et seulement de celui-là : même taille, et tout ce qu'elle montre était déjà dans CETTE
+// photo du site. C'est la seule écriture hors du dossier privé, et une photo de Wolt ne peut pas y arriver : elle
+// ne ressemble pas à la photo du site. La licence de ces photos permet de les modifier, à condition de le dire :
+// la photo est alors marquée `detouree` dans `lib/credits-photos.ts`, et la page /credits l'indique.
 // Les images reçues sont des données : on n'en lit que les points, rien n'en est exécuté.
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
@@ -26,6 +32,7 @@ import { PHOTOS_FRAIS } from "../../prisma/photos-frais";
 /** Les repères déjà retouchés : fichier → le lot qui l'a apporté. Pour savoir où l'on en est. */
 const REGISTRE = "prive/reperes-retouches.json";
 const POIDS_MAX = 40_000; // comme tests/reperes-wolt.test.ts
+const POIDS_MAX_DU_SITE = 120_000; // tests/photos.test.ts refuse une photo du site de 130 Ko
 /**
  * Ce que la retouche montre doit se retrouver, presque point pour point, dans la photo en service… Presque : le
  * bord d'un article détouré est adouci, et une pastille de Wolt posée SUR l'article est repeinte (la boîte du
@@ -39,6 +46,8 @@ const PART_DEJA_LA = 0.8;
  * disparaît — il en reste un tiers pour un pain, un cinquième pour trois bagels ou une baguette.
  */
 const PART_GARDEE = 0.1;
+/** Tout y était et tout y est resté : la même image, réenregistrée (l'ail et l'oignon, déjà sur fond blanc) — rien à poser. */
+const MEME_IMAGE = 0.995;
 
 /** Le nom de fichier que l'export des photos donne à un article (les signes interdits dans un nom de fichier retirés). */
 export function nomDeFichier(nom: string): string {
@@ -81,6 +90,7 @@ async function principal() {
   // Les photos du site lui-même (libres de droits), que l'export lui a données sous le nom de l'article.
   const duSite = new Map(Object.entries(PHOTOS_FRAIS).map(([nom, f]) => [nomDeFichier(nom).toLowerCase(), path.join("public/produits/frais", f)]));
   const posees: string[] = [];
+  const poseesSurLeSite: string[] = [];
   const laissees: string[] = [];
   const refusees: string[] = [];
 
@@ -90,7 +100,30 @@ async function principal() {
     const cle = nom.replace(/\.[a-z]+$/i, "").normalize("NFC").toLowerCase();
     const recu = readFileSync(chemin);
     const photoDuSite = duSite.get(cle);
-    if (photoDuSite && recu.equals(readFileSync(photoDuSite))) { laissees.push(`${nom} : c'est la photo du site (${photoDuSite}), pas une photo de Wolt`); continue; }
+    if (photoDuSite) {
+      const enLigne = readFileSync(photoDuSite);
+      if (recu.equals(enLigne)) { laissees.push(`${nom} : c'est la photo du site (${photoDuSite}), pas une photo de Wolt`); continue; }
+      try {
+        // La photo du site, détourée ? Même taille, et rien qu'elle ne montrait déjà.
+        const [avant, apres] = await Promise.all([sharp(enLigne).metadata(), sharp(recu).metadata()]);
+        if (avant.width === apres.width && avant.height === apres.height) {
+          const r = ressemblance(await points(enLigne), await points(recu));
+          if (r.dejaLa >= MEME_IMAGE && r.gardee >= MEME_IMAGE) { laissees.push(`${nom} : la photo du site, réenregistrée sans retouche (${photoDuSite})`); continue; }
+          if (r.dejaLa >= PART_DEJA_LA && r.gardee >= PART_GARDEE) {
+            const jpegDuSite = apres.format === "jpeg" && recu.length < POIDS_MAX_DU_SITE ? recu : await sharp(recu).flatten({ background: "#ffffff" }).jpeg({ quality: 86 }).toBuffer();
+            if (jpegDuSite.length >= POIDS_MAX_DU_SITE) { refusees.push(`${nom} : photo du site trop lourde (${jpegDuSite.length} octets)`); continue; }
+            if (poser) writeFileSync(photoDuSite, jpegDuSite);
+            poseesSurLeSite.push(`${photoDuSite}  ←  ${nom}  (${Math.round(r.dejaLa * 100)} % déjà là, ${Math.round(r.gardee * 100)} % de la photo gardée)`);
+            continue;
+          }
+          refusees.push(`${nom} : ce n'est pas la photo du site retouchée (${Math.round(r.dejaLa * 100)} % de ce qu'elle montre y était, ${Math.round(r.gardee * 100)} % en est resté)`);
+          continue;
+        }
+      } catch (e) {
+        refusees.push(`${nom} : illisible (${e instanceof Error ? e.message : "erreur"})`);
+        continue;
+      }
+    }
     const fichier = parNom.get(cle);
     if (!fichier) { refusees.push(`${nom} : aucun article de ce nom`); continue; }
     const cible = path.join(DOSSIER_DES_REPERES, fichier);
@@ -110,6 +143,7 @@ async function principal() {
         laissees.push(`${nom} : déjà retouchée davantage (${registre[fichier]}), on garde celle en service`);
         continue;
       }
+      if (r.dejaLa >= MEME_IMAGE && r.gardee >= MEME_IMAGE) { laissees.push(`${nom} : la même image que celle en service, réenregistrée sans retouche`); continue; }
       if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE) {
         refusees.push(`${nom} : ce n'est pas la photo en service retouchée (${Math.round(r.dejaLa * 100)} % de ce qu'elle montre y était, ${Math.round(r.gardee * 100)} % en est resté)`);
         continue;
@@ -127,6 +161,8 @@ async function principal() {
   if (poser) writeFileSync(REGISTRE, JSON.stringify(Object.fromEntries(Object.entries(registre).sort()), null, 1) + "\n");
   console.log(`${poser ? "Posées" : "À poser"} : ${posees.length}`);
   for (const l of posees) console.log("  " + l);
+  console.log(`${poser ? "Posées" : "À poser"} sur les photos du site (public/produits/frais) : ${poseesSurLeSite.length}`);
+  for (const l of poseesSurLeSite) console.log("  " + l);
   console.log(`Laissées : ${laissees.length}`);
   for (const l of laissees) console.log("  " + l);
   console.log(`Refusées : ${refusees.length}`);

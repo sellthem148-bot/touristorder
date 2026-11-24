@@ -277,9 +277,10 @@ const en: DictionnaireServeur = {
       intro: "Some photos of fresh products are illustrative photos, under a free licence, from Wikimedia Commons. They show the product, not necessarily the variety or the packaging delivered. Thank you to their authors.",
       auteurs: "Authors and licences",
       photoOrigine: "original photo",
+      fondRetire: "background removed",
       modifications: {
         titre: "Changes",
-        p1: "The photos have been cropped and compressed. Those published under a “share-alike” licence (CC BY-SA) remain available, in their cropped version, under the same licence.",
+        p1: "The photos have been cropped and compressed; the background of some has been removed, as noted on their line. Those published under a “share-alike” licence (CC BY-SA) remain available, in their modified version, under the same licence.",
       },
     },
   },
