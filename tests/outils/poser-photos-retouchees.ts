@@ -46,6 +46,12 @@ const PART_DEJA_LA = 0.8;
  * disparaît — il en reste un tiers pour un pain, un cinquième pour trois bagels ou une baguette.
  */
 const PART_GARDEE = 0.1;
+/**
+ * … ou bien l'image est restée telle quelle presque partout. C'est le cas d'un article BLANC sur fond blanc (un
+ * adaptateur, un câble, un chargeur Apple) : on n'y « voit » presque que le « + » de Wolt, et une fois celui-ci
+ * effacé il ne reste que 9 à 26 % de ce que la photo montrait — alors que rien d'autre n'a bougé.
+ */
+const PART_INTACTE = 0.6;
 /** Tout y était et tout y est resté : la même image, réenregistrée (l'ail et l'oignon, déjà sur fond blanc) — rien à poser. */
 const MEME_IMAGE = 0.995;
 
@@ -62,18 +68,30 @@ const points = (octets: Buffer): Promise<Buffer> => sharp(octets).flatten({ back
 
 /**
  * Deux images de même taille : `dejaLa` = la part de ce que montre la retouche (tout ce qui n'est pas blanc) qui
- * est identique dans la photo en service ; `gardee` = la part de la photo en service qui est restée. Une retouche
- * efface (le « + », une pastille) : dejaLa ≈ 1. Une autre photo, ou la photo d'un autre article : dejaLa bas.
+ * est identique dans la photo en service ; `gardee` = la part de la photo en service qui est restée ; `intacte` =
+ * la part de l'image entière, blanc compris, qui n'a pas bougé. Une retouche efface (le « + », une pastille) :
+ * dejaLa ≈ 1. Une autre photo, ou la photo d'un autre article : dejaLa bas.
  */
-export function ressemblance(avant: Buffer, apres: Buffer): { dejaLa: number; gardee: number } {
+export function ressemblance(avant: Buffer, apres: Buffer): { dejaLa: number; gardee: number; intacte: number } {
   const plein = (b: Buffer, i: number) => Math.min(b[i], b[i + 1], b[i + 2]) < 232;
-  let montre = 0, montreDejaLa = 0, avait = 0, avaitGarde = 0;
+  let points = 0, memes = 0, montre = 0, montreDejaLa = 0, avait = 0, avaitGarde = 0;
   for (let i = 0; i + 2 < avant.length; i += 3) {
     const pareil = Math.max(Math.abs(avant[i] - apres[i]), Math.abs(avant[i + 1] - apres[i + 1]), Math.abs(avant[i + 2] - apres[i + 2])) < 30;
+    points++;
+    if (pareil) memes++;
     if (plein(apres, i)) { montre++; if (pareil) montreDejaLa++; }
     if (plein(avant, i)) { avait++; if (pareil) avaitGarde++; }
   }
-  return { dejaLa: montre === 0 ? 0 : montreDejaLa / montre, gardee: avait === 0 ? 0 : avaitGarde / avait };
+  return { dejaLa: montre === 0 ? 0 : montreDejaLa / montre, gardee: avait === 0 ? 0 : avaitGarde / avait, intacte: points === 0 ? 0 : memes / points };
+}
+
+/**
+ * Une retouche de la photo en service : ce qu'elle montre y était déjà, et il en reste l'article — une part de ce
+ * que la photo montrait (un article détouré de son fond gris), ou l'image presque entière (un article blanc sur
+ * blanc dont seul le « + » a disparu). Une image vide ne montre rien : `dejaLa` vaut 0.
+ */
+export function estUneRetouche(r: { dejaLa: number; gardee: number; intacte: number }): boolean {
+  return r.dejaLa >= PART_DEJA_LA && (r.gardee >= PART_GARDEE || r.intacte >= PART_INTACTE);
 }
 
 async function principal() {
@@ -109,7 +127,7 @@ async function principal() {
         if (avant.width === apres.width && avant.height === apres.height) {
           const r = ressemblance(await points(enLigne), await points(recu));
           if (r.dejaLa >= MEME_IMAGE && r.gardee >= MEME_IMAGE) { laissees.push(`${nom} : la photo du site, réenregistrée sans retouche (${photoDuSite})`); continue; }
-          if (r.dejaLa >= PART_DEJA_LA && r.gardee >= PART_GARDEE) {
+          if (estUneRetouche(r)) {
             const jpegDuSite = apres.format === "jpeg" && recu.length < POIDS_MAX_DU_SITE ? recu : await sharp(recu).flatten({ background: "#ffffff" }).jpeg({ quality: 86 }).toBuffer();
             if (jpegDuSite.length >= POIDS_MAX_DU_SITE) { refusees.push(`${nom} : photo du site trop lourde (${jpegDuSite.length} octets)`); continue; }
             if (poser) writeFileSync(photoDuSite, jpegDuSite);
@@ -144,7 +162,7 @@ async function principal() {
         continue;
       }
       if (r.dejaLa >= MEME_IMAGE && r.gardee >= MEME_IMAGE) { laissees.push(`${nom} : la même image que celle en service, réenregistrée sans retouche`); continue; }
-      if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE) {
+      if (!estUneRetouche(r)) {
         refusees.push(`${nom} : ce n'est pas la photo en service retouchée (${Math.round(r.dejaLa * 100)} % de ce qu'elle montre y était, ${Math.round(r.gardee * 100)} % en est resté)`);
         continue;
       }

@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { DOSSIER_DES_REPERES, NOMBRE_DE_PHOTOS_REPERE, PHOTOS_REPERE, estPhotoRepere, photoRepere } from "@/lib/reperes-wolt";
 import { repereWolt } from "@/lib/repere-wolt";
-import { nomDeFichier, ressemblance } from "./outils/poser-photos-retouchees";
+import { estUneRetouche, nomDeFichier, ressemblance } from "./outils/poser-photos-retouchees";
 import { LOTS_WOLT } from "../prisma/remplissage";
 import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
@@ -198,14 +198,14 @@ describe("photos repère", () => {
     }
     // Les premiers lots : les douze étuis de capsules Nespresso, puis le reste de l'épicerie.
     expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(12);
-    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(541); // les rayons Crèmerie (228), Pain (75), Boissons (157), Boucherie & poisson (24), Apéro (22), Surgelés (3) et les deux photos de Wolt des fruits et légumes
+    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(621); // les rayons Crèmerie (228), Pain (75), Boissons (157), Électronique (80), Boucherie & poisson (24), Apéro (22), Surgelés (3) et les deux photos de Wolt des fruits et légumes
     // Une photo du site lui-même (libre de droits, `public/`) n'est jamais au registre : ce n'est pas une photo de Wolt.
     for (const fichier of Object.keys(registre)) expect(existsSync(`public/produits/frais/${fichier}`), fichier).toBe(false);
     // L'outil ne pose qu'une retouche : même taille, rien que la photo en service ne montrait déjà, rien d'écrit hors du dossier privé.
     const outil = readFileSync("tests/outils/poser-photos-retouchees.ts", "utf8");
     expect(outil).toContain("const cible = path.join(DOSSIER_DES_REPERES, fichier);");
     expect(outil).toContain("avant.width !== apres.width || avant.height !== apres.height");
-    expect(outil).toContain("if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE)");
+    expect(outil).toContain("if (!estUneRetouche(r)) {");
     // Il écrit trois choses : la photo de Wolt retouchée, dans le dossier privé ; le registre ; et une photo LIBRE
     // du site que le gérant a détourée, à la place de ce même fichier de `public/produits/frais` — jamais autre
     // chose dans `public/` : elle doit être la photo du site elle-même, retouchée (même taille, rien qu'elle ne
@@ -218,7 +218,7 @@ describe("photos repère", () => {
     const controleDuSite = outil.indexOf("const r = ressemblance(await points(enLigne), await points(recu));");
     expect(controleDuSite).toBeGreaterThan(0);
     expect(controleDuSite).toBeLessThan(ecritureDuSite);
-    expect(outil.slice(controleDuSite, ecritureDuSite)).toContain("if (r.dejaLa >= PART_DEJA_LA && r.gardee >= PART_GARDEE) {");
+    expect(outil.slice(controleDuSite, ecritureDuSite)).toContain("if (estUneRetouche(r)) {");
     expect(outil).toContain('path.join("public/produits/frais", f)'); // la seule adresse de `public/` qu'il connaît
     expect(outil).not.toMatch(/photoUrl/);
     // Ce qui n'est pas à poser est laissé, sans faire échouer le lot : la photo du site, une image non touchée,
@@ -235,7 +235,19 @@ describe("photos repère", () => {
     expect(ressemblance(enService, retouchee).dejaLa).toBe(1);
     expect(ressemblance(enService, retouchee).gardee).toBeGreaterThan(0.5); // l'article est resté, le « + » et l'étiquette non
     expect(ressemblance(enService, autre).dejaLa).toBeLessThan(0.5);
-    expect(ressemblance(enService, image(() => blanc))).toEqual({ dejaLa: 0, gardee: 0 }); // une image vide n'est pas une retouche
+    expect(ressemblance(enService, image(() => blanc))).toMatchObject({ dejaLa: 0, gardee: 0 }); // une image vide n'est pas une retouche
+    expect(estUneRetouche(ressemblance(enService, image(() => blanc)))).toBe(false);
+    expect(estUneRetouche(ressemblance(enService, retouchee))).toBe(true);
+    expect(estUneRetouche(ressemblance(enService, autre))).toBe(false);
+    // Un article BLANC sur fond blanc (un adaptateur, un câble) : on n'y voit presque que le « + » de Wolt ; une fois
+    // effacé, il reste moins d'un dixième de ce que la photo montrait — mais l'image n'a pas bougé ailleurs.
+    const fil = (x: number, y: number) => x === 20 && y >= 6 && y < 16;
+    const blancSurBlanc = image((x, y) => (fil(x, y) ? [215, 215, 215] : x < 10 && y < 7 ? [10, 30, 50] : blanc));
+    const blancRetouche = ressemblance(blancSurBlanc, image((x, y) => (fil(x, y) ? [215, 215, 215] : blanc)));
+    expect(blancRetouche.dejaLa).toBe(1);
+    expect(blancRetouche.gardee).toBeLessThan(0.2);
+    expect(blancRetouche.intacte).toBeGreaterThan(0.9);
+    expect(estUneRetouche(blancRetouche)).toBe(true);
     // Une photo à fond gris dont il détoure l'article : tout le fond disparaît, l'article reste — c'est une retouche.
     const surFondGris = image((x, y) => (article(x, y) ? [200, 40, 40] : [205, 205, 205]));
     const detouree = ressemblance(surFondGris, retouchee);
@@ -243,7 +255,10 @@ describe("photos repère", () => {
     expect(detouree.gardee).toBeGreaterThan(0.2);
     expect(detouree.gardee).toBeLessThan(0.4);
     // … mais un petit bout de la photo n'en est pas une.
-    expect(ressemblance(surFondGris, image((x, y) => (x >= 14 && x < 18 && y >= 4 && y < 8 ? [200, 40, 40] : blanc))).gardee).toBeLessThan(0.1);
+    const petitBout = ressemblance(surFondGris, image((x, y) => (x >= 14 && x < 18 && y >= 4 && y < 8 ? [200, 40, 40] : blanc)));
+    expect(petitBout.gardee).toBeLessThan(0.1);
+    expect(estUneRetouche(petitBout)).toBe(false);
+    expect(estUneRetouche(detouree)).toBe(true);
     expect(outil).toContain("const PART_GARDEE = 0.1;");
     expect(outil).toContain("const PART_DEJA_LA = 0.8;");
     // Le nom que l'export des photos donne à un article est celui que l'outil reconnaît.
