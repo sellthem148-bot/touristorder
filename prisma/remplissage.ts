@@ -8,6 +8,8 @@ import { slugDe } from "../lib/slug";
 import { lireOptionsSaisies } from "../lib/options";
 import { CATALOGUE, CATEGORIES, PLAGES_EXEMPLE, VILLES_EXEMPLE } from "./catalogue";
 import { CLE_CORRECTION_DE_LA_GRILLE, CLE_GRILLE_DES_ZONES, QUARTIER_IR_YAMIM, ZONES_CORRIGEES, supplementsDeLaGrille } from "./zones-1123";
+import { CLE_RUES_D_IR_YAMIM, RUES_D_IR_YAMIM } from "./rues-ir-yamim-1124";
+import { LONGUEUR_MAXIMALE_DES_REPERES, lireReperes } from "../lib/zones";
 import { ARTICLES_WOLT, BOUTIQUE_WOLT, CATEGORIES_WOLT, REMPLACES_PAR_WOLT, enAgorot, type ArticleWolt } from "./articles-wolt";
 import { ARTICLES_DYNAMICA, ARTICLES_DYNAMICA_DU_13_NOVEMBRE, BOUTIQUE_DYNAMICA } from "./articles-dynamica";
 import { ARTICLES_WOLT_FICHES, DESCRIPTIONS_ENRICHIES } from "./articles-wolt-fiches";
@@ -159,6 +161,39 @@ export async function corrigerLaGrilleDesZones(prisma: PrismaClient): Promise<st
   ]);
   const reglees = resultats.slice(0, cibles.length).reduce((n, r) => n + ("count" in r ? r.count : 0), 0);
   return `Correction de la grille des zones : ${reglees} ville(s) sur ${cibles.length} au nouveau prix.`;
+}
+
+/**
+ * Les rues d'Ir Yamim et de Ramat Poleg que le gérant a envoyées le 24 novembre 2026 (prisma/rues-ir-yamim-1124.ts),
+ * ajoutées UNE SEULE FOIS aux repères de sa zone « Netanya – Ir Yamim / Poleg » : c'est par la rue que le site
+ * reconnaît ce quartier (Google ne le nomme pas). Rien de ce qu'il a déjà écrit n'est retiré ni réécrit : on
+ * n'ajoute que les écritures absentes, une rue par ligne. S'il a retiré ou renommé la zone, rien n'est posé.
+ * Ensuite la liste est à lui, dans « Villes » : ce qu'il en retire n'y revient pas.
+ */
+export async function ajouterLesRuesDIrYamim(prisma: PrismaClient): Promise<string> {
+  const faite = await operationFaite(prisma, CLE_RUES_D_IR_YAMIM);
+  if (faite === null) return "Rues d'Ir Yamim / Poleg : réglages pas encore créés, rien de changé.";
+  if (faite) return "Rues d'Ir Yamim / Poleg : déjà posées, rien de changé.";
+  const zone = await prisma.ville.findFirst({ where: { nom: QUARTIER_IR_YAMIM }, select: { id: true, reperes: true } });
+  if (!zone) {
+    await noterOperation(prisma, CLE_RUES_D_IR_YAMIM);
+    return "Rues d'Ir Yamim / Poleg : la zone n'existe plus sous ce nom, rien de posé.";
+  }
+  const deja = new Set(lireReperes(zone.reperes));
+  let texte = zone.reperes.trim();
+  let rues = 0;
+  for (const rue of RUES_D_IR_YAMIM) {
+    const nouvelles = rue.noms.filter((nom) => lireReperes(nom).some((r) => !deja.has(r)));
+    if (nouvelles.length === 0) continue;
+    const suite = texte ? `${texte}\n${nouvelles.join(", ")}` : nouvelles.join(", ");
+    // La place n'est pas infinie (le champ de « Villes » non plus) : une rue entière, ou rien.
+    if (suite.length > LONGUEUR_MAXIMALE_DES_REPERES) break;
+    texte = suite;
+    rues++;
+    for (const nom of nouvelles) for (const r of lireReperes(nom)) deja.add(r);
+  }
+  await prisma.$transaction([prisma.ville.update({ where: { id: zone.id }, data: { reperes: texte } }), noterOperation(prisma, CLE_RUES_D_IR_YAMIM)]);
+  return `Rues d'Ir Yamim / Poleg : ${rues} rue(s) ajoutée(s) aux repères de la zone (${lireReperes(texte).length} repères en tout).`;
 }
 
 /**

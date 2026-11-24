@@ -94,7 +94,10 @@ export function zoneReperee(nom: string, reperes: string, nomsTraduits: string[]
 
 /**
  * La zone qu'une adresse désigne, quand ce n'est pas celle que le client a choisie — sinon `null`.
- * - un repère (rue, hôtel, quartier) d'une autre zone la désigne à coup sûr ;
+ * - un repère (rue, hôtel, quartier) d'une autre zone la désigne à coup sûr — mais un repère d'un QUARTIER ne
+ *   vaut que dans sa ville : si le client a choisi cette ville (ou un autre de ses quartiers), ou si l'adresse
+ *   la nomme. Les rues d'un quartier portent des noms que toutes les villes ont (« Menachem Begin »,
+ *   « HaVradim ») : « Menachem Begin 132 », pour qui loge à Tel Aviv, n'est pas une rue de Netanya ;
  * - le nom d'une autre ville aussi, sauf si l'adresse nomme déjà sa propre ville : « rue de Haïfa, Netanya »
  *   est une rue de Netanya ;
  * - un repère de la zone choisie tranche : l'adresse y est ;
@@ -110,9 +113,16 @@ export function zoneCitee(adresse: string, choisie: string, zones: ZoneReperee[]
   if (zones.find((z) => z.nom === choisie)?.reperes.some(cite)) return null;
   const nommeSaVille = zones.some((z) => (z.nom === choisie || z.nom === commune) && z.noms.some(cite));
   let trouvee: { nom: string; sure: boolean; longueur: number } | null = null;
+  // La ville d'un quartier est-elle celle du client, ou nommée dans l'adresse ?
+  const dansSaVille = (z: ZoneReperee) => {
+    const ville = communeDe(z.nom);
+    if (ville === z.nom || ville === commune) return true;
+    const entiere = zones.find((x) => x.nom === ville);
+    return entiere ? entiere.noms.some(cite) : cite(simplifier(ville));
+  };
   for (const z of zones) {
     if (z.nom === choisie || z.nom === commune) continue;
-    const citations: [string[], boolean][] = [[z.reperes.filter(cite), true], [nommeSaVille ? [] : z.noms.filter(cite), false]];
+    const citations: [string[], boolean][] = [[dansSaVille(z) ? z.reperes.filter(cite) : [], true], [nommeSaVille ? [] : z.noms.filter(cite), false]];
     for (const [mots, sure] of citations) {
       for (const mot of mots) {
         if (!trouvee || (sure && !trouvee.sure) || (sure === trouvee.sure && mot.length > trouvee.longueur)) {
