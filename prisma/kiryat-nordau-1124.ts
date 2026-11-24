@@ -12,7 +12,8 @@
 //   (n° 44 : 34,8558 au sud ; n° 1 : 34,8584 au nord) ;
 // - à l'EST, la zone industrielle (HaMelacha, parallèle à Max Nordau, 300 mètres plus loin : n° 4 : 34,8576 au sud ;
 //   n° 34 : 34,8605 au nord ; puis Giborei Israel, HaBonim, HaOmanut) : elle n'est PAS dans la zone — il n'a
-//   demandé que le quartier. La limite passe entre les deux rues, d'où un bord est en escalier ;
+//   demandé que le quartier. La limite passe entre les deux rues (c'est la route 2), d'où un bord est en escalier.
+//   Elle a eu SA zone le jour même, à 40 ₪ aussi, comme Givat HaIrusim (prisma/sud-de-netanya-1124.ts) ;
 // - au NORD-OUEST, un autre quartier, Givat HaIrusim (rues aux noms de fleurs : Rotem, Havatzelet HaHof, Irus
 //   HaArgaman, Hartzit), au nord d'Uzi Hitman : il reste à 30 ₪. Rotem longe Zalman Shneur à cent mètres ; Google
 //   ne connaît pas ses numéros et range presque toute la rue au même point (32,28481 ; 34,84928), qui doit donc
@@ -145,7 +146,11 @@ export const DANS_KIRYAT_NORDAU: [string, number, number][] = [
   ["Shalom Aleichem 44", 32.2878, 34.85422],
 ];
 
-/** … celles-là sont autour : Givat HaIrusim, Agamim, Kiryat HaSharon, la zone industrielle. Elles restent à 30 ₪. */
+/**
+ * … celles-là sont autour : Givat HaIrusim, Agamim, Kiryat HaSharon, la zone industrielle — hors de CETTE zone.
+ * Givat HaIrusim et la zone industrielle ont eu la leur le jour même, à 40 ₪ aussi (prisma/sud-de-netanya-1124.ts) ;
+ * Agamim et Kiryat HaSharon, au nord, restent à 30 ₪.
+ */
 export const AUTOUR_DE_KIRYAT_NORDAU: [string, number, number][] = [
   ["Rotem 1 (Givat HaIrusim)", 32.28405, 34.84682],
   ["Rotem, là où Google range presque tous ses numéros", 32.28481, 34.84928],

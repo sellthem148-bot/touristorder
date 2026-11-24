@@ -2869,6 +2869,8 @@ const he: TraductionsCatalogue = {
     "Netanya": "נתניה",
     "Netanya – Ir Yamim / Poleg": "נתניה – עיר ימים / פולג",
     "Netanya – Kiryat Nordau": "נתניה – קרית נורדאו",
+    "Netanya – Givat HaIrusim": "נתניה – גבעת האירוסים",
+    "Netanya – Zone industrielle Poleg": "נתניה – אזור התעשייה פולג",
     "Even Yehuda": "אבן יהודה",
     "Kfar Yona": "כפר יונה",
     "Kadima-Tsoran": "קדימה-צורן",

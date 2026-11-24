@@ -25,6 +25,12 @@ const QUARTIER = "Netanya – Ir Yamim / Poleg";
 const NORDAU = "Netanya – Kiryat Nordau";
 // Les limites de Kiryat Nordau, lues là où la mise en ligne les prend : un rectangle par ligne.
 const LIMITES_NORDAU = [...readFileSync(new URL("../../prisma/kiryat-nordau-1124.ts", import.meta.url), "utf8").matchAll(/^  "(nord [^"]+)",$/gm)].map((m) => m[1]).join("\n");
+// … et les deux autres secteurs du sud de Netanya, à 40 ₪ aussi depuis le même jour.
+const IRUSIM = "Netanya – Givat HaIrusim";
+const INDUSTRIE = "Netanya – Zone industrielle Poleg";
+const SUD_DE_NETANYA = readFileSync(new URL("../../prisma/sud-de-netanya-1124.ts", import.meta.url), "utf8");
+const LIMITES_IRUSIM = SUD_DE_NETANYA.match(/LIMITES_DE_GIVAT_HAIRUSIM = "([^"]+)"/)[1];
+const LIMITES_INDUSTRIE = [...SUD_DE_NETANYA.matchAll(/^  "(nord [^"]+)",$/gm)].map((m) => m[1]).join("\n");
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // Les lieux que le faux Google connaît, dans les formes que le vrai renvoie (relevées le 24 novembre 2026 avec
@@ -49,7 +55,19 @@ const LIEUX = {
     fr: { principal: "Keren HaYesod Street 10", secondaire: "Netanya, Israël", adresse: "Keren HaYesod St 10, Netanya, Israël", composants: voie("10", "Keren HaYesod Street", "Keren HaYesod St", "Netanya") },
     he: { principal: "קרן היסוד 10", secondaire: "נתניה, ישראל", adresse: "קרן היסוד 10, נתניה, ישראל", composants: enHebreu("10", "קרן היסוד", "נתניה") },
   },
-  // Une rue de Givat HaIrusim, le quartier coincé entre les deux, au nord d'Uzi Hitman : dans aucune limite — Netanya.
+  // Une rue d'Agamim, juste au nord de la ligne Eisenhower – Shalom Aleichem : dans aucune limite — Netanya, à 30 ₪.
+  agamim: {
+    mots: ["agammim", "agamim", "האגמים"], types: ["street_address"], position: { lat: 32.28866, lng: 34.84931 },
+    fr: { principal: "HaAgammim Boulevard 14", secondaire: "Netanya, Israël", adresse: "HaAgammim Blvd 14, Netanya, Israël", composants: voie("14", "HaAgammim Boulevard", "HaAgammim Blvd", "Netanya") },
+    he: { principal: "שדרות האגמים 14", secondaire: "נתניה, ישראל", adresse: "שדרות האגמים 14, נתניה, ישראל", composants: enHebreu("14", "שדרות האגמים", "נתניה") },
+  },
+  // Une rue de la zone industrielle, de l'autre côté de la route 2 : sa zone à elle, à 40 ₪.
+  melacha: {
+    mots: ["melakha", "melacha", "המלאכה"], types: ["street_address"], position: { lat: 32.280255, lng: 34.858951 },
+    fr: { principal: "HaMelacha Street 20", secondaire: "Netanya, Israël", adresse: "Ha-Melakha St 20, Netanya, Israël", composants: voie("20", "Ha-Melakha Street", "Ha-Melakha St", "Netanya") },
+    he: { principal: "המלאכה 20", secondaire: "נתניה, ישראל", adresse: "המלאכה 20, נתניה, ישראל", composants: enHebreu("20", "המלאכה", "נתניה") },
+  },
+  // Une rue de Givat HaIrusim, le quartier coincé entre Ir Yamim et Kiryat Nordau, au nord d'Uzi Hitman : sa zone à lui.
   rotem: {
     mots: ["rotem", "רותם"], types: ["street_address"], position: { lat: 32.28405, lng: 34.84682 },
     fr: { principal: "Rotem Street 1", secondaire: "Netanya, Israël", adresse: "Rotem St 1, Netanya, Israël", composants: voie("1", "Rotem Street", "Rotem St", "Netanya") },
@@ -227,7 +245,9 @@ try {
     await ligneQuartier.locator('textarea[name^="rep_"]').fill("Rue Ehud Manor, רחוב בני בנימין");
     // Les limites sur la carte : proposées au quartier seulement ; une ligne illisible est refusée, rien n'est enregistré.
     const ligneNordau = admin.locator("li", { has: admin.locator(`input[value="${NORDAU}"]`) });
-    verifier((await admin.locator("details[data-limites]").count()) === 2 && (await ligneQuartier.locator("details[data-limites]").count()) === 1 && (await ligneNordau.locator("details[data-limites]").count()) === 1, "« Limites sur la carte » : proposées aux deux quartiers de Netanya seulement, pas aux villes entières");
+    const ligneIrusim = admin.locator("li", { has: admin.locator(`input[value="${IRUSIM}"]`) });
+    const ligneIndustrie = admin.locator("li", { has: admin.locator(`input[value="${INDUSTRIE}"]`) });
+    verifier((await admin.locator("details[data-limites]").count()) === 4 && (await ligneQuartier.locator("details[data-limites]").count()) === 1 && (await ligneNordau.locator("details[data-limites]").count()) === 1 && (await ligneIrusim.locator("details[data-limites]").count()) === 1 && (await ligneIndustrie.locator("details[data-limites]").count()) === 1, "« Limites sur la carte » : proposées aux quatre secteurs de Netanya seulement, pas aux villes entières");
     await ligneQuartier.locator("details[data-limites] summary").click();
     await ligneQuartier.locator('textarea[name^="lim_"]').fill("tout le sud de la ville");
     await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
@@ -248,6 +268,14 @@ try {
     await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
     // « Villes enregistrées. » est déjà à l'écran depuis l'enregistrement précédent : c'est la page rendue de nouveau qu'on attend.
     await ligneNordau.locator('details[data-limites="5"]').waitFor();
+    // Givat HaIrusim et la zone industrielle : leurs limites aussi, en un seul enregistrement.
+    await ligneIrusim.locator("details[data-limites] summary").click();
+    await ligneIrusim.locator('textarea[name^="lim_"]').fill(LIMITES_IRUSIM);
+    await ligneIndustrie.locator("details[data-limites] summary").click();
+    await ligneIndustrie.locator('textarea[name^="lim_"]').fill(LIMITES_INDUSTRIE);
+    await admin.getByRole("button", { name: "Enregistrer les villes" }).click();
+    await ligneIndustrie.locator('details[data-limites="5"]').waitFor();
+    verifier((await ligneIrusim.locator("details[data-limites]").getAttribute("data-limites")) === "1" && (await ligneNordau.locator("details[data-limites]").getAttribute("data-limites")) === "5", "les limites de Givat HaIrusim (1 rectangle) et de la zone industrielle (5) sont enregistrées ; celles de Kiryat Nordau n'ont pas bougé");
     verifier((await ligneNordau.locator("details[data-limites]").getAttribute("data-limites")) === "5" && (await ligneQuartier.locator("details[data-limites]").getAttribute("data-limites")) === "2", "les limites de Kiryat Nordau sont enregistrées : 5 rectangles ; celles de l'autre quartier n'ont pas bougé");
     ok("le gérant a noté deux rues du quartier : « Rue Ehud Manor » et, en hébreu, « רחוב בני בנימין »");
 
@@ -386,8 +414,18 @@ try {
     await taper("Rotem");
     await liste.waitFor();
     await options.first().click();
+    await client.waitForFunction((q) => document.querySelector("#ville").value === q, IRUSIM);
+    verifier((await rue.inputValue()) === "Rotem Street 1" && (await zone()) === IRUSIM && (await info()).includes("livraison 40 ₪") && (await cache("latitudeGoogle")) === "32.284050", "« Rotem Street 1 » (Givat HaIrusim, entre Ir Yamim et Kiryat Nordau) : par sa position, la zone « Netanya – Givat HaIrusim » — livraison 40 ₪");
+    await taper("Melacha");
+    await liste.waitFor();
+    await options.first().click();
+    await client.waitForFunction((q) => document.querySelector("#ville").value === q, INDUSTRIE);
+    verifier((await rue.inputValue()) === "HaMelacha Street 20" && (await zone()) === INDUSTRIE && (await info()).includes("livraison 40 ₪"), "« HaMelacha Street 20 » (de l'autre côté de la route 2) : la zone « Netanya – Zone industrielle Poleg » — livraison 40 ₪");
+    await taper("Agamim");
+    await liste.waitFor();
+    await options.first().click();
     await client.waitForFunction(() => document.querySelector("#ville").value === "Netanya");
-    verifier((await rue.inputValue()) === "Rotem Street 1" && (await zone()) === "Netanya" && (await info()).includes("livraison 30 ₪") && (await cache("latitudeGoogle")) === "32.284050", "« Rotem Street 1 » (Givat HaIrusim, entre les deux quartiers, au nord d'Uzi Hitman) : dans aucune limite — Netanya à 30 ₪");
+    verifier((await rue.inputValue()) === "HaAgammim Boulevard 14" && (await zone()) === "Netanya" && (await info()).includes("livraison 30 ₪") && (await cache("latitudeGoogle")) === "32.288660", "« HaAgammim Boulevard 14 » (Agamim, juste au nord de la ligne) : dans aucune limite — Netanya à 30 ₪");
     await taper("Ehud");
     await liste.waitFor();
 

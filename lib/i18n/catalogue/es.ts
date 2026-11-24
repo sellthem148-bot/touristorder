@@ -2858,6 +2858,8 @@ const es: TraductionsCatalogue = {
     "Netanya": "Netanya",
     "Netanya – Ir Yamim / Poleg": "Netanya – Ir Yamim / Poleg",
     "Netanya – Kiryat Nordau": "Netanya – Kiryat Nordau",
+    "Netanya – Givat HaIrusim": "Netanya – Givat HaIrusim",
+    "Netanya – Zone industrielle Poleg": "Netanya – Zona industrial Poleg",
     "Even Yehuda": "Even Yehuda",
     "Kfar Yona": "Kfar Yona",
     "Kadima-Tsoran": "Kadima-Tzoran",

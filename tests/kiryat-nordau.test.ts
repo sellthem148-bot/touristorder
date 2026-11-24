@@ -81,6 +81,8 @@ describe("ses limites, face aux adresses relevées chez Google", () => {
     for (const rue of RUES_DE_KIRYAT_NORDAU) expect(dansLesLimites({ lat: rue.lat, lng: rue.lng }, limites), rue.noms[0]).toBe(true);
   });
 
+  // Givat HaIrusim et la zone industrielle ont chacun leur zone depuis (tests/sud-de-netanya.test.ts) : ici, on
+  // vérifie seulement que les limites de Kiryat Nordau et d'Ir Yamim / Poleg ne les prennent pas.
   it("Givat HaIrusim, Agamim, Kiryat HaSharon et la zone industrielle sont dehors — des deux zones", () => {
     expect(AUTOUR_DE_KIRYAT_NORDAU.length).toBeGreaterThan(25);
     for (const [lieu, lat, lng] of AUTOUR_DE_KIRYAT_NORDAU) {
@@ -222,25 +224,34 @@ describe("une adresse tapée à la main : les rues du quartier", () => {
 
 describe("la mise en ligne : une seule fois, sans rien écraser", () => {
   const code = lire("prisma/remplissage.ts");
-  const corps = code.slice(code.indexOf("export async function ajouterKiryatNordau"), code.indexOf("export async function", code.indexOf("export async function ajouterKiryatNordau") + 10));
+  const fonction = (nom: string) => code.slice(code.indexOf(nom), code.indexOf("\n}\n", code.indexOf(nom)));
+  // Ce qui crée un quartier — le même geste pour Kiryat Nordau, Givat HaIrusim et la zone industrielle.
+  const corps = fonction("async function creerUnQuartier");
+  const appel = fonction("export async function ajouterKiryatNordau");
 
   it("une clé à elle, posée dans la même transaction", () => {
     expect(CLE_KIRYAT_NORDAU).toBe("zone-kiryat-nordau-1124");
-    expect(corps).toContain("operationFaite(prisma, CLE_KIRYAT_NORDAU)");
-    expect(corps.match(/noterOperation\(prisma, CLE_KIRYAT_NORDAU\)/g)).toHaveLength(3);
+    expect(appel).toContain("cle: CLE_KIRYAT_NORDAU");
+    expect(appel).toContain("nom: QUARTIER_KIRYAT_NORDAU");
+    expect(appel).toContain("livraison: LIVRAISON_A_KIRYAT_NORDAU");
+    expect(appel).toContain("limites: LIMITES_DE_KIRYAT_NORDAU");
+    expect(appel).toContain("reperes: reperesDeKiryatNordau()");
+    expect(corps).toContain("operationFaite(prisma, q.cle)");
+    expect(corps.match(/noterOperation\(prisma, q\.cle\)/g)).toHaveLength(3);
     expect(corps).not.toMatch(/delete|deleteMany|updateMany/);
   });
 
   it("une zone qui existe déjà garde son prix : elle ne reçoit que ce qui lui manque", () => {
-    expect(corps).toContain('zone.limites.trim() === "" ? { limites: LIMITES_DE_KIRYAT_NORDAU }');
-    expect(corps).toContain('zone.reperes.trim() === "" ? { reperes: reperesDeKiryatNordau() }');
+    expect(corps).toContain('zone.limites.trim() === "" ? { limites: q.limites }');
+    expect(corps).toContain('zone.reperes.trim() === "" ? { reperes: q.reperes }');
     const siElleExiste = corps.slice(corps.indexOf("if (zone) {"), corps.indexOf("if (!ville)"));
     expect(siElleExiste).not.toContain("supplementLivraison");
   });
 
   it("le prix : 40 ₪ moins la livraison de base de SES réglages ; rangée à la suite de l'autre quartier", () => {
-    expect(corps).toContain("Math.max(0, LIVRAISON_A_KIRYAT_NORDAU - reglages.fraisLivraison)");
-    expect(corps).toContain("(parNom.get(QUARTIER_IR_YAMIM)?.ordre ?? ville.ordre) + 1");
+    expect(corps).toContain("Math.max(0, q.livraison - reglages.fraisLivraison)");
+    expect(corps).toContain("Math.max(ville.ordre, ...q.apres.map((nom) => parNom.get(nom)?.ordre ?? ville.ordre)) + 1");
+    expect(appel).toContain("apres: [QUARTIER_IR_YAMIM]");
   });
 
   it("lancée à la mise en ligne, après la grille et les limites d'Ir Yamim", () => {
