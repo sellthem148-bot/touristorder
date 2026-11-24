@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { DOSSIER_DES_REPERES, NOMBRE_DE_PHOTOS_REPERE, PHOTOS_REPERE, estPhotoRepere, photoRepere } from "@/lib/reperes-wolt";
 import { repereWolt } from "@/lib/repere-wolt";
-import { nomDeFichier } from "./outils/poser-photos-retouchees";
+import { nomDeFichier, ressemblance } from "./outils/poser-photos-retouchees";
 import { LOTS_WOLT } from "../prisma/remplissage";
 import { RELEVE_DU_12_NOVEMBRE, RELEVE_DU_POISSON_SURGELE, REMPLACEMENTS_DU_12_NOVEMBRE } from "../prisma/releve-wolt-1112";
 import { RELEVE_DES_BOISSONS } from "../prisma/articles-wolt-captures-boissons";
@@ -196,15 +196,36 @@ describe("photos repère", () => {
       expect(fichiers.has(fichier), fichier).toBe(true);
       expect(lot, fichier).toMatch(/^\d{4}-\d{2}-\d{2} · /);
     }
-    // Le premier lot : dix étuis de capsules Nespresso.
-    expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(10);
-    // L'outil ne pose qu'une retouche : même taille, même article au centre de l'image, rien d'écrit hors du dossier privé.
+    // Les premiers lots : les douze étuis de capsules Nespresso, puis le reste de l'épicerie.
+    expect(Object.keys(registre).filter((f) => f.startsWith("capsules-nespresso-")).length).toBeGreaterThanOrEqual(12);
+    expect(Object.keys(registre).length).toBeGreaterThanOrEqual(30);
+    // L'outil ne pose qu'une retouche : même taille, rien que la photo en service ne montrait déjà, rien d'écrit hors du dossier privé.
     const outil = readFileSync("tests/outils/poser-photos-retouchees.ts", "utf8");
     expect(outil).toContain("const cible = path.join(DOSSIER_DES_REPERES, fichier);");
     expect(outil).toContain("avant.width !== apres.width || avant.height !== apres.height");
-    expect(outil).toContain("if (ecart > ECART_MAX)");
+    expect(outil).toContain("if (r.dejaLa < PART_DEJA_LA || r.gardee < PART_GARDEE)");
     expect(outil.match(/writeFileSync\(/g)).toHaveLength(2); // la photo, et le registre
     expect(outil).not.toMatch(/public\/|photoUrl/);
+    // Une retouche efface (le « + », une pastille, une étiquette) et n'ajoute rien ; une autre image n'en est pas une.
+    const image = (dessin: (x: number, y: number) => [number, number, number]) => Buffer.from(Array.from({ length: 40 * 20 }, (_, i) => dessin(i % 40, Math.floor(i / 40))).flat());
+    const blanc: [number, number, number] = [255, 255, 255];
+    const article = (x: number, y: number) => x >= 14 && x < 26 && y >= 4 && y < 18;
+    const enService = image((x, y) => (article(x, y) ? [200, 40, 40] : x < 8 && y < 6 ? [10, 30, 50] : x >= 30 && y >= 12 ? [0, 0, 0] : blanc));
+    const retouchee = image((x, y) => (article(x, y) ? [203, 38, 41] : blanc)); // le « + » et l'étiquette effacés
+    const autre = image((x, y) => (x >= 4 && x < 30 && y >= 2 && y < 16 ? [40, 90, 200] : blanc));
+    expect(ressemblance(enService, retouchee).dejaLa).toBe(1);
+    expect(ressemblance(enService, retouchee).gardee).toBeGreaterThan(0.5); // l'article est resté, le « + » et l'étiquette non
+    expect(ressemblance(enService, autre).dejaLa).toBeLessThan(0.5);
+    expect(ressemblance(enService, image(() => blanc))).toEqual({ dejaLa: 0, gardee: 0 }); // une image vide n'est pas une retouche
+    // Une photo à fond gris dont il détoure l'article : tout le fond disparaît, l'article reste — c'est une retouche.
+    const surFondGris = image((x, y) => (article(x, y) ? [200, 40, 40] : [205, 205, 205]));
+    const detouree = ressemblance(surFondGris, retouchee);
+    expect(detouree.dejaLa).toBe(1);
+    expect(detouree.gardee).toBeGreaterThan(0.2);
+    expect(detouree.gardee).toBeLessThan(0.4);
+    // … mais un petit bout de la photo n'en est pas une.
+    expect(ressemblance(surFondGris, image((x, y) => (x >= 14 && x < 18 && y >= 4 && y < 8 ? [200, 40, 40] : blanc))).gardee).toBeLessThan(0.2);
+    expect(outil).toContain("const PART_GARDEE = 0.2;");
     // Le nom que l'export des photos donne à un article est celui que l'outil reconnaît.
     expect(nomDeFichier("Lait Tnuva 3 % 1 L")).toBe("Lait Tnuva 3 % 1 L");
     expect(nomDeFichier('Écran 24" : modèle A/B')).toBe("Écran 24 - modèle A-B");
